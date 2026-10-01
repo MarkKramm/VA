@@ -186,9 +186,26 @@ Dark is a designed theme, not an inverted one:
 - `color-scheme` is set per theme, so form controls and scrollbars follow.
 
 The mechanism is a `data-theme` attribute on `<html>`, plus a `prefers-color-scheme`
-media query for the default. A manual choice persists through the `StorageAdapter`
-under its own key — never `localStorage` directly, because progress persistence goes
-through the port and a theme preference must not be the thing that bypasses it.
+media query for the default. The attribute has two writers that must agree:
+
+1. An **inline script in `index.html`**, which runs before first paint and before the
+   stylesheet is applied. This is the only thing that prevents a flash for a learner
+   who chose dark.
+2. **`ThemeProvider`, on mount**, which re-applies the resolved theme. This covers the
+   cases the inline script does not: a Content-Security-Policy that blocks inline
+   scripts, an extension that strips them, and any render that does not go through
+   `index.html`.
+
+The `@media (prefers-color-scheme: dark)` rule is guarded by `:root:not([data-theme])`,
+so it applies only while no choice has been recorded — a third mechanism for the case
+where neither writer ran. An explicit choice always wins, because it puts the attribute
+on the element and the guard stops matching. The dark values are declared once for the
+explicit attribute and once for this fallback; `src/styles/__tests__/theme-tokens.test.ts`
+asserts the two sets are identical so they cannot drift apart.
+
+A manual choice persists through the `StorageAdapter` under its own key — never
+`localStorage` directly, because progress persistence goes through the port and a theme
+preference must not be the thing that bypasses it.
 
 ## 4. Typography
 

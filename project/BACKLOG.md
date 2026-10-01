@@ -37,6 +37,16 @@ Nothing here is scheduled. Items are listed so they are not forgotten, not as a 
 - Coverage thresholds on `src/domain` (90%+) and `src/content` (80%+). No UI threshold.
 - Playwright, for the 5–10 critical journeys at M3.
 
+## Development environment
+
+- **Scope `format:check` to tracked and explicitly-listed files.** `prettier --check .`
+  globs the whole working tree, so any untracked, non-Prettier file in the root fails the
+  gate. Today that file is `opencode.json`, which is live OpenCode runtime configuration
+  and must not be moved or reformatted to clear the failure (`DECISIONS.md` D20). The fix
+  is to pass Prettier the tracked file list (plus `dist`-free globs) instead of `.`. Until
+  then, validate the files under test and report the limitation rather than touching the
+  configuration.
+
 ## Milestone-gated
 
 | Item                                                     | Milestone | Note                                          |

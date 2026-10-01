@@ -10,14 +10,27 @@
     />
     <meta name="color-scheme" content="light dark" />
 
-    {/* Theme applied before first paint. This script is deliberately inline and deliberately
-    duplicated: it must run BEFORE the stylesheet and the React bundle are parsed, or a learner who
-    chose dark mode sees a white flash on every navigation. It cannot import
-    `src/app/storage/theme.ts` — that is a module the bundler has not loaded yet — so the key is
-    written out literally here. That duplication is the cost of not having a flash, and it is why
-    the key name is a constant in `theme.ts` with a comment pointing at this file. If you change
-    one, change both. `scripts/check-spa-fallback.ts` does not verify this; the test suite does not
-    either, so it is called out in a comment rather than left as a silent trap. */}
+    <!--
+      Theme applied before first paint.
+
+      This script is deliberately inline and deliberately duplicated: it must run
+      BEFORE the stylesheet and the React bundle are parsed, or a learner who chose
+      dark mode sees a white flash on every navigation. It cannot import
+      `src/app/storage/theme.ts` - that is a module the bundler has not loaded yet -
+      so the storage key is written out literally here.
+
+      The key is a constant in `theme.ts`, and the JSON encoding matches what
+      `LocalStorageAdapter` writes, because a mismatch would silently produce a
+      flash for exactly the users this script exists to serve. If you change one,
+      change the other. `src/app/__tests__/theme-bootstrap.test.ts` asserts the two
+      agree, so a mismatch fails the test suite rather than shipping.
+
+      NOTE: this comment block is written in HTML comment syntax. It was previously
+      written in JSX comment syntax, which is not a comment in HTML at all - the
+      browser parsed it as text and rendered the whole block to the learner on every
+      page load. `scripts/check-paths.ts` now fails the build if that syntax
+      reappears in the built output, and `theme-bootstrap.test.ts` checks the source.
+    -->
     <script>
       ;(function () {
         try {
@@ -31,18 +44,32 @@
                 : 'light'
           document.documentElement.setAttribute('data-theme', theme)
         } catch (error) {
-          // localStorage can throw in private mode. The stylesheet's
-          // prefers-color-scheme default handles it, so failing silently here is
-          // correct: the alternative is blocking first paint on a preference.
+          /*
+           * localStorage can throw in private mode, and a malformed value throws
+           * in JSON.parse. Failing silently is correct: the alternative is
+           * blocking first paint on a preference.
+           *
+           * The page still renders correctly in that case. tokens.css carries a
+           * `@media (prefers-color-scheme: dark)` fallback on `:root:not([data-theme])`,
+           * so a system-dark learner gets the dark palette even when this script never
+           * runs. That selector is specificity (0,2,0), which is what lets it beat the
+           * light theme's plain `:root` at (0,1,0) — an earlier version wrapped it in
+           * `:where()`, which zeroed the specificity and made the fallback dead while
+           * looking correct.
+           */
         }
       })()
     </script>
   </head>
   <body>
-    {/* The React app mounts here. The fallback text is inside the container rather than beside it,
-    so it is replaced on hydration rather than left behind. It is also what a learner sees if the
-    JavaScript bundle fails to load, which is a real condition on a slow connection — hence an
-    actual explanation rather than a spinner. */}
+    <!--
+      The React app mounts here.
+
+      The fallback text is inside the container rather than beside it, so it is
+      replaced on hydration rather than left behind. It is also what a learner sees
+      if the JavaScript bundle fails to load, which is a real condition on a slow
+      connection - hence an actual explanation rather than a spinner.
+    -->
     <div id="root">
       <noscript>
         <div style="padding: 2rem; font-family: system-ui, sans-serif; max-width: 40rem">
@@ -55,9 +82,11 @@
       </noscript>
     </div>
 
-    {/* A module script, so it is deferred by default and does not block parsing. `crossorigin`
-    matters for the module preload; Vite emits hashed asset names and a cross-origin module without
-    this attribute fails to load. */}
+    <!--
+      A module script, so it is deferred by default and does not block parsing.
+      `crossorigin` matters for the module preload; Vite emits hashed asset names and
+      a cross-origin module without this attribute fails to load.
+    -->
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

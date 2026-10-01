@@ -86,6 +86,26 @@ export const ThemeProvider = ({ children, storage }: ThemeProviderProps) => {
     setPreference(next)
   }, [preference, setPreference])
 
+  // Sync the resolved theme to the document on mount.
+  //
+  // WHY THIS IS NECESSARY even though `index.html` already sets the attribute:
+  //
+  // The inline bootstrap script and this provider are two writers of one value, and
+  // they can disagree. The script runs before first paint and is the only thing that
+  // prevents a flash; but it can be blocked by a Content-Security-Policy or an
+  // extension, and it does not exist at all in a test or a non-`index.html` render
+  // context. Before this effect, the provider set the attribute only inside
+  // `setPreference`, so a learner whose bootstrap script did not run saw a light page
+  // until they touched the toggle - and the React state and the DOM attribute
+  // genuinely disagreed, which is a correctness bug rather than a cosmetic one.
+  //
+  // Re-applying the same value on mount is idempotent: when the script did run, this
+  // writes the identical string and nothing changes, so there is no flash. When it
+  // did not, this corrects the page. Either way React and the DOM agree afterwards.
+  useEffect(() => {
+    applyToDocument(theme)
+  }, [theme])
+
   // Follow the operating system while the preference is "system".
   //
   // This is the one subscription in the app, and it is what makes "follow the

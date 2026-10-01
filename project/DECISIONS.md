@@ -455,3 +455,52 @@ the script as a comment. Second, `DESIGN_SYSTEM.md` publishes the ratios copied 
 script's output, and the two are asserted to agree in spirit — the script is the source
 of truth. Known gap: this verifies tokens, not rendered pixels, so a component that puts
 a good token on an unintended background would not be caught.
+
+## D20 — `opencode.json` is live runtime configuration and is never moved
+
+**Date:** 2026-10-01 (M1)
+
+**Context.** This repository is developed inside an OpenCode session, and `opencode.json`
+in the project root is the **active** runtime configuration for that session. It names the
+provider and model the session is using. It is untracked and is deliberately not part of
+the repository, because it is local development configuration rather than application
+code. It must not contain real secrets.
+
+The file is also visible to tooling that globs the working tree. In particular
+`npm run format:check` runs `prettier --check .`, which picks up untracked files, so an
+`opencode.json` that is not Prettier-formatted makes the whole gate exit non-zero even
+though every tracked file passes.
+
+**Options.** (a) Move the file out of the tree while validating, so the gate goes green.
+(b) Delete or `git clean` it. (c) Reformat it so `prettier --check .` passes. (d) Leave it
+in place, report the condition, and validate in a way that does not touch it.
+
+**Choice.** (d). Leave `opencode.json` present and untouched at all times. Validate the
+files that are actually under test — the tracked files and any new files — rather than
+removing the configuration to make a tree-wide glob pass. Never edit the provider or model
+configuration to satisfy a repository check.
+
+**Reason.** The file is not inert. Removing it while OpenCode is running can cause the
+active session to **lose its configured provider and model and fall back to a different
+model mid-task** — which happened: an earlier validation step moved `opencode.json` to the
+temporary directory to isolate the formatting failure, and the session dropped its
+configured provider and continued on a fallback model. The validation result obtained that
+way was therefore invalid, because the environment that produced it was no longer the
+environment under test. Removing live configuration to get a cleaner check is the same
+class of mistake as modifying the thing you are measuring: the measurement no longer
+describes reality.
+
+**Consequences.**
+
+- `Move-Item`, `Remove-Item`, `git clean`, renaming, hiding, or otherwise removing
+  `opencode.json` during an active OpenCode task is forbidden. There is no "just for a
+  moment" exception.
+- When `opencode.json` makes a tree-wide check fail, that is a fact to report, not a
+  problem to clear by touching the file. The correct responses are to validate the
+  specific files under test, or to state the limitation explicitly in the report.
+- The provider and model configuration is never edited to make checks pass.
+- Known gap, recorded rather than fixed: because `format:check` globs the whole working
+  tree, an untracked, non-Prettier file anywhere in the root will fail the gate. The durable
+  fix is to scope the format check to tracked and explicitly-listed files, which is a
+  tooling change for a later session — not a reason to remove the configuration now. See
+  `BACKLOG.md`.

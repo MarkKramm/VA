@@ -91,6 +91,55 @@ if (!existsSync(FALLBACK)) {
 }
 
 /*
+ * No JSX comment syntax in the HTML.
+ *
+ * THE FAILURE THIS CATCHES
+ *
+ * JSX comments are not HTML comments. A browser parsing `index.html` treats those
+ * characters the way it treats any other text — it renders them. So a stray JSX
+ * comment in the template does not "stay in the source": it ships, and every learner
+ * reads the developer's note above the page on every load, including every deep-link
+ * refresh served by `404.html`.
+ *
+ * WHAT IS EXCLUDED, AND WHY
+ *
+ * The scan removes `<script>` and `<style>` contents before looking, because real
+ * JavaScript legitimately contains a `{` immediately followed by a `/*` block
+ * comment — `index.html` has one inside its theme bootstrap. Treating that as a
+ * defect would make this check fail on correct code, which is how a check gets
+ * deleted. HTML comments are removed too, so a comment that DOCUMENTS the bad syntax
+ * does not trigger it.
+ *
+ * This is checked in the built output rather than in `index.html` because the build
+ * is the artifact that is served. Checking both files covers the normal entry point
+ * and the SPA fallback — they are copies today, and the copy step is exactly the kind
+ * of thing that can diverge.
+ */
+const countLines = (text: string): number => text.split(/\r?\n/).length
+
+const findJsxComment = (contents: string): number => {
+  const scannable = contents
+    .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, (block) => '\n'.repeat(countLines(block)))
+    .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, (block) => '\n'.repeat(countLines(block)))
+    .replace(/<!--[\s\S]*?-->/g, (block) => '\n'.repeat(countLines(block)))
+  return scannable.split(/\r?\n/).findIndex((line) => /\{\s*\/\*/.test(line))
+}
+
+for (const [label, file] of [
+  ['index.html', INDEX],
+  ['404.html', FALLBACK],
+] as const) {
+  if (!existsSync(file)) continue
+  const line = findJsxComment(readFileSync(file, 'utf8'))
+  if (line !== -1) {
+    failures.push(
+      `${label} contains JSX comment syntax on line ${line + 1}. JSX comments are not HTML\n` +
+        '    comments, so the browser renders them as visible text. Use `<!-- … -->` instead.',
+    )
+  }
+}
+
+/*
  * Vite emits a CSS file per entry chunk. Verify the referenced assets actually
  * exist on disk: a stale or renamed asset produces HTML that looks correct and a
  * blank page.

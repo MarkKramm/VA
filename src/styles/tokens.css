@@ -154,6 +154,20 @@
  * Dark is a designed theme, not an inverted one. Surfaces get LIGHTER as they
  * come forward (the opposite of the usual "darker = closer" intuition) because
  * pure black backgrounds cause halation on OLED and make long reading harder.
+ *
+ * TWO WAYS IN, ONE SET OF VALUES
+ *
+ * This block is applied when the learner has EXPLICITLY chosen dark, i.e. the
+ * `data-theme` attribute on `<html>` is `dark`. The system-preference fallback
+ * lives in a media query immediately below and reuses these same declarations —
+ * it is not a second copy, and it must not become one, or the two would drift
+ * and `check-contrast.ts` would verify a palette the browser is not using.
+ *
+ * The selector is written as a list with the `[data-theme='dark']` marker on its
+ * own line because `scripts/check-contrast.ts` locates the dark theme by that
+ * literal string. Changing the selector shape without checking that script will
+ * make it read the dark palette as the light one and report confident, wrong
+ * contrast ratios — see DECISIONS.md D19.
  * ------------------------------------------------------------------------ */
 
 [data-theme='dark'] {
@@ -223,6 +237,106 @@
   --shadow-sm: 0 1px 2px oklch(0% 0 0 / 0.3);
   --shadow-md: 0 2px 6px oklch(0% 0 0 / 0.35), 0 6px 16px oklch(0% 0 0 / 0.3);
   --shadow-lg: 0 6px 16px oklch(0% 0 0 / 0.4), 0 16px 40px oklch(0% 0 0 / 0.35);
+}
+
+/*
+ * System-preference fallback.
+ *
+ * WHY THIS EXISTS
+ *
+ * The `data-theme` attribute is set in two places: the inline bootstrap script in
+ * `index.html` (before first paint, so there is no flash) and `ThemeProvider` on
+ * mount (so React and the DOM cannot disagree). Both can fail — the inline script
+ * is blocked by a strict Content-Security-Policy or an extension, and the script
+ * bundle itself may not load on a poor connection.
+ *
+ * Without this block, a learner whose operating system is set to dark would, in
+ * that situation, get a permanently LIGHT page rather than a briefly flashing
+ * one: `:root, [data-theme='light']` above is unconditional, so light is the
+ * default and nothing else would correct it. That is a wrong theme, not a flash,
+ * and it is the case this rule covers.
+ *
+ * WHY THE VALUES ARE REPEATED, AND HOW DRIFT IS PREVENTED
+ *
+ * CSS cannot reference one block's declarations from another, so the dark values
+ * are restated here rather than shared. That is a genuine duplication and a real
+ * drift hazard — one copy gets updated, the other does not, and a learner on a
+ * system-dark machine sees a different palette from one who chose dark.
+ *
+ * Rather than leave that to review discipline, `src/styles/__tests__/theme-tokens.test.ts`
+ * asserts that this block and the `[data-theme='dark']` block declare an identical
+ * set of custom properties with identical values. Drift fails the test suite rather
+ * than shipping. That test is the reason the duplication is acceptable; removing it
+ * while keeping the duplication is not.
+ *
+ * The `:not([data-theme])` guard is what makes an explicit choice win: once the
+ * learner picks light or dark, the attribute exists, this rule stops matching, and
+ * `[data-theme='light']` / `[data-theme='dark']` take over.
+ *
+ * WHY THERE IS NO `:where()` HERE
+ *
+ * This selector was first written as `:where(:root:not([data-theme]))`, on the
+ * reasoning that `:where()` zeroes specificity so the fallback could never outrank
+ * an explicit attribute selector. That reasoning is correct and the rule was still
+ * DEAD: `:where()` makes the specificity `(0,0,0)`, and the light theme's plain
+ * `:root` rule is `(0,1,0)`. Higher specificity wins before source order is even
+ * consulted, so a system-dark learner with no stored preference got the LIGHT
+ * palette and the fallback never applied at all.
+ *
+ * `:root:not([data-theme])` is `(0,2,0)` — one pseudo-class plus one attribute —
+ * which beats the light `:root` `(0,1,0)` and still stops matching the moment a
+ * `data-theme` attribute exists. Specificity is the mechanism; `:where()` disabled
+ * it in the one direction that mattered. Verified against jsdom's cascade engine,
+ * not by eye — see `src/styles/__tests__/theme-tokens.test.ts`.
+ */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    color-scheme: dark;
+
+    --color-canvas: oklch(16% 0.012 250);
+    --color-surface: oklch(20% 0.012 250);
+    --color-surface-raised: oklch(23% 0.013 250);
+    --color-surface-sunken: oklch(14% 0.012 250);
+    --color-surface-inset: oklch(18% 0.012 250);
+    --color-surface-hover: oklch(26% 0.013 250);
+    --color-surface-active: oklch(30% 0.014 250);
+
+    --color-border: oklch(30% 0.013 250);
+    --color-border-strong: oklch(38% 0.014 250);
+    --color-border-subtle: oklch(25% 0.012 250);
+
+    --color-text-primary: oklch(97% 0.004 250);
+    --color-text-secondary: oklch(85% 0.008 250);
+    --color-text-muted: oklch(72% 0.01 250);
+    --color-text-on-brand: oklch(16% 0.012 250);
+    --color-text-inverse: oklch(16% 0.012 250);
+
+    --color-accent: var(--brand-300);
+    --color-accent-hover: var(--brand-200);
+    --color-accent-active: var(--brand-100);
+    --color-accent-text: var(--brand-300);
+    --color-accent-soft: oklch(28% 0.04 200);
+    --color-accent-border: oklch(38% 0.05 200);
+    --color-accent-fill: var(--brand-300);
+
+    --color-focus-ring: var(--brand-300);
+    --color-focus-halo: oklch(14% 0.012 250);
+
+    --state-complete-soft: oklch(27% 0.05 152);
+    --state-complete-strong: oklch(84% 0.13 152);
+    --state-progress-soft: oklch(27% 0.055 245);
+    --state-progress-strong: oklch(84% 0.11 245);
+    --state-recommended-soft: oklch(28% 0.06 305);
+    --state-recommended-strong: oklch(85% 0.12 305);
+    --state-locked-soft: oklch(27% 0.008 250);
+    --state-locked-strong: oklch(84% 0.008 250);
+    --state-available-soft: oklch(28% 0.006 250);
+    --state-available-strong: oklch(86% 0.006 250);
+
+    --shadow-sm: 0 1px 2px oklch(0% 0 0 / 0.3);
+    --shadow-md: 0 2px 6px oklch(0% 0 0 / 0.35), 0 6px 16px oklch(0% 0 0 / 0.3);
+    --shadow-lg: 0 6px 16px oklch(0% 0 0 / 0.4), 0 16px 40px oklch(0% 0 0 / 0.35);
+  }
 }
 
 /*

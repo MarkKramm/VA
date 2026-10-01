@@ -96,16 +96,61 @@ const tokenSource = await import('node:fs').then((fs) =>
  *
  * Theme blocks are keyed by their selector, so light and dark resolve separately.
  * `:root` is the light theme; `[data-theme='dark']` overrides it.
+ *
+ * The dark palette is declared TWICE in `tokens.css`: once under
+ * `[data-theme='dark']` (an explicit choice) and once inside
+ * `@media (prefers-color-scheme: dark)` (the system-preference fallback). Both are
+ * the dark theme, so both must land in the `dark` map.
+ *
+ * WHY THIS MATTERS, AND HOW IT BROKE
+ *
+ * This reader originally switched themes on a line containing `[data-theme='dark']`
+ * and reset to light on ANY line ending in `{`. When the fallback block was added,
+ * the `@media (prefers-color-scheme: dark) {` line ended in `{`, so the reader reset
+ * to LIGHT and wrote all 37 dark declarations into the LIGHT map, overwriting the
+ * real light values. The script stayed green while verifying the dark palette twice
+ * and never verifying light at all — a confident wrong answer, which is the exact
+ * failure `DECISIONS.md` D19 exists to prevent.
+ *
+ * Marking the `@media` line as dark is not enough on its own: the rule's own
+ * selector line (`:root:not([data-theme]) {`) also ends in `{`, and the generic
+ * reset would immediately undo it. So the reader tracks the media block's depth and
+ * only treats a `{` as "back to light" when it is NOT inside that block. The
+ * fallback's declarations are the only ones between the opening `@media {` and its
+ * closing `}`, so this is exact rather than a heuristic.
  */
 const readTokens = (): { light: Map<string, string>; dark: Map<string, string> } => {
   const light = new Map<string, string>()
   const dark = new Map<string, string>()
   let target = light
+  /** > 0 while inside the `@media (prefers-color-scheme: dark)` block. */
+  let darkMediaDepth = 0
 
   // Walk the file, tracking which theme block we are inside.
   for (const rawLine of tokenSource.split(/\r?\n/)) {
     const line = rawLine.trim()
     if (line.startsWith('/*') || line.startsWith('*') || line.startsWith('*/')) continue
+
+    // Entering the system-preference fallback: everything inside is dark.
+    if (/@media\s*\(prefers-color-scheme:\s*dark\)\s*\{/.test(line)) {
+      darkMediaDepth = 1
+      target = dark
+      continue
+    }
+
+    if (darkMediaDepth > 0) {
+      // Track inner nesting so the block's closing brace ends the dark region.
+      darkMediaDepth += (line.match(/\{/g) ?? []).length
+      darkMediaDepth -= (line.match(/\}/g) ?? []).length
+      const declMedia = line.match(/^(--[\w-]+):\s*(.+);$/)
+      if (declMedia?.[1] && declMedia[2]) target.set(declMedia[1], declMedia[2].trim())
+      if (darkMediaDepth <= 0) {
+        darkMediaDepth = 0
+        target = light
+      }
+      continue
+    }
+
     if (line.includes("[data-theme='dark']")) {
       target = dark
       continue
