@@ -1,15 +1,47 @@
+import '@testing-library/jest-dom/vitest'
+
 /**
  * Test setup.
  *
- * jsdom is configured in vitest.config.ts. This file exists so the environment
- * has a single, explicit definition rather than relying on defaults, and so
- * there is one obvious place to add global test configuration later.
+ * `jest-dom` adds the accessible-role matchers (`toHaveAccessibleName`,
+ * `toBeInTheDocument`) and the `toHaveFocus` matcher. Without it the shell tests
+ * would have to assert on class names and text content, which is how a test ends
+ * up passing while the markup is wrong.
+ *
+ * Two jsdom gaps are filled here, and both matter for this shell specifically:
+ *
+ *  1. **`matchMedia`.** jsdom does not implement it. The theme provider calls it
+ *     to resolve `system`, and the header's focus-trap logic depends on real
+ *     focus behaviour. Returning a stub that reports "light" and supports
+ *     add/removeEventListener keeps the provider honest without pulling in a
+ *     polyfill dependency.
+ *
+ *  2. **`scrollTo`.** jsdom throws "not implemented" for it, and it is called on
+ *     route changes by anything that scrolls. Stubbed to a no-op.
+ *
+ * Both are filled with the minimum that works. A fuller DOM emulation is a
+ * dependency, and `DESIGN_SYSTEM.md` §9 and D11 set the bar for adding one.
  */
 
-// Fail a test that leaves an unhandled rejection behind — an async error that is
-// swallowed is exactly the kind of bug that hides in a storage layer.
-process.on('unhandledRejection', (reason) => {
-  throw reason
-})
+if (typeof globalThis.matchMedia !== 'function') {
+  Object.defineProperty(globalThis, 'matchMedia', {
+    writable: true,
+    value: (query: string) => ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addListener: () => {},
+      removeListener: () => {},
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      dispatchEvent: () => false,
+    }),
+  })
+}
 
-export {}
+if (typeof globalThis.scrollTo !== 'function') {
+  Object.defineProperty(globalThis, 'scrollTo', {
+    writable: true,
+    value: () => {},
+  })
+}

@@ -10,7 +10,9 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "vite build && npm run build:fallback && npm run check:paths",
+    "build:fallback": "vite-node scripts/copy-spa-fallback.ts",
+    "check:paths": "vite-node scripts/check-paths.ts",
     "preview": "vite preview",
     "lint": "eslint .",
     "format": "prettier --write .",
@@ -20,15 +22,26 @@
     "test:watch": "vitest",
     "test:arch": "vitest run src/domain/__tests__/boundaries.test.ts",
     "content:check": "vite-node scripts/validate-content.ts",
-    "check": "npm run format:check && npm run lint && npm run typecheck && npm run content:check && npm run test && npm run build"
+    "check:contrast": "vite-node scripts/check-contrast.ts",
+    "check": "npm run format:check && npm run lint && npm run typecheck && npm run content:check && npm run check:contrast && npm run test && npm run build"
   },
   "dependencies": {
+    "lucide-react": "^1.49.0",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "react-router": "^7.18.4",
     "zod": "^4.6.5"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@testing-library/jest-dom": "^7.0.1",
+    "@testing-library/react": "^16.3.3",
+    "@testing-library/user-event": "^14.6.7",
     "@types/jsdom": "^30.0.0",
     "@types/node": "^26.6.3",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.1.1",
     "eslint": "^10.11.0",
     "globals": "^17.12.0",
     "gray-matter": "^4.0.3",

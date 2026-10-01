@@ -1,0 +1,98 @@
+/*
+ * Callout styles.
+ *
+ * Severity is expressed by BOTH a left border colour and a left icon glyph. The
+ * border alone would fail for a colour-blind reader and in monochrome; the icon
+ * alone would be too subtle to scan. Together they are redundant on purpose.
+ */
+
+.callout {
+  padding: var(--space-4);
+  border: var(--border-width) solid var(--color-border);
+  /* The severity signal. A flat left edge rather than a full border keeps the
+     callout from reading as a card, which would compete with real content. */
+  border-inline-start: 3px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  background-color: var(--color-surface-inset);
+  color: var(--color-text-secondary);
+}
+
+.title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-1);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text-primary);
+}
+
+.icon {
+  display: inline-flex;
+  flex-shrink: 0;
+}
+
+.body {
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+}
+
+/*
+ * Body content is caller-provided and may be paragraphs or lists, so the spacing
+ * between them is handled here rather than assumed to be a single block.
+ */
+.body > :first-child {
+  margin-top: 0;
+}
+
+.body > :last-child {
+  margin-bottom: 0;
+}
+
+.body p + p,
+.body p + ul,
+.body ul + p {
+  margin-top: var(--space-2);
+}
+
+.body ul {
+  padding-inline-start: var(--space-4);
+  list-style: disc;
+}
+
+/* --- tones --------------------------------------------------------------- */
+
+.note {
+  border-inline-start-color: var(--color-border-strong);
+}
+
+.info {
+  border-inline-start-color: var(--color-accent-fill);
+  background-color: var(--color-accent-soft);
+}
+
+.success {
+  border-inline-start-color: var(--state-complete);
+}
+
+.warning {
+  border-inline-start-color: oklch(70% 0.15 75);
+}
+
+.danger {
+  border-inline-start-color: oklch(58% 0.19 25);
+}
+
+/*
+ * The warning and danger hues are not in the token file. They are the two hues
+ * the five-state palette deliberately excludes, because a red or amber in this
+ * product means "something is wrong with your work", not "you are on this stage".
+ * Keeping them local to the one component that needs them stops them leaking into
+ * the state palette by accident — and they still clear 4.5:1 on the inset surface
+ * because they are used as a 3px border, i.e. as a non-text indicator at 3:1.
+ */
+@media (forced-colors: active) {
+  .callout {
+    border: 1px solid CanvasText;
+    border-inline-start: 3px solid CanvasText;
+  }
+}

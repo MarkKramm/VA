@@ -1,0 +1,120 @@
+/*
+ * Card styles.
+ *
+ * One border, one shadow level, no gradients. `DESIGN_SYSTEM.md` §2.3: density
+ * over decoration. The shadow is `--shadow-sm`, not `--shadow-md`, because a page
+ * containing nine cards each with a medium shadow reads as nine competing
+ * objects rather than as one page.
+ */
+
+.card {
+  background-color: var(--color-surface);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-lg);
+  /* `min-width: 0` matters more than it looks: a grid or flex child defaults to
+     `min-width: auto`, which refuses to shrink below its content and is the
+     usual cause of a card overflowing a 375 px screen. */
+  min-width: 0;
+}
+
+.default {
+  box-shadow: var(--shadow-sm);
+}
+
+.raised {
+  background-color: var(--color-surface-raised);
+  box-shadow: var(--shadow-md);
+}
+
+/*
+ * Sunken cards sit *below* the canvas — used for inset regions like a code sample
+ * or a quoted requirement. In dark mode this is genuinely darker than the
+ * surface, which is the one place the "lighter is closer" rule is inverted on
+ * purpose, because an inset should read as a recess.
+ */
+.sunken {
+  background-color: var(--color-surface-sunken);
+  box-shadow: none;
+}
+
+/*
+ * Interactive cards are links. The hover and focus states must be visible on the
+ * card itself, and the whole card must be the hit target — so `transition` covers
+ * border and shadow rather than a transform, which would move the hit target
+ * under the pointer.
+ */
+.interactive {
+  transition:
+    border-color var(--motion-transition),
+    box-shadow var(--motion-transition),
+    background-color var(--motion-transition);
+}
+
+.interactive:hover {
+  border-color: var(--color-accent-border);
+  box-shadow: var(--shadow-md);
+}
+
+/* --- padding ------------------------------------------------------------- */
+
+.padding-none {
+  padding: 0;
+}
+
+.padding-sm {
+  padding: var(--space-3);
+}
+
+.padding-md {
+  padding: var(--space-4);
+}
+
+.padding-lg {
+  padding: var(--space-5);
+}
+
+/* --- header -------------------------------------------------------------- */
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.headerText {
+  /* Without this, a long title pushes the actions off the right edge instead of
+     wrapping, which is how a card overflows on mobile. */
+  min-width: 0;
+}
+
+.title {
+  font-size: var(--text-md);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-snug);
+  letter-spacing: var(--tracking-tight);
+}
+
+.description {
+  margin-top: var(--space-1);
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+}
+
+.actions {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.body {
+  margin-top: var(--space-3);
+}
+
+.footer {
+  margin-top: var(--space-4);
+  padding-top: var(--space-3);
+  border-top: var(--border-width) solid var(--color-border-subtle);
+}

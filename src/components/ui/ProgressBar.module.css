@@ -1,0 +1,104 @@
+/*
+ * ProgressBar styles.
+ *
+ * The track has a visible border in both themes. In dark mode a low-contrast
+ * track is easy to miss entirely, and the unfilled portion is itself information
+ * — "how much is left" is the question a progress bar is asked.
+ */
+
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.labels {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+  font-size: var(--text-xs);
+  line-height: var(--leading-snug);
+}
+
+.label {
+  color: var(--color-text-secondary);
+  /* Long labels ("8 of 24 lessons completed") must wrap rather than push the
+     percentage off the edge on a narrow card. */
+  min-width: 0;
+}
+
+.percent {
+  flex-shrink: 0;
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+  /* Tabular figures so a percentage ticking from 9% to 10% does not shift the
+     layout sideways. */
+}
+
+.track {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  background-color: var(--color-surface-inset);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-full);
+}
+
+.md {
+  height: 0.5rem;
+}
+
+.sm {
+  height: 0.3125rem;
+}
+
+.fill {
+  height: 100%;
+  background-color: var(--color-accent-fill);
+  border-radius: inherit;
+  transition: inline-size var(--duration-normal) var(--ease-standard);
+}
+
+/*
+ * State colours come from the shared --state-* tokens. The fill uses the solid
+ * variant because it sits on the soft track, and the contrast check in
+ * scripts/check-contrast.ts covers exactly that pairing.
+ */
+.wrapper[data-state] .fill {
+  background-color: var(--state-solid);
+}
+
+/*
+ * Forced colours: the fill is a background, which the OS discards. A forced
+ * `border-inline-end` on the fill keeps the filled portion visible, and the text
+ * label carries the number regardless.
+ */
+@media (forced-colors: active) {
+  .track {
+    border: 1px solid CanvasText;
+  }
+
+  .fill {
+    background-color: Highlight;
+    border-inline-end: 2px solid CanvasText;
+  }
+}
+
+/*
+ * The label is still rendered when hidden; it is only visually removed. `.srOnly`
+ * is a global utility in global.css rather than a local class because the skip
+ * link needs it too, and duplicating it per component is how the two drift apart.
+ */
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}

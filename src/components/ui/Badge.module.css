@@ -1,0 +1,58 @@
+/*
+ * Badge styles.
+ *
+ * Two independent colour systems, deliberately:
+ *
+ *  1. `data-state` (set by the component) picks up --state-bg / --state-fg, which
+ *     are defined once in tokens.css. A new state needs no CSS here.
+ *  2. `tone` is for non-progression labels — a lane, a difficulty. It uses
+ *     neutral/accent surface tokens so it cannot be mistaken for a state.
+ *
+ * Keeping them separate is what stops "recommended" and "accent" drifting into
+ * the same colour, which would make a badge's meaning ambiguous.
+ */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  /* Slightly reduced from body size: a badge is metadata about something, not
+     the thing itself, and it should not compete with the title next to it. */
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+  line-height: 1.4;
+  padding: 0.125rem var(--space-2);
+  border-radius: var(--radius-full);
+  white-space: nowrap;
+  background-color: var(--color-surface-inset);
+  color: var(--color-text-secondary);
+}
+
+/* A state badge takes its colours from the state tokens. */
+.badge[data-state] {
+  background-color: var(--state-bg);
+  color: var(--state-fg);
+}
+
+.outline {
+  background-color: transparent;
+  border: var(--border-width) solid var(--color-border-strong);
+}
+
+.icon {
+  display: inline-flex;
+  /* Optical alignment: icons sit slightly high next to text at small sizes. */
+  transform: translateY(-0.05em);
+}
+
+/*
+ * In forced-colours mode the chip backgrounds are discarded, and two badges that
+ * differ only by background become indistinguishable. A border restores the
+ * distinction, and the text remains the primary signal either way — which is the
+ * whole reason the label is not optional.
+ */
+@media (forced-colors: active) {
+  .badge {
+    border: 1px solid CanvasText;
+  }
+}

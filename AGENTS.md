@@ -22,20 +22,26 @@ Do these in order. Do not skip to the code.
 4. **`project/CHECKPOINT.md`** — the last verified stable state, and what was tested.
 5. **`project/NEXT_STEPS.md`** — the actual task list. It holds at most three items.
 6. **`docs/ARCHITECTURE.md`** — how the system is built.
-7. **`docs/CONTENT_ARCHITECTURE.md`** — only if you are writing or changing content.
-8. **`project/DECISIONS.md`** — the sections relevant to your task. These are settled.
+7. **`docs/DESIGN_SYSTEM.md`** — before writing or changing any UI. Tokens, the visual
+   identity, and the accessibility commitments.
+8. **`docs/CONTENT_ARCHITECTURE.md`** — only if you are writing or changing content.
+9. **`project/DECISIONS.md`** — the sections relevant to your task. These are settled.
    Do not undo them.
-9. **The code itself**, before changing it.
+10. **The code itself**, before changing it.
 
 `project/CURRENT_STATE.md`, `CHECKPOINT.md` and `NEXT_STEPS.md` together tell you where
 the project is without needing any conversation history. That is the point of them.
 
 ## 2. The state of the project
 
-**Milestone 0 (Foundation) is complete. Milestone 1 (Application Shell) is next.**
+**Milestone 0 (Foundation) and Milestone 1 (Application Shell) are complete. Milestone 2
+(Content Engine) is next.**
 
-There is no user interface. No React components, no router, no CSS. If you find
-yourself wanting to build a component, you are working on the wrong milestone.
+There is a working application shell: React, routing, layout, navigation, a dashboard, a
+design-token layer and the deployment path. **There are no lesson pages, no exercises, no
+progress tracking, no quizzes, no labs and no tool directory.** If you find yourself wanting
+to build one of those, you are working on the wrong milestone — and if you find yourself
+wanting to add a route that points at one, read rule 6 first.
 
 Verify your starting point before doing anything else:
 
@@ -44,8 +50,9 @@ git status
 npm run check        # must be green before you change anything
 ```
 
-`check` is the single gate: formatting, lint, types, content validation, tests and build. If
-it is green, CI will be green. `npm run format` fixes formatting rather than reporting it.
+`check` is the single gate: formatting, lint, types, content validation, contrast, tests and
+build (including the SPA fallback and the subpath check). If it is green, CI will be green.
+`npm run format` fixes formatting rather than reporting it.
 
 If `npm run check` is red, that is your first task, regardless of what you were asked
 to do.
@@ -89,8 +96,8 @@ refactoring something unrelated. If the change touches more than three files, pa
 confirm it is really the smallest change.
 
 **9. Verify before claiming completion.**
-`npm run check` must pass. It includes formatting, lint, types, content validation, tests
-and build. "It should work" is not a result.
+`npm run check` must pass. It includes formatting, lint, types, content validation, contrast,
+tests and build. "It should work" is not a result.
 
 **10. Update the four documents and commit before you finish.**
 `project/CURRENT_STATE.md`, `project/NEXT_STEPS.md`, `project/CHECKPOINT.md`, and
@@ -201,8 +208,43 @@ both` is a field, and the reason is written down in `DECISIONS.md`. Revisit only
   _career path_ is first-class. See `DECISIONS.md`.
 - **Do not add file upload.** There is no backend, so there is nowhere to put a file and
   no reason to accept one.
+- **Do not import `@/content/` from `src/features/` or `src/components/`.** ESLint blocks
+  it, and that is the point, not an obstacle to route around. Read content through
+  `src/app/content.ts`, which is the only UI-side file allowed to touch the registry, and
+  which uses `selectors.ts`. A query that does not exist means adding a selector — not
+  reaching into the registry from a component. `DECISIONS.md` D16.
+- **Do not add a state-management library yet.** The theme uses React context. Zustand is
+  the recorded choice over Redux and friends, deferred until M3 when the progress log
+  genuinely needs a store. `DECISIONS.md` D17.
+- **Do not add placeholder routes for future milestones.** A nav entry pointing at a
+  non-functional page is worse than no nav entry: it promises a feature and then 404s.
+- **Do not hand-roll a YAML parser to shrink the bundle.** ~55 kB gzipped of `gray-matter`
+  reaches the browser because `content/index.ts` parses frontmatter at module scope. The fix
+  is the M2 MDX pipeline. A hand-rolled parser would duplicate a solved problem and could
+  disagree with `gray-matter` on an edge case. `BACKLOG.md`.
+- **Do not hard-code `/VA/`.** Read `import.meta.env.BASE_URL`. A test asserts the router
+  does not contain the literal, and `check:paths` asserts the built output.
+- **Do not skip `prefers-reduced-motion` when adding animation.** Every duration is a
+  token in `tokens.css`, and the reduced-motion block zeroes them. Honouring the preference
+  is reading a token, not auditing transitions.
+- **Do not add a second dialog without replacing the hand-rolled focus trap.** The mobile
+  nav's trap is deliberate and documented; a second dialog is the moment to introduce a
+  real primitive. `DECISIONS.md` D18.
 
-## 8. When you are stuck
+## 8. Before you build UI
+
+Since M1 the project has an interface, which changes three things:
+
+1. **Read `docs/DESIGN_SYSTEM.md` before touching `src/styles/`.** The tokens are the output
+   of the decisions in that document. Editing a value without knowing which decision it
+   serves is how a design system becomes a pile of overrides.
+2. **Colour is never the only signal.** Every state carries text, a glyph, or a number as
+   well as a hue. `npm run check:contrast` verifies contrast from the token values and fails
+   the build, but it cannot see a component that puts a good token on the wrong background.
+3. **Test behaviour, not existence.** `expect(getByTestId('shell')).toBeInTheDocument()`
+   passes on a shell with no landmarks and no working navigation.
+
+## 9. When you are stuck
 
 If something genuinely blocks you and the documents do not resolve it: **stop and ask.**
 Do not invent a requirement, and do not change the architecture to get unstuck. A wrong

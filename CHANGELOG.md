@@ -10,6 +10,107 @@ All notable changes to this project. Format follows
 
 ## [Unreleased]
 
+## [0.2.0] — 2026-10-01 — M1 Application Shell
+
+The first usable application. M0 built a validated content pipeline with no interface; M1
+puts a shell around it — routing, layout, navigation, a dashboard, a design-token layer and
+the GitHub Pages deployment path — and deliberately stops there.
+
+### Added
+
+**Application shell.** React 19 + React Router 7, a real Vite application build replacing
+the M0 library-mode placeholder. Four routes: the dashboard, the roadmaps index, a roadmap
+detail page, and a catch-all in-app 404. Route-level error boundaries sit **inside** the
+layout route, so a thrown error keeps the header, the nav and the skip link rather than
+replacing the page.
+
+**Layout and navigation.** `AppShell`, `AppHeader`, `AppNav`, `AppFooter`, `SkipLink`, and a
+shared `ThemeToggle`. Navigation is **data** (`src/app/navigation.ts`), so the desktop
+sidebar and the mobile panel cannot disagree about which destinations exist. The mobile nav
+is a real modal dialog: `aria-modal`, focus moves in, Tab is trapped, Escape closes, focus
+returns to the toggle, and it closes on navigation. `DECISIONS.md` D18.
+
+**Design system foundation.** `src/styles/tokens.css` and `global.css`, with
+`docs/DESIGN_SYSTEM.md` written _before_ the components so the identity was designed rather
+than accreted. Colour, type, space, radius, motion and elevation as tokens; light and dark
+from day one; CSS Modules; no CSS framework and no webfonts. The identity is deliberately
+not a generic SaaS dashboard — `DESIGN_SYSTEM.md` §1 records what was rejected and why.
+
+**A verified-contrast gate.** `npm run check:contrast` computes WCAG ratios from the token
+values and fails the build if any pair drops below its required level. 34 pairs, both themes.
+`DECISIONS.md` D19.
+
+**Deployment path.** `deploy.yml` with the required Pages permissions and environment,
+`public/.nojekyll`, a postbuild step copying `dist/index.html` to `dist/404.html`, and
+`scripts/check-paths.ts` asserting the built HTML has no root-relative asset URL.
+
+**Tests: 169 → 241.** Shell landmarks and structure, routing, navigation and active-route
+state, breadcrumbs, the mobile dialog's focus behaviour, the dashboard and roadmap pages
+against real content, the router's `basename`, the deployment configuration, theme
+persistence, and each UI component's accessibility contract.
+
+### Changed
+
+- **`npm run check` now includes `check:contrast` and a subpath-verified build.** It is the
+  single gate: format, lint, typecheck, `content:check`, contrast, tests, build, SPA
+  fallback, path check.
+- **The build is an application build.** `build.lib` and its M0 placeholder comment are
+  gone; `index.html` and `src/main.tsx` replace them.
+- **Vitest includes `.tsx`** and loads `tests/setup.ts`, which fills two jsdom gaps
+  (`matchMedia`, `scrollTo`) the shell depends on.
+- **`vite.config.ts`** gained `@vitejs/plugin-react` and a bundle-size budget set from the
+  measured M1 size.
+
+### Fixed
+
+Bugs found _during_ M1, each of which would have shipped:
+
+1. **`AppShell` rendered `children`, which react-router never passes.** A layout route is
+   rendered empty and delivers content through `<Outlet />`. This typechecked, compiled, and
+   produced a blank page on every route. Caught by a test asserting the matched route's
+   content renders.
+2. **The contrast checker reported 23 failures that were all its own bugs** — WCAG luminance
+   is defined on _linear_ light and the script gamma-encoded first, turning a known 10:1 pair
+   into 3.2:1; and dark-theme lookups did not fall back to the `:root` primitives. Recorded
+   in the script because a checker producing confident wrong numbers is worse than none.
+3. **State chips were theme-independent**, putting a 94%-lightness pastel on an 18%-dark
+   surface. Dark mode now defines its own soft and strong state variants.
+4. **`DESIGN_SYSTEM.md` initially published invented contrast ratios**, replaced with the
+   checker's measured output. A "well under a second" claim about Prettier in this file was
+   measured at 1.8s and corrected.
+5. **`react-router` resolved to v8** when the settled stack recorded v7. Pinned to 7.18.4
+   rather than silently deviating from a recorded decision.
+
+### Known limitations, stated rather than buried
+
+- **The bundle is 717 kB / 202 kB gzipped, and ~55 kB of that is `gray-matter` shipping to
+  the browser.** Measured by rebuilding with the parser stubbed out (717 kB → 469 kB). The
+  fix is a build-time frontmatter transform, which is the M2 MDX pipeline; it was not
+  patched here because a hand-rolled YAML parser would duplicate a solved problem. A real
+  cost on a phone, so it is a decision rather than an oversight.
+- **No live URL.** The repository has no git remote, so the deployment workflow has never
+  run, and M1's stated exit condition — a working deployed site with a deep link surviving a
+  hard refresh — is **not met**.
+- **No browser was driven at 375 / 768 / 1440.** Responsive behaviour is verified by
+  construction, not by screenshot.
+- **Contrast is verified from token values, not rendered pixels.**
+
+### Not changed
+
+No architecture, no schema semantics, no content, no M0 source file, no test removed. All
+curriculum content remains `status: draft`. No lesson pages, quizzes, labs, tool directory,
+progress UI, or placeholder routes for them — those are M2 onwards.
+
+### Dependencies
+
+Runtime 1 → 5, against a budget of 20: added `react`, `react-dom`, `react-router` (pinned
+7.x) and `lucide-react`. Dev-only: `@vitejs/plugin-react`, `@testing-library/react`,
+`@testing-library/user-event`, `@testing-library/jest-dom`, `@types/react`,
+`@types/react-dom`. **No Zustand** — `DECISIONS.md` D17 explains why the recorded choice was
+deferred rather than rejected.
+
+## [0.1.0-foundation] — 2026-10-01
+
 ### Fixed
 
 **Two validation gates that were not actually green**, both found by an independent audit of

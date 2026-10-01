@@ -339,3 +339,119 @@ paths are retained, so a duplicate error names both files — a synthesised
 `content/lessons/**/<id>.mdx` would have named the same path twice and told the reader
 nothing. Map lookup behaviour is unchanged: a duplicate still resolves to the last entry,
 which is pinned by a test so nobody "fixes" it into a first-wins rule by accident.
+
+## D16 — `src/app/content.ts` is the only seam between content and UI
+
+**Date:** 2026-10-01 (M1)
+
+**Context.** The M0 ESLint rule forbids `src/components/` and `src/features/` from
+importing anything matching `content/*`. That was written before either directory
+existed, and the pattern is broad enough that at M1 it also blocks `@/content/*` — the
+alias. A feature component therefore cannot import the registry, and cannot import a
+selector either.
+
+**Options.** (a) Narrow the ESLint rule so features may import `@/content/`.
+(b) Let features read the registry directly and drop the rule. (c) Keep the rule and
+give `src/app/` the job of composing content for the UI.
+
+**Choice.** (c). `src/app/content.ts` reads the registry through `selectors.ts` and
+hands plain data to the presentation layer.
+
+**Reason.** (a) and (b) both weaken an M0 invariant to solve a convenience problem, and
+the invariant exists for the reason in `ARCHITECTURE.md`: without a mechanical boundary,
+an agent can suggest a restructure and, with enough momentum, silently perform one.
+Verified empirically at M1 rather than assumed — a probe file importing
+`@/content/registry.ts` from `src/features/` fails lint with the expected message.
+
+The seam is also where a genuinely new query belongs: adding a selector is a change to
+`src/content/selectors.ts`, which is reviewable, rather than an ad-hoc `registry.get()`
+sprouted in a component.
+
+**Consequences.** A feature asks `src/app/` for data instead of reaching for it. Every
+content read is now greppable in one file. The cost is one extra hop, and a rule that
+features may not compute from content — which is the correct constraint anyway, since
+computation belongs in `src/domain/`.
+
+## D17 — No state-management library at M1; the theme uses React context
+
+**Date:** 2026-10-01 (M1)
+
+**Context.** `ARCHITECTURE.md` records Zustand as the choice over Redux, XState and
+TanStack Query. At M1 the only shared client state is the theme preference: one string,
+one writer, a few readers.
+
+**Options.** (a) Add Zustand now. (b) React context plus `useState`. (c) A module-level
+mutable singleton.
+
+**Choice.** (b).
+
+**Reason.** Not a rejection of the recorded choice — a deferral. Zustand earns its place
+at M3, when the progress event log arrives and genuinely needs a store outside React's
+render cycle. Adding it now to hold a theme string would pay a dependency for nothing,
+and `AGENTS.md` rule 3 requires a dependency to justify itself. (c) is rejected outright:
+a module-level mutable singleton is untestable in isolation and is how "just one global"
+becomes five.
+
+**Consequences.** The runtime dependency count is 5 (zod, react, react-dom, react-router,
+lucide-react), against a budget of 20. The theme preference is still persisted through
+`StorageAdapter`, so choosing context did not leak persistence into a component — that is
+asserted by a test which reads the value back out of the adapter and separately asserts
+`localStorage` was never touched.
+
+## D18 — Mobile navigation is a modal dialog, hand-rolled
+
+**Date:** 2026-10-01 (M1)
+
+**Context.** The header needs a nav disclosure below `md`. A non-modal drawer that only
+slides in visually is the most common mobile nav accessibility failure: a keyboard user
+tabs straight out of the open menu into invisible page content behind it.
+
+**Options.** (a) A CSS-only disclosure with no focus management. (b) A hand-written
+`role="dialog"` with a focus trap, Escape, and focus restoration. (c) A dialog library or
+a headless component library.
+
+**Choice.** (b).
+
+**Reason.** (a) is the bug. (c) is disproportionate: the M1 shell has exactly one dialog,
+and the reachable primitives (Radix, Headless UI) arrive with a design system attached,
+which `DESIGN_SYSTEM.md` §1 rejects on principle. The trap is about fifteen lines of
+`keydown` handling.
+
+**Consequences.** `DESIGN_SYSTEM.md` §10 records that a reusable dialog primitive is a
+known gap, to be revisited when a second dialog exists — at which point the hand-rolled
+version should be replaced rather than extended. The panel is rendered only when open, so
+its links are not focusable while closed.
+
+## D19 — Contrast is verified by code, not asserted in a document
+
+**Date:** 2026-10-01 (M1)
+
+**Context.** `DESIGN_SYSTEM.md` states contrast ratios. A stated ratio that is wrong is
+worse than no ratio, because the next person trusts it and skips the check.
+
+**Options.** (a) State the ratios and trust them. (b) Verify with a browser tool on
+rendered output. (c) Compute them from the token values and fail the build.
+
+**Choice.** (c), via `npm run check:contrast`, which is part of `npm run check`.
+
+**Reason.** The ratios are derived from `oklch()` token values, so they are computable
+without a browser, and a check that runs in CI cannot be forgotten. It caught two real
+problems on its first run — see below — which is the argument for the approach.
+
+**The first run reported 23 failures. All 23 were bugs in the checker, not the palette:**
+
+1. WCAG relative luminance is defined on **linear** light. The script gamma-encoded the
+   channels first, reporting a known-good 10:1 pair as 3.2:1.
+2. Dark-theme lookups did not fall back to the `:root` primitives, so every lookup of a
+   `--brand-*` or `--state-*` token reported "not found".
+
+It then found one genuine palette problem: the state chips used a single theme-independent
+ramp, putting a 94%-lightness pastel on an 18%-lightness dark surface. Dark mode now
+defines its own soft and strong variants.
+
+**Consequences.** Two lessons recorded rather than forgotten. First, a check that produces
+confident wrong numbers is worse than no check, so the known-good value is written into
+the script as a comment. Second, `DESIGN_SYSTEM.md` publishes the ratios copied from the
+script's output, and the two are asserted to agree in spirit — the script is the source
+of truth. Known gap: this verifies tokens, not rendered pixels, so a component that puts
+a good token on an unintended background would not be caught.

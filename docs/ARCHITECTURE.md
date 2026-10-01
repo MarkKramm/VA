@@ -204,33 +204,83 @@ Each of these is absent on purpose. Adding one is a decision to be recorded in
 | An evaluation strategy for labs               | `src/domain/labs/evaluators/`, one file, registered in a map                              |
 | A UI component used by one feature            | That feature's folder                                                                     |
 | A UI component used by many features          | `src/components/`                                                                         |
-| A route                                       | `src/routes/`, thin: a loader or guard, and render a feature                              |
+| A route                                       | `src/app/router.tsx`, thin: a loader or guard, and render a feature                       |
+| A page                                        | `src/features/<name>/`, rendering data handed to it by `src/app/`                         |
 | A design token                                | `src/styles/tokens.css`                                                                   |
 | Storage behaviour                             | `src/app/storage/` behind the port                                                        |
+| Shared client state                           | `src/app/providers/` — context at M1; see `DECISIONS.md` D17                              |
 
 If you cannot place something in this table, that is a signal the design is missing
 something. Ask rather than invent a layer.
+
+## The content/UI seam
+
+Since M1, `src/features/` and `src/components/` **cannot import `@/content/`**. The ESLint
+boundary pattern also matches the alias, so the restriction is broader than the original
+`content/` rule intended — and that is the useful outcome, not a bug.
+
+`src/app/content.ts` is the seam. It reads the registry through `selectors.ts` and hands
+plain data to the presentation layer:
+
+```
+src/features/dashboard/DashboardPage.tsx
+   ↓ calls functions from
+src/app/content.ts          ← the only file that touches @/content/ from the UI side
+   ↓ uses
+src/content/selectors.ts    ← every read goes through a selector
+   ↓ reads
+src/content/registry.ts
+```
+
+The point is that a query which does not exist cannot be improvised in a component. Adding
+one means adding a selector, which is reviewable, rather than reaching past the registry
+where the derived-index rule stops being true. Verified by probe: a file importing
+`@/content/registry.ts` from `src/features/` fails lint. See `DECISIONS.md` D16.
 
 ## Build configuration that matters
 
 `base: '/VA/'` in `vite.config.ts` is load-bearing. The site is served from a subpath on
 GitHub Pages, so every asset URL, the router basename and the `404.html` SPA fallback all
-depend on it. **Never hard-code `/VA/`.** Read `import.meta.env.BASE_URL` instead. A
-`check:paths` CI step will assert no root-relative asset URL has crept in.
+depend on it. **Never hard-code `/VA/`.** Read `import.meta.env.BASE_URL` instead.
 
-M0 has no application and therefore no `index.html`, so the build bundles the content
-registry in library mode. That is a placeholder, not a library we publish — M1 replaces it
-with a normal application build.
+`npm run check:paths` asserts, against the **built** output rather than the source, that no
+asset URL is root-relative. That distinction matters: a check that only reads source can be
+fooled by a transform that introduces the problem later, and the failure it guards against —
+a site that works on the homepage and 404s on every deep link — is invisible in `vite dev`.
+
+The same failure needs the `404.html` fallback, because GitHub Pages has no rewrite rules: a
+hard refresh on `/VA/roadmaps/beginner-va` hits the server, matches no file, and returns
+Pages' own 404 without ever booting the app. Copying `index.html` to `404.html` lets the
+app load and resolve the route client-side. `scripts/copy-spa-fallback.ts` does this as part
+of `npm run build`.
+
+Since M1 the build is a normal application build. M0 had no `index.html` and therefore
+bundled the content registry in library mode — a placeholder, now replaced.
 
 ## Testing strategy
 
-| Suite                                     | What it covers                                  | Environment                                                                            |
-| ----------------------------------------- | ----------------------------------------------- | -------------------------------------------------------------------------------------- |
-| `src/content/__tests__/`                  | Registry, selectors, validation, quality checks | jsdom (validation is pure; jsdom is for parity)                                        |
-| `src/domain/**/__tests__/`                | Reducer and selectors                           | jsdom, but nothing in `src/domain/` may import a DOM API — the ESLint rule enforces it |
-| `src/app/storage/__tests__/`              | Adapters, merge, import validation              | jsdom, because the merge logic can only be tested against a real Storage               |
-| `src/domain/__tests__/boundaries.test.ts` | The architectural invariants                    | node + filesystem                                                                      |
+| Suite                                     | What it covers                                  | Environment                                                                                                                                                 |
+| ----------------------------------------- | ----------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/content/__tests__/`                  | Registry, selectors, validation, quality checks | jsdom (validation is pure; jsdom is for parity)                                                                                                             |
+| `src/domain/**/__tests__/`                | Reducer and selectors                           | jsdom, but nothing in `src/domain/` may import a DOM API — the ESLint rule enforces it                                                                      |
+| `src/app/storage/__tests__/`              | Adapters, merge, import validation              | jsdom, because the merge logic can only be tested against a real Storage                                                                                    |
+| `src/app/__tests__/`                      | The content/UI seam, router shape, deployment   | jsdom + filesystem. `router.test.ts` reads source, because a rendered assertion cannot tell "the basename is right" from "the basename did not matter here" |
+| `src/app/providers/__tests__/`            | Theme resolution and port-backed persistence    | jsdom, with a `matchMedia` stub in `tests/setup.ts`                                                                                                         |
+| `src/components/**/__tests__/`            | Shell structure, navigation, dialog behaviour   | jsdom + Testing Library                                                                                                                                     |
+| `src/components/ui/__tests__/`            | Each component's accessibility contract         | jsdom + Testing Library                                                                                                                                     |
+| `src/domain/__tests__/boundaries.test.ts` | The architectural invariants                    | node + filesystem                                                                                                                                           |
 
 **Validation is tested against constructed fixtures, not files on disk.** That is the only
 practical way to test the cases that matter most, which are the invalid ones. A suite that
 can only assert "the real content is fine" proves very little.
+
+**Shell tests assert behaviour, not existence.** `expect(getByTestId('shell')).toBeInTheDocument()`
+passes on a shell with no landmarks, no skip link and no working navigation. The M1 suite
+asserts where focus lands, what is announced, and which link is current. That is not
+fastidiousness: `AppShell` took a `children` prop that react-router never passes, which
+typechecked, compiled, and rendered a blank page on every route. The test that caught it is
+`renders the matched route's content, not an empty main`.
+
+**jsdom gaps are filled explicitly, in `tests/setup.ts`.** `matchMedia` and `scrollTo` are
+not implemented, and the theme provider and focus-trap logic depend on them. Both are
+stubbed minimally rather than with a polyfill dependency.

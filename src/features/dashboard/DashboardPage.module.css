@@ -1,0 +1,243 @@
+/*
+ * DashboardPage styles.
+ *
+ * The layout is `auto-fit` + `minmax` rather than a column count. This is what
+ * lets the page reflow continuously from one column at 320 px to two at 1440 px
+ * with no breakpoint in the file — which is the responsive strategy
+ * DESIGN_SYSTEM.md §6 describes, applied here rather than asserted.
+ */
+
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--layout-section-gap);
+}
+
+/* --- welcome ------------------------------------------------------------- */
+
+.welcome {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-3);
+  /*
+   * Deliberately not a hero. No oversized type, no gradient, no full-bleed
+   * image. `text-2xl` is large enough to be a page title and small enough that
+   * the roadmap cards below it stay the most substantial thing on screen.
+   */
+  max-width: var(--measure-prose);
+}
+
+.eyebrow {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.title {
+  font-size: var(--text-2xl);
+  /* Balances the line breaks so a two-line title does not leave a very short
+     second line. */
+  text-wrap: balance;
+}
+
+.lede {
+  color: var(--color-text-secondary);
+  font-size: var(--text-md);
+  line-height: var(--leading-relaxed);
+}
+
+.welcomeActions {
+  margin-top: var(--space-2);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+/* --- columns ------------------------------------------------------------- */
+
+.columns {
+  display: grid;
+  /* `minmax(min(20rem, 100%), 1fr)` is the idiom that stops a grid track from
+     forcing overflow when the viewport is narrower than the track's minimum.
+     Without the inner `min()`, the track stays 20rem wide on a 320 px screen and
+     the page scrolls sideways. */
+  grid-template-columns: repeat(auto-fit, minmax(min(20rem, 100%), 1fr));
+  gap: var(--space-6);
+  align-items: start;
+}
+
+.column {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  min-width: 0;
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.sectionTitle {
+  font-size: var(--text-lg);
+}
+
+.sectionLink {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-height: 2.75rem;
+  color: var(--color-accent-text);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  text-decoration: none;
+}
+
+.sectionLink:hover {
+  text-decoration: underline;
+}
+
+/* --- roadmap cards ------------------------------------------------------- */
+
+.cardGrid {
+  display: grid;
+  /* One column at every width. The roadmap cards are full-width in the left
+     column because a roadmap summary needs the horizontal room for its three
+     facts; stacking them would make each card a short, wide strip. */
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-4);
+}
+
+.roadmapCard {
+  block-size: 100%;
+}
+
+/* --- facts (a dl, not a row of divs) -------------------------------------- */
+
+.facts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-2);
+  margin: 0;
+  padding-block: var(--space-2);
+  border-block: var(--border-width) solid var(--color-border-subtle);
+}
+
+.fact {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.factLabel {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+
+.factValue {
+  margin: 0;
+  font-size: var(--text-md);
+  font-weight: var(--weight-semibold);
+  /* Tabular figures, so "4 / 4 / 1" across three cells align on their digits. */
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- card link ----------------------------------------------------------- */
+
+.cardLink {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-height: 2.75rem;
+  margin-top: var(--space-3);
+  color: var(--color-accent-text);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  text-decoration: none;
+}
+
+.cardLink:hover {
+  text-decoration: underline;
+}
+
+/* --- lesson list --------------------------------------------------------- */
+
+.lessonList {
+  display: flex;
+  flex-direction: column;
+  /* Counter-based numbering would be tidier, but an explicit span is clearer and
+     lets the number be styled independently of the list. */
+  gap: var(--space-2);
+}
+
+.lessonItem {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  background-color: var(--color-surface);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-md);
+  min-width: 0;
+}
+
+.lessonNumber {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  inline-size: 1.75rem;
+  block-size: 1.75rem;
+  border-radius: var(--radius-full);
+  background-color: var(--color-surface-inset);
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  font-variant-numeric: tabular-nums;
+}
+
+.lessonText {
+  min-width: 0;
+}
+
+.lessonTitle {
+  font-weight: var(--weight-medium);
+  line-height: var(--leading-snug);
+}
+
+.lessonMeta {
+  margin-top: 2px;
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  text-transform: capitalize;
+}
+
+.startFooter {
+  display: flex;
+}
+
+.progressSection {
+  margin-top: var(--space-1);
+}
+
+.footnote {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  padding-top: var(--space-4);
+  border-top: var(--border-width) solid var(--color-border-subtle);
+  max-width: var(--measure-prose);
+}
+
+@media (min-width: 64rem) {
+  .welcome {
+    max-width: none;
+  }
+}

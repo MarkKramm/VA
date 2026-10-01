@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>VA Learning Platform</title>
+    <meta
+      name="description"
+      content="Structured roadmaps that take you from complete beginner to job-ready virtual assistant."
+    />
+    <meta name="color-scheme" content="light dark" />
+
+    {/* Theme applied before first paint. This script is deliberately inline and deliberately
+    duplicated: it must run BEFORE the stylesheet and the React bundle are parsed, or a learner who
+    chose dark mode sees a white flash on every navigation. It cannot import
+    `src/app/storage/theme.ts` — that is a module the bundler has not loaded yet — so the key is
+    written out literally here. That duplication is the cost of not having a flash, and it is why
+    the key name is a constant in `theme.ts` with a comment pointing at this file. If you change
+    one, change both. `scripts/check-spa-fallback.ts` does not verify this; the test suite does not
+    either, so it is called out in a comment rather than left as a silent trap. */}
+    <script>
+      ;(function () {
+        try {
+          var stored = window.localStorage.getItem('va:theme')
+          var preference = stored ? JSON.parse(stored) : 'system'
+          var theme =
+            preference === 'light' || preference === 'dark'
+              ? preference
+              : window.matchMedia('(prefers-color-scheme: dark)').matches
+                ? 'dark'
+                : 'light'
+          document.documentElement.setAttribute('data-theme', theme)
+        } catch (error) {
+          // localStorage can throw in private mode. The stylesheet's
+          // prefers-color-scheme default handles it, so failing silently here is
+          // correct: the alternative is blocking first paint on a preference.
+        }
+      })()
+    </script>
+  </head>
+  <body>
+    {/* The React app mounts here. The fallback text is inside the container rather than beside it,
+    so it is replaced on hydration rather than left behind. It is also what a learner sees if the
+    JavaScript bundle fails to load, which is a real condition on a slow connection — hence an
+    actual explanation rather than a spinner. */}
+    <div id="root">
+      <noscript>
+        <div style="padding: 2rem; font-family: system-ui, sans-serif; max-width: 40rem">
+          <h1>VA Learning Platform</h1>
+          <p>
+            This platform needs JavaScript to display the curriculum. The content is also stored in
+            this repository as plain files, if you would rather read it there.
+          </p>
+        </div>
+      </noscript>
+    </div>
+
+    {/* A module script, so it is deferred by default and does not block parsing. `crossorigin`
+    matters for the module preload; Vite emits hashed asset names and a cross-origin module without
+    this attribute fails to load. */}
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

@@ -1,0 +1,247 @@
+/*
+ * RoadmapDetailPage styles.
+ *
+ * The stage list is a vertical timeline: each stage is separated by a rule and
+ * carries its ordinal ("Stage 1"), so the progression reads as ordered without
+ * relying on indentation or colour. That is the "colour is never the only signal"
+ * rule applied to structure rather than to state.
+ */
+
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+}
+
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  /* 44px touch target. */
+  min-height: 2.75rem;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  text-decoration: none;
+}
+
+.backLink:hover {
+  color: var(--color-text-primary);
+  text-decoration: underline;
+}
+
+.title {
+  font-size: var(--text-2xl);
+  text-wrap: balance;
+}
+
+.summary {
+  color: var(--color-text-secondary);
+  line-height: var(--leading-relaxed);
+  max-width: var(--measure-prose);
+}
+
+.badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-1);
+}
+
+.sectionTitle {
+  font-size: var(--text-lg);
+  margin-bottom: var(--space-3);
+}
+
+/* --- outcomes ------------------------------------------------------------ */
+
+.outcomes {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  max-width: var(--measure-prose);
+}
+
+.outcome {
+  position: relative;
+  padding-inline-start: var(--space-5);
+  color: var(--color-text-secondary);
+  line-height: var(--leading-normal);
+}
+
+/*
+ * A bullet drawn with a border rather than a `list-style`, so its colour follows
+ * the accent token and it aligns identically in both themes.
+ */
+.outcome::before {
+  content: '';
+  position: absolute;
+  inset-inline-start: 0;
+  inset-block-start: 0.55em;
+  inline-size: 0.375rem;
+  block-size: 0.375rem;
+  border-radius: var(--radius-full);
+  background-color: var(--color-accent-fill);
+}
+
+/* --- stages -------------------------------------------------------------- */
+
+.stages {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  counter-reset: stage;
+}
+
+.stage {
+  padding-inline-start: var(--space-4);
+  border-inline-start: 2px solid var(--color-border);
+}
+
+.stageHeader {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+
+.stageIndex {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.stageTitle {
+  font-size: var(--text-md);
+}
+
+.stageNote {
+  margin-bottom: var(--space-3);
+  padding: var(--space-3);
+  background-color: var(--color-surface-sunken);
+  border-radius: var(--radius-md);
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+  /* The note is editorial context ("why this stage exists for THIS roadmap"), so
+     it is indented against the stage rule it belongs to. */
+  border-inline-start: 2px solid var(--color-accent-border);
+}
+
+/* --- modules ------------------------------------------------------------- */
+
+.modules {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.module {
+  block-size: 100%;
+}
+
+.moduleTitle {
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-snug);
+}
+
+.moduleOutcome {
+  margin-top: var(--space-1);
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+}
+
+.lessons {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: var(--border-width) solid var(--color-border-subtle);
+}
+
+.lesson {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  /* Left padding aligns lesson titles with the module title above them, past the
+     ordinal. */
+  padding-block: var(--space-1);
+  font-size: var(--text-sm);
+  min-width: 0;
+}
+
+.lessonIndex {
+  flex-shrink: 0;
+  inline-size: 1.25rem;
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+  text-align: end;
+}
+
+.lessonTitle {
+  min-width: 0;
+  font-weight: var(--weight-medium);
+  overflow-wrap: break-word;
+}
+
+.lessonMeta {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  flex-shrink: 0;
+  margin-inline-start: auto;
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+  font-variant-numeric: tabular-nums;
+}
+
+.noLessons {
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: var(--border-width) solid var(--color-border-subtle);
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  font-style: italic;
+}
+
+.nextAction {
+  margin-top: var(--space-2);
+}
+
+.nextLink {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-height: 2.75rem;
+  color: var(--color-accent-text);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  text-decoration: none;
+}
+
+.nextLink:hover {
+  text-decoration: underline;
+}
+
+/*
+ * Below `sm` the stage indent is removed. On a 320 px screen a 2rem indent plus
+ * padding leaves too little width for a lesson title, and the timeline reads
+ * worse than a flat list would.
+ */
+@media (max-width: 26rem) {
+  .stage {
+    padding-inline-start: var(--space-3);
+  }
+}

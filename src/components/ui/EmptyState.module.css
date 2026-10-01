@@ -1,0 +1,64 @@
+/*
+ * EmptyState styles.
+ *
+ * Centred and bordered rather than a bare grey box, because an empty region with
+ * no visual boundary is indistinguishable from a region that failed to load. The
+ * dashed border says "nothing here yet" without needing a colour to do it.
+ */
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: var(--space-2);
+  padding: var(--space-8) var(--space-4);
+  border: var(--border-width) dashed var(--color-border-strong);
+  border-radius: var(--radius-lg);
+  background-color: var(--color-surface-sunken);
+}
+
+.compact {
+  padding: var(--space-5) var(--space-3);
+}
+
+.icon {
+  display: inline-flex;
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-1);
+}
+
+.title {
+  font-weight: var(--weight-semibold);
+  color: var(--color-text-primary);
+  /* Long titles ("No lessons have been written for this roadmap yet") must wrap
+     on a 375 px screen rather than forcing the container wider. */
+  text-wrap: balance;
+}
+
+.body {
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+  /* Caps the measure so a long explanation stays readable as a centred block
+     rather than becoming one very long line. */
+  max-width: var(--measure-tight);
+}
+
+.body > :first-child {
+  margin-top: 0;
+}
+
+.body > :last-child {
+  margin-bottom: 0;
+}
+
+.action {
+  margin-top: var(--space-3);
+}
+
+@media (forced-colors: active) {
+  .empty {
+    border: 1px dashed CanvasText;
+  }
+}

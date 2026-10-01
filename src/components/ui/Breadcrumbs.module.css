@@ -1,0 +1,63 @@
+/*
+ * Breadcrumbs styles.
+ *
+ * The separator is a CSS `::before` on every item except the first, so it exists
+ * only visually. That is not a stylistic choice: an element in the DOM gets
+ * announced, and a chevron icon or a literal slash read aloud between every pair
+ * of crumbs is noise a screen-reader user pays on every page.
+ */
+
+.breadcrumbs {
+  min-width: 0;
+}
+
+.list {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--text-sm);
+  min-width: 0;
+}
+
+.item {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+/* The separator. Decorative, so it is never in the accessibility tree. */
+.item + .item::before {
+  content: '/';
+  color: var(--color-text-muted);
+  /* Optically lighter than the text: the separator is punctuation, not content. */
+  opacity: 0.6;
+  padding-inline-end: var(--space-1);
+}
+
+.link {
+  color: var(--color-text-muted);
+  text-decoration: none;
+  border-radius: var(--radius-sm);
+}
+
+.link:hover {
+  color: var(--color-text-primary);
+  text-decoration: underline;
+}
+
+.current {
+  color: var(--color-text-secondary);
+}
+
+.last {
+  color: var(--color-text-primary);
+  font-weight: var(--weight-medium);
+  /* Only the leaf truncates. Everything above it is context the learner needs in
+     order to know where they are; a long roadmap title is the acceptable cost. */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}

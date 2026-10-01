@@ -1,0 +1,64 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  # A manual run is the escape hatch for a Pages build that failed for an
+  # infrastructure reason rather than a code one.
+  workflow_dispatch:
+
+# Never run two deploys at once. A half-finished publish is worse than a
+# skipped one, and the concurrency group makes the second run queue rather than
+# race the first.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build:
+    name: Build and verify
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+          cache: npm
+
+      - run: npm ci
+
+      # The same gate as local development, and for the same reason: `check` is
+      # the single definition of "healthy". Running the individual steps here
+      # instead would create a second, drifting definition.
+      - name: Verify
+        run: npm run check
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          # The directory `vite build` writes to. `vite.config.ts` sets
+          # `outDir: 'dist'`, and this path has to match it or the artifact is
+          # silently empty.
+          path: dist
+
+  deploy:
+    name: Deploy to GitHub Pages
+    needs: build
+    runs-on: ubuntu-latest
+    # Required, and not optional: without it the deployment is rejected. This is
+    # what ties a published site to a particular repository.
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4

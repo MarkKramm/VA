@@ -1,0 +1,33 @@
+/*
+ * SkipLink styles.
+ *
+ * Off-screen via transform, not `display: none` — a display:none element is not
+ * focusable, so the link would be unreachable and permanently invisible.
+ *
+ * The transition is on `transform` only, which is a compositor-friendly property,
+ * so focusing it is instant even though it animates.
+ */
+
+.skipLink {
+  position: absolute;
+  top: var(--space-2);
+  left: var(--space-2);
+  z-index: var(--z-skip-link);
+  padding: var(--space-3) var(--space-4);
+  background-color: var(--color-accent-fill);
+  color: var(--color-text-on-brand);
+  border-radius: var(--radius-md);
+  font-weight: var(--weight-semibold);
+  text-decoration: none;
+  white-space: nowrap;
+  box-shadow: var(--shadow-lg);
+  /* Moves it fully above the viewport without clipping the focus ring — a
+     `top: -100%` would cut the outline off. */
+  transform: translateY(calc(-100% - var(--space-6)));
+  transition: transform var(--motion-transition);
+}
+
+.skipLink:focus-visible {
+  color: var(--color-text-on-brand);
+  transform: translateY(0);
+}

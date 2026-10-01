@@ -1,0 +1,172 @@
+/*
+ * AppHeader styles.
+ *
+ * Fixed to the top, so the main region carries a matching padding offset. That
+ * offset is `--size-header-height` from tokens.css — the same token the skip link
+ * and `scroll-padding-top` use — so the three cannot drift apart.
+ */
+
+.header {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-header);
+  background-color: var(--color-surface);
+  /* A border rather than a shadow: a shadow on a sticky element scrolls its own
+     content past it and looks like a smudge. */
+  border-bottom: var(--border-width) solid var(--color-border);
+}
+
+.inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  block-size: var(--size-header-height);
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  /* Tappable area, not just the glyph. */
+  min-height: 2.75rem;
+  padding-inline: var(--space-1);
+  border-radius: var(--radius-md);
+  color: var(--color-text-primary);
+  text-decoration: none;
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-tight);
+}
+
+.brand:hover {
+  color: var(--color-text-primary);
+}
+
+.brandName {
+  font-size: var(--text-base);
+  /* Below `sm` the full name would overflow with the toggle and menu button on a
+     320 px screen. */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  flex-shrink: 0;
+}
+
+/* --- mobile disclosure --------------------------------------------------- */
+
+.navToggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 2.75rem;
+  padding-inline: var(--space-3);
+  border-radius: var(--radius-md);
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+}
+
+.navToggle:hover {
+  background-color: var(--color-surface-hover);
+  color: var(--color-text-primary);
+}
+
+.navToggleLabel {
+  /* Below 30rem the label plus the brand would not both fit. The icon remains,
+     and the accessible name is unaffected because the label is real text, not an
+     image. */
+  display: none;
+}
+
+.mobilePanel {
+  /* Positioned below the header, full width, above the page content. Not a
+     centred modal: on a phone a bottom-anchored or edge-anchored panel is easier
+     to reach one-handed than a floating box. */
+  position: fixed;
+  inset-block-start: var(--size-header-height);
+  inset-inline: 0;
+  z-index: var(--z-overlay);
+  max-block-size: calc(100dvh - var(--size-header-height));
+  overflow-y: auto;
+  /* `overscroll-behavior: contain` stops a scroll that reaches the end of the
+     panel from continuing to scroll the page behind it. */
+  overscroll-behavior: contain;
+  padding: var(--space-4) var(--layout-gutter) var(--space-6);
+  background-color: var(--color-surface);
+  border-bottom: var(--border-width) solid var(--color-border);
+  box-shadow: var(--shadow-lg);
+}
+
+.mobilePanel:focus-visible {
+  /* The panel itself receives focus on open. It must not draw a ring, or the
+     whole panel appears outlined before the user has tabbed anywhere. */
+  outline: none;
+}
+
+.mobileNav {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.mobileGroup + .mobileGroup {
+  padding-top: var(--space-4);
+  border-top: var(--border-width) solid var(--color-border-subtle);
+}
+
+.mobileGroupLabel {
+  margin-bottom: var(--space-2);
+  padding-inline: var(--space-3);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.mobileList {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* --- responsive ---------------------------------------------------------- */
+
+/*
+ * Below `md` the sidebar is hidden (it is inside AppShell, which switches to a
+ * single column) and the Menu button is shown.
+ *
+ * At `md` and above the reverse: the sidebar is visible and the Menu button is
+ * hidden, because the same destinations are permanently on screen.
+ */
+@media (min-width: 48rem) {
+  .navToggle {
+    display: none;
+  }
+
+  .navToggleLabel {
+    display: inline;
+  }
+
+  .mobilePanel {
+    display: none;
+  }
+}
+
+@media (min-width: 30rem) {
+  .navToggleLabel {
+    display: inline;
+  }
+}
+
+@media (forced-colors: active) {
+  .navToggle {
+    border: 1px solid ButtonBorder;
+  }
+}

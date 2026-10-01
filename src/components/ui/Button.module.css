@@ -1,0 +1,120 @@
+/*
+ * Button styles.
+ *
+ * Sizing note: `min-height` is a floor, not a fixed height, so a button with a
+ * two-line label grows instead of clipping. Padding is `em`-relative, which means
+ * vertical padding scales with the user's font size — a fixed pixel padding on a
+ * 200%-zoomed button leaves the text cramped while the box stays the same size.
+ */
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: 2.75rem;
+  padding: var(--space-2) var(--space-4);
+  border: var(--border-width) solid transparent;
+  border-radius: var(--radius-md);
+  font-family: inherit;
+  font-weight: var(--weight-medium);
+  line-height: var(--leading-snug);
+  text-align: center;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background-color var(--motion-transition),
+    border-color var(--motion-transition),
+    color var(--motion-transition);
+}
+
+.button:disabled,
+.button[aria-disabled='true'] {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/*
+ * The pressed state. Using an inset box-shadow rather than a transform means the
+ * button does not shift position, which matters when a row of buttons would
+ * otherwise jitter as each is clicked.
+ */
+.button:active:not(:disabled) {
+  box-shadow: inset 0 1px 2px oklch(20% 0.012 250 / 0.18);
+}
+
+.fullWidth {
+  width: 100%;
+}
+
+/* --- variants ------------------------------------------------------------ */
+
+.primary {
+  background-color: var(--color-accent-fill);
+  border-color: var(--color-accent-fill);
+  color: var(--color-text-on-brand);
+}
+
+.primary:hover:not(:disabled) {
+  background-color: var(--color-accent-hover);
+  border-color: var(--color-accent-hover);
+  color: var(--color-text-on-brand);
+}
+
+.secondary {
+  background-color: var(--color-surface);
+  border-color: var(--color-border-strong);
+  color: var(--color-text-primary);
+}
+
+.secondary:hover:not(:disabled) {
+  background-color: var(--color-surface-hover);
+  border-color: var(--color-border-strong);
+  color: var(--color-text-primary);
+}
+
+.ghost {
+  background-color: transparent;
+  border-color: transparent;
+  color: var(--color-text-secondary);
+}
+
+.ghost:hover:not(:disabled) {
+  background-color: var(--color-surface-hover);
+  color: var(--color-text-primary);
+}
+
+/*
+ * Forced colours: all author colours are discarded, so a transparent-background
+ * ghost button becomes invisible. Give every variant an explicit border here or
+ * the control disappears entirely.
+ */
+@media (forced-colors: active) {
+  .button {
+    border-color: ButtonBorder;
+  }
+}
+
+/* --- sizes --------------------------------------------------------------- */
+
+/*
+ * `sm` still clears the 44 px touch target; the reduction is in horizontal
+ * padding and font size only. A control smaller than this is not offered as an
+ * option rather than being made inaccessible and left to the caller.
+ */
+.sm {
+  min-height: 2.75rem;
+  padding: var(--space-1) var(--space-3);
+  font-size: var(--text-sm);
+}
+
+.md {
+  font-size: var(--text-sm);
+}
+
+.lg {
+  min-height: 3rem;
+  padding: var(--space-3) var(--space-6);
+  font-size: var(--text-base);
+}

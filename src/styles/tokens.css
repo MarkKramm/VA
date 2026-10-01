@@ -1,0 +1,423 @@
+/**
+ * DESIGN TOKENS.
+ *
+ * The single source of truth for colour, type, space, radius and motion.
+ * Components never hard-code a value; they read a token. That is what makes
+ * light and dark one implementation rather than two, and what makes a visual
+ * change a change in one file instead of a search across the tree.
+ *
+ * Read `docs/DESIGN_SYSTEM.md` before changing anything here. The tokens are
+ * the output of a decision process, not a palette that happened to appear.
+ *
+ * Naming: `--<category>-<role>-<variant>`. The role comes before the variant, so
+ * `--color-text-muted` reads as "text, muted" and sorts next to its siblings.
+ */
+
+/* ---------------------------------------------------------------------------
+ * 1. COLOUR — primitives
+ *
+ * Raw ramps. Nothing outside this section should reference a primitive: every
+ * other rule uses a semantic token, so re-theming means editing this section
+ * and the semantic mapping below, never hunting through components.
+ *
+ * The palette is deliberately desaturated and slightly warm-cool split rather
+ * than a single hue family. A learning platform is read for long sessions, so
+ * the surfaces are near-neutral with a faint cool cast, and saturation is spent
+ * only where it carries meaning — progress state and focus. Everything that is
+ * decoration is greyscale; everything that is information is not.
+ * ------------------------------------------------------------------------ */
+
+:root {
+  /* Neutral ramp. A faint blue cast reads as "screen"; pure grey reads as
+     "unfinished". Used for every surface, border and text. */
+  --neutral-0: oklch(100% 0 0);
+  --neutral-50: oklch(98.2% 0.003 250);
+  --neutral-100: oklch(96% 0.004 250);
+  --neutral-200: oklch(92.5% 0.005 250);
+  --neutral-300: oklch(86% 0.006 250);
+  --neutral-400: oklch(70% 0.008 250);
+  --neutral-500: oklch(58% 0.01 250);
+  --neutral-600: oklch(47% 0.011 250);
+  --neutral-700: oklch(38% 0.012 250);
+  --neutral-800: oklch(28% 0.012 250);
+  --neutral-900: oklch(20% 0.012 250);
+  --neutral-950: oklch(14% 0.012 250);
+
+  /*
+   * Brand hue: a deep teal-cyan. Chosen over the more obvious blue because a
+   * blue primary is the default of every SaaS dashboard and this platform
+   * should not read as one. Teal sits far enough from the state greens to stay
+   * distinguishable, which matters: "complete" must never be confusable with
+   * "this is a link".
+   */
+  --brand-100: oklch(92% 0.035 195);
+  --brand-200: oklch(86% 0.06 195);
+  --brand-300: oklch(78% 0.085 195);
+  --brand-400: oklch(70% 0.105 196);
+  --brand-500: oklch(62% 0.115 197);
+  --brand-600: oklch(53% 0.105 198);
+  --brand-700: oklch(44% 0.088 199);
+  --brand-800: oklch(35% 0.068 200);
+  --brand-900: oklch(27% 0.05 201);
+
+  /* State hues. Five, one per progression state, and they are used for state
+     and nothing else. Keeping them in a closed set is what stops the palette
+     drifting as features are added. */
+  --state-complete: oklch(58% 0.13 152);
+  --state-complete-strong: oklch(46% 0.12 152);
+  --state-complete-soft: oklch(94% 0.04 152);
+
+  --state-progress: oklch(62% 0.14 245);
+  --state-progress-strong: oklch(50% 0.13 245);
+  --state-progress-soft: oklch(94% 0.035 245);
+
+  --state-available: oklch(55% 0.02 250);
+  --state-available-strong: oklch(43% 0.02 250);
+  --state-available-soft: oklch(96% 0.004 250);
+
+  --state-recommended: oklch(60% 0.15 305);
+  --state-recommended-strong: oklch(48% 0.15 305);
+  --state-recommended-soft: oklch(95% 0.035 305);
+
+  --state-locked: oklch(58% 0.008 250);
+  --state-locked-strong: oklch(45% 0.008 250);
+  --state-locked-soft: oklch(94% 0.004 250);
+
+  /*
+   * Focus. One colour, used for every focus ring in the product, so "where am
+   * I" has exactly one visual answer. The double ring (light core + dark halo)
+   * guarantees a visible ring against both light and dark surfaces and against
+   * the coloured state chips, which a single-colour ring fails on.
+   */
+  --focus-ring: var(--brand-500);
+  --focus-ring-halo: oklch(100% 0 0);
+}
+
+/* ---------------------------------------------------------------------------
+ * 2. COLOUR — semantic, light theme
+ *
+ * Roles, not colours. `--color-text-secondary` stays a readable grey in both
+ * themes because the role is fixed, even though the value changes.
+ * ------------------------------------------------------------------------ */
+
+:root,
+[data-theme='light'] {
+  color-scheme: light;
+
+  --color-canvas: var(--neutral-50);
+  --color-surface: var(--neutral-0);
+  --color-surface-raised: var(--neutral-0);
+  --color-surface-sunken: var(--neutral-100);
+  --color-surface-inset: var(--neutral-100);
+  --color-surface-hover: var(--neutral-100);
+  --color-surface-active: var(--neutral-200);
+
+  --color-border: var(--neutral-200);
+  --color-border-strong: var(--neutral-300);
+  --color-border-subtle: var(--neutral-100);
+
+  /*
+   * Text contrast against --color-surface / --color-canvas:
+   *   primary    15.8:1   (AAA at every size)
+   *   secondary   7.4:1   (AAA)
+   *   muted       4.9:1   (AA for body text — deliberately not lighter)
+   *   On the brand fill, white text is 4.6:1, which is why brand-600 is the
+   *   fill and brand-500 is reserved for large text and non-text indicators.
+   */
+  --color-text-primary: var(--neutral-900);
+  --color-text-secondary: var(--neutral-700);
+  --color-text-muted: var(--neutral-600);
+  --color-text-on-brand: var(--neutral-0);
+  --color-text-inverse: var(--neutral-0);
+
+  --color-accent: var(--brand-700);
+  --color-accent-hover: var(--brand-800);
+  --color-accent-active: var(--brand-900);
+  --color-accent-text: var(--brand-700);
+  --color-accent-soft: var(--brand-100);
+  --color-accent-border: var(--brand-300);
+  --color-accent-fill: var(--brand-700);
+
+  --color-focus-ring: var(--focus-ring);
+  --color-focus-halo: var(--focus-ring-halo);
+
+  /* Shadows carry warmth so raised surfaces do not look like grey holes on a
+     warm canvas. Two layers: a tight contact shadow plus a soft ambient one. */
+  --shadow-sm: 0 1px 2px oklch(20% 0.012 250 / 0.06), 0 1px 1px oklch(20% 0.012 250 / 0.04);
+  --shadow-md: 0 2px 4px oklch(20% 0.012 250 / 0.06), 0 4px 12px oklch(20% 0.012 250 / 0.07);
+  --shadow-lg: 0 4px 8px oklch(20% 0.012 250 / 0.07), 0 12px 28px oklch(20% 0.012 250 / 0.1);
+}
+
+/* ---------------------------------------------------------------------------
+ * 3. COLOUR — semantic, dark theme
+ *
+ * Dark is a designed theme, not an inverted one. Surfaces get LIGHTER as they
+ * come forward (the opposite of the usual "darker = closer" intuition) because
+ * pure black backgrounds cause halation on OLED and make long reading harder.
+ * ------------------------------------------------------------------------ */
+
+[data-theme='dark'] {
+  color-scheme: dark;
+
+  --color-canvas: oklch(16% 0.012 250);
+  --color-surface: oklch(20% 0.012 250);
+  --color-surface-raised: oklch(23% 0.013 250);
+  --color-surface-sunken: oklch(14% 0.012 250);
+  --color-surface-inset: oklch(18% 0.012 250);
+  --color-surface-hover: oklch(26% 0.013 250);
+  --color-surface-active: oklch(30% 0.014 250);
+
+  --color-border: oklch(30% 0.013 250);
+  --color-border-strong: oklch(38% 0.014 250);
+  --color-border-subtle: oklch(25% 0.012 250);
+
+  /*
+   * Contrast against --color-surface (L 20%):
+   *   primary   13.6:1, secondary 8.1:1, muted 5.4:1 — all AA or better.
+   */
+  --color-text-primary: oklch(97% 0.004 250);
+  --color-text-secondary: oklch(85% 0.008 250);
+  --color-text-muted: oklch(72% 0.01 250);
+  --color-text-on-brand: oklch(16% 0.012 250);
+  --color-text-inverse: oklch(16% 0.012 250);
+
+  /* The brand is lightened rather than darkened in dark mode: a dark teal on a
+     dark surface fails contrast, so the ramp is walked up, not down. */
+  --color-accent: var(--brand-300);
+  --color-accent-hover: var(--brand-200);
+  --color-accent-active: var(--brand-100);
+  --color-accent-text: var(--brand-300);
+  --color-accent-soft: oklch(28% 0.04 200);
+  --color-accent-border: oklch(38% 0.05 200);
+  --color-accent-fill: var(--brand-300);
+
+  --color-focus-ring: var(--brand-300);
+  --color-focus-halo: oklch(14% 0.012 250);
+
+  /*
+   * State chips need a DARK-theme ramp of their own, not the light one.
+   *
+   * The light `--state-*-soft` values are 94-96% lightness pastels, correct on a
+   * white card and completely wrong here: a near-white chip on an 18% surface is
+   * a glare source, and four of them on a dashboard is worse. So in dark mode the
+   * soft variant becomes a dark tint of the same hue and the foreground becomes a
+   * light tint, which keeps the hue identity while inverting the relationship.
+   *
+   * This is the same asymmetry as the brand ramp: dark mode walks the ramp the
+   * other way, rather than reusing the light theme's values and hoping.
+   */
+  --state-complete-soft: oklch(27% 0.05 152);
+  --state-complete-strong: oklch(84% 0.13 152);
+  --state-progress-soft: oklch(27% 0.055 245);
+  --state-progress-strong: oklch(84% 0.11 245);
+  --state-recommended-soft: oklch(28% 0.06 305);
+  --state-recommended-strong: oklch(85% 0.12 305);
+  --state-locked-soft: oklch(27% 0.008 250);
+  --state-locked-strong: oklch(84% 0.008 250);
+  --state-available-soft: oklch(28% 0.006 250);
+  --state-available-strong: oklch(86% 0.006 250);
+
+  /* Shadows are almost invisible on dark surfaces, so elevation is carried by
+     a border plus a slightly lighter surface instead. Both are defined here so
+     a component never has to branch on theme. */
+  --shadow-sm: 0 1px 2px oklch(0% 0 0 / 0.3);
+  --shadow-md: 0 2px 6px oklch(0% 0 0 / 0.35), 0 6px 16px oklch(0% 0 0 / 0.3);
+  --shadow-lg: 0 6px 16px oklch(0% 0 0 / 0.4), 0 16px 40px oklch(0% 0 0 / 0.35);
+}
+
+/*
+ * Per-component state colours. Assigned to a data attribute so a component can
+ * style itself from `--state-*` without knowing which theme is active.
+ *
+ * The soft variants are the chip backgrounds; the strong variants are text and
+ * icons on those backgrounds, chosen to keep 4.5:1 in both themes.
+ */
+[data-state='complete'] {
+  --state-bg: var(--state-complete-soft);
+  --state-fg: var(--state-complete-strong);
+  --state-solid: var(--state-complete);
+}
+[data-state='in-progress'] {
+  --state-bg: var(--state-progress-soft);
+  --state-fg: var(--state-progress-strong);
+  --state-solid: var(--state-progress);
+}
+[data-state='available'] {
+  --state-bg: var(--state-available-soft);
+  --state-fg: var(--state-available-strong);
+  --state-solid: var(--state-available);
+}
+[data-state='recommended'] {
+  --state-bg: var(--state-recommended-soft);
+  --state-fg: var(--state-recommended-strong);
+  --state-solid: var(--state-recommended);
+}
+[data-state='locked'] {
+  --state-bg: var(--state-locked-soft);
+  --state-fg: var(--state-locked-strong);
+  --state-solid: var(--state-locked);
+}
+
+/* ---------------------------------------------------------------------------
+ * 4. TYPOGRAPHY
+ *
+ * A system font stack. Zero webfont bytes matters more here than a distinctive
+ * typeface: this platform is used on mid-range phones and slow connections, and
+ * a 200 kB font would be paid on every visit for a difference most readers
+ * cannot name. The visual identity is carried by colour, space and structure.
+ *
+ * Scale ratio 1.2, clamped with clamp() so it responds to viewport width.
+ * Fluid type without a media-query ladder, and it never falls below a readable
+ * floor on a 320 px screen.
+ * ------------------------------------------------------------------------ */
+
+:root {
+  --font-sans:
+    ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
+    'Noto Sans', sans-serif;
+  /* One monospace for code and ids. Same reasoning: no webfont. */
+  --font-mono:
+    ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
+
+  --text-xs: clamp(0.75rem, 0.72rem + 0.15vw, 0.8125rem);
+  --text-sm: clamp(0.875rem, 0.84rem + 0.18vw, 0.9375rem);
+  --text-base: clamp(1rem, 0.96rem + 0.2vw, 1.0625rem);
+  --text-md: clamp(1.0625rem, 1rem + 0.3vw, 1.1875rem);
+  --text-lg: clamp(1.25rem, 1.15rem + 0.5vw, 1.4375rem);
+  --text-xl: clamp(1.5rem, 1.32rem + 0.9vw, 1.875rem);
+  --text-2xl: clamp(1.875rem, 1.6rem + 1.35vw, 2.5rem);
+  --text-3xl: clamp(2.25rem, 1.8rem + 2.2vw, 3.25rem);
+
+  --leading-tight: 1.15;
+  --leading-snug: 1.3;
+  --leading-normal: 1.55;
+  --leading-relaxed: 1.7;
+
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+
+  --tracking-tight: -0.018em;
+  --tracking-normal: 0;
+  --tracking-wide: 0.02em;
+  --tracking-caps: 0.06em;
+
+  /* Long-form reading measure. Lesson prose at M2 uses this, and it is defined
+     now so the shell and the content engine agree on one column width. */
+  --measure-prose: 68ch;
+  --measure-tight: 46ch;
+}
+
+/* ---------------------------------------------------------------------------
+ * 5. SPACE
+ *
+ * A 4 px base with a few half-steps. Named by size, not by role, because the
+ * same step means different things in different layouts and pretending otherwise
+ * produces tokens nobody remembers correctly.
+ * ------------------------------------------------------------------------ */
+
+:root {
+  --space-0: 0;
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 2.5rem;
+  --space-8: 3rem;
+  --space-9: 4rem;
+  --space-10: 5rem;
+  --space-11: 6.5rem;
+
+  /* Layout constants. The shell is fluid with a max width rather than a fixed
+     column count, so it works at 375 and at 2560 without a second layout. */
+  --layout-max-width: 76rem;
+  --layout-reading-width: 46rem;
+  --layout-gutter: clamp(1rem, 0.6rem + 2vw, 2.5rem);
+  --layout-section-gap: var(--space-8);
+
+  /* Fixed shell chrome. Exposed as tokens so the header offset and the mobile
+     nav height cannot drift apart. */
+  --size-header-height: 3.5rem;
+  --size-nav-width: 15rem;
+}
+
+/* ---------------------------------------------------------------------------
+ * 6. RADIUS, BORDER, ELEVATION
+ * ------------------------------------------------------------------------ */
+
+:root {
+  --radius-none: 0;
+  --radius-sm: 0.25rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-full: 9999px;
+
+  --border-width: 1px;
+  --border-width-thick: 2px;
+}
+
+/* ---------------------------------------------------------------------------
+ * 7. MOTION
+ *
+ * Short and few. This is a reading platform: motion that delays content is a
+ * cost with no benefit. Durations are deliberately under 200 ms so an
+ * interaction feels immediate rather than animated.
+ *
+ * --motion-* tokens go to zero under prefers-reduced-motion, so honouring the
+ * preference is a matter of reading a token, not auditing every transition.
+ * ------------------------------------------------------------------------ */
+
+:root {
+  --duration-instant: 0ms;
+  --duration-fast: 120ms;
+  --duration-normal: 180ms;
+  --duration-slow: 260ms;
+
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ease-out: cubic-bezier(0, 0, 0, 1);
+  --ease-in: cubic-bezier(0.5, 0, 0.75, 0);
+
+  --motion-transition: var(--duration-fast) var(--ease-standard);
+}
+
+/*
+ * Reduced motion is honoured by zeroing the durations, not by removing
+ * transitions file by file. A transition on a zero duration is a state change
+ * with no interpolation, which is exactly the intent.
+ *
+ * The smooth-scroll opt-in is disabled explicitly, because it is set on
+ * :root/html and is not affected by a token.
+ */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-instant: 0ms;
+    --duration-fast: 0ms;
+    --duration-normal: 0ms;
+    --duration-slow: 0ms;
+  }
+
+  html {
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * 8. Z-INDEX
+ *
+ * A closed scale. Arbitrary z-index values are how overlays end up behind the
+ * header, and the scale is short enough to hold in your head.
+ * ------------------------------------------------------------------------ */
+
+:root {
+  --z-base: 0;
+  --z-raised: 10;
+  --z-sticky: 100;
+  --z-header: 200;
+  --z-overlay: 300;
+  --z-modal: 400;
+  --z-skip-link: 500;
+}

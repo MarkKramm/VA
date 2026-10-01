@@ -3,12 +3,19 @@
 A learning platform that takes a learner from complete beginner to job-ready Virtual
 Assistant, across many career paths.
 
-**Status: Milestone 0 (Foundation) — no user interface yet.**
+**Status: Milestone 1 (Application Shell) — the shell works, the learning systems do not
+exist yet.**
 
-The curriculum lives in `content/` and is validated at build time. The application
-shell, lessons, quizzes and labs arrive in later milestones. See
+The curriculum lives in `content/` and is validated at build time. There is now a real
+application around it: routing, a responsive shell, a dashboard and a roadmaps index, all
+rendering actual M0 content. **Lesson pages, exercises, progress tracking, quizzes and labs
+arrive in later milestones** — nothing here pretends to work that does not. See
 [project/CURRENT_STATE.md](project/CURRENT_STATE.md) for exactly what exists and works
 today, and [project/NEXT_STEPS.md](project/NEXT_STEPS.md) for what is being built next.
+
+> **Not deployed yet.** The deployment path is committed and locally verified, but the
+> repository has no git remote, so there is no live URL. `CURRENT_STATE.md` records this
+> as the one part of M1's exit condition that is not met.
 
 ---
 
@@ -16,8 +23,8 @@ today, and [project/NEXT_STEPS.md](project/NEXT_STEPS.md) for what is being buil
 
 ```bash
 npm install
-npm run dev        # dev server (no UI at M0)
-npm run check      # format, lint, types, content, tests, build
+npm run dev        # dev server — the shell runs at /
+npm run check      # the single gate: format, lint, types, content, contrast, tests, build
 npm run format     # Prettier — fixes formatting instead of reporting it
 ```
 
@@ -26,21 +33,44 @@ Node 24 also works — `engines` is `>=22.12` so a newer machine does not warn).
 
 ## Commands
 
-| Command                           | What it does                                       |
-| --------------------------------- | -------------------------------------------------- |
-| `npm run dev`                     | Vite dev server                                    |
-| `npm run build`                   | Production build to `dist/`                        |
-| `npm run preview`                 | Serve the production build locally                 |
-| `npm run lint`                    | ESLint, including the layer-boundary rules         |
-| `npm run typecheck`               | `tsc --noEmit`, app and tooling configs separately |
-| `npm run content:check`           | Validate all curriculum content                    |
-| `npm run test`                    | Full test suite                                    |
-| `npm run test:arch`               | Architectural invariant tests only                 |
-| `npm run format` / `format:check` | Prettier                                           |
-| `npm run check`                   | Everything above, in order. The single gate        |
+| Command                           | What it does                                         |
+| --------------------------------- | ---------------------------------------------------- |
+| `npm run dev`                     | Vite dev server                                      |
+| `npm run build`                   | Production build, then the SPA fallback + path check |
+| `npm run preview`                 | Serve the production build locally                   |
+| `npm run lint`                    | ESLint, including the layer-boundary rules           |
+| `npm run typecheck`               | `tsc --noEmit`, app and tooling configs separately   |
+| `npm run content:check`           | Validate all curriculum content                      |
+| `npm run check:contrast`          | WCAG ratios computed from the design tokens          |
+| `npm run test`                    | Full test suite                                      |
+| `npm run test:arch`               | Architectural invariant tests only                   |
+| `npm run format` / `format:check` | Prettier                                             |
+| `npm run check`                   | Everything above, in order. The single gate          |
 
-`check` includes `format:check`, so a green `check` means CI will be green. Use
-`npm run format` to fix formatting rather than report it.
+`check` includes `format:check`, `check:contrast` and the built-output path check, so a
+green `check` means CI will be green. Use `npm run format` to fix formatting rather than
+report it.
+
+## Architecture at a glance
+
+Four layers, dependencies pointing one way:
+
+```
+content/          the curriculum, as data. Knows nothing about the application.
+   ↓
+src/content/      schemas, registry, selectors. The ONLY read path to content.
+   ↓
+src/domain/       pure logic: progress, assessment, unlock. No React, no I/O.
+   ↓
+src/app/          wiring: router, navigation, storage. Composes content for the UI.
+src/features/     one folder per feature. Reads data from src/app/, never content.
+src/components/   genuinely cross-feature components.
+```
+
+The boundaries are **enforced, not documented** — two by ESLint, three by `test:arch`. A
+notable consequence: `src/features/` cannot import `@/content/`, so every content read goes
+through `src/app/content.ts`. See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) and
+[project/DECISIONS.md](project/DECISIONS.md).
 
 ## Adding content
 
@@ -57,40 +87,36 @@ with a file-and-field diagnostic.
 
 Full rules, schemas and worked examples: [docs/CONTENT_ARCHITECTURE.md](docs/CONTENT_ARCHITECTURE.md).
 
-## Architecture in one minute
-
-Four layers, dependencies pointing one way only:
-
-```
-content/          the curriculum, as data. Knows nothing about the app.
-   ↓
-src/content/      schemas, registry, selectors. The ONLY read path to content.
-   ↓
-src/domain/       pure logic: progress, assessment, unlock. No React, no I/O.
-   ↓
-src/app/          wiring: router, store, storage. Knows about all of the above.
-src/features/     one folder per feature.
-```
-
 Three consequences worth knowing:
 
-1. **Adding a lesson touches no application code.** Every relationship is an id
-   reference, and every "which roadmaps use this" question is derived by the
-   registry rather than written by hand.
+1. **Adding a lesson touches no application code.** Every relationship is an id reference,
+   and every "which roadmaps use this" question is derived by the registry rather than
+   written by hand.
 2. **Progress is a fold over an event log.** `state = events.reduce(applyEvent, initial)`.
    Every future personalisation feature is a pure function over that log, so it can be
    written later with no migration.
-3. **The boundaries are enforced, not documented.** ESLint restricts imports;
-   `npm run test:arch` asserts the invariants.
+3. **Content is never hard-coded into the UI.** A curriculum string appearing in
+   `src/components/` or `src/features/` is a review-blocking bug, and `test:arch` fails on
+   it.
 
 Details: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ## Deployment
 
-GitHub Pages, at `https://markkramm.github.io/VA/`. The site is served from a subpath,
-so `base: '/VA/'` in `vite.config.ts` is load-bearing and every asset URL and the router
-basename derive from `import.meta.env.BASE_URL`. Never hard-code `/VA/` anywhere else.
-Deployment arrives at M1.
+GitHub Pages, at `https://markkramm.github.io/VA/`. The site is served from a **subpath**,
+which drives three things:
+
+- `base: '/VA/'` in `vite.config.ts` — load-bearing. Every asset URL and the router
+  `basename` derive from `import.meta.env.BASE_URL`. **Never hard-code `/VA/` anywhere
+  else**; a test asserts the router does not.
+- `dist/404.html` — GitHub Pages has no rewrite rules, so without a copy of `index.html` a
+  hard refresh on any deep link serves a server 404 instead of the app. `npm run build`
+  does this automatically.
+- `npm run check:paths` — asserts no built asset URL is root-relative. A subpath site that
+  works on the homepage and 404s on every deep link is the classic failure this catches.
+
+`.github/workflows/deploy.yml` runs `npm run check` then publishes `dist/` on every push to
+`main`. **It has not run yet:** there is no git remote configured.
 
 ## For AI coding agents
 
@@ -110,6 +136,7 @@ never hard-code content into `src/`, keep the smallest correct change, run
 | [docs/DATA_MODEL.md](docs/DATA_MODEL.md)                     | Every entity type and the progress event log                |
 | [docs/CONTENT_GUIDELINES.md](docs/CONTENT_GUIDELINES.md)     | How to write a lesson that is worth reading                 |
 | [docs/WORKFLOWS.md](docs/WORKFLOWS.md)                       | Repo procedures                                             |
+| [docs/DESIGN_SYSTEM.md](docs/DESIGN_SYSTEM.md)               | Visual identity, tokens, and the accessibility rules        |
 | [project/CURRENT_STATE.md](project/CURRENT_STATE.md)         | What exists and works right now                             |
 | [project/CHECKPOINT.md](project/CHECKPOINT.md)               | The last verified stable state                              |
 | [project/NEXT_STEPS.md](project/NEXT_STEPS.md)               | What is being built next                                    |

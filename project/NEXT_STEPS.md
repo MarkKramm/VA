@@ -8,52 +8,40 @@ is too large or work is not being closed out.
 
 ---
 
-## Current milestone: M1 — Application Shell
+## Current milestone: M1 — Application Shell · **complete, awaiting review**
 
-### 1. Design tokens and the base style layer
+All three items are done. What follows is what remains, including the one thing that is
+**not** done.
 
-Create `src/styles/tokens.css` and `global.css`. Tokens for colour, type scale, spacing,
-radius, and the five state colours (complete, in-progress, available, recommended, locked).
-Light and dark from day one, driven by `prefers-color-scheme` plus a manual toggle — the
-toggle state itself is a new storage key behind the existing `StorageAdapter`.
+### 1. Deploy it — the M1 exit condition is not met
 
-Then write `docs/DESIGN_SYSTEM.md` **before** building components on top of the tokens. The
-visual identity should be designed rather than accreted.
+`NEXT_STEPS.md` set M1's exit condition as a live URL at
+`https://markkramm.github.io/VA/`, navigable, keyboard-operable, responsive at 375 / 768 /
+1440, with a deep link surviving a hard refresh **on the real deployed site**.
 
-The twelve design principles are in `PLAN.md` section 12. The non-negotiables: colour is
-never the only signal, 4.5:1 body contrast, visible focus, and every data-visualising
-graphic has a text equivalent.
+Everything needed is committed and locally verified: `deploy.yml`, `public/.nojekyll`, the
+`404.html` fallback, and `check-paths` (proven to fail on a deliberately broken build).
+**There is no git remote**, so the workflow has never run and there is no live URL.
 
-### 2. The application shell
+This needs a human: add the remote, push to `main`, and confirm the deployed deep-link
+refresh.
 
-`src/components/layout/`: `AppShell`, `AppHeader`, `AppNav`, `AppFooter`, `SkipLink`.
-`src/components/ui/`: `Button`, `Card`, `Badge`, `Callout`, `ProgressBar`, `Breadcrumbs`,
-`EmptyState`. `src/components/icons/Icon.tsx` wrapping `lucide-react`.
+### 2. Review the shell in a browser at three widths
 
-Keep the initial set small. A component used by one feature lives in that feature. The M0
-boundary test checks that curriculum strings never appear in these directories, and it will
-start having something to check.
+The responsive layout is verified by construction — fluid `clamp()` and `auto-fit` grids
+with one structural breakpoint at `md` — but no browser was driven at 375 / 768 / 1440.
+Worth doing before M2 builds on it.
 
-### 3. The router, with GitHub Pages subpath handling
+### 3. Decide whether the bundle size is acceptable to defer
 
-`src/app/router.tsx` with `createBrowserRouter` and **`basename` from
-`import.meta.env.BASE_URL`** — never the literal `/VA/`. Real routes, an in-app 404, and
-route-level error boundaries.
+The build is **717 kB / 202 kB gzipped**, of which roughly **55 kB gzipped is
+`gray-matter`**, a Node YAML parser shipping to the browser. Measured by rebuilding with the
+parser stubbed out (717 kB → 469 kB).
 
-Then the deployment piece, which is the part most likely to be got wrong:
-
-- `public/.nojekyll`, so the Pages build does not strip underscore-prefixed paths.
-- A postbuild step copying `dist/index.html` to `dist/404.html`. GitHub Pages has no
-  rewrite rules, so without this a refresh on `/VA/lessons/anything` 404s.
-- `scripts/check-paths.ts`, asserting the built HTML has no root-relative `/assets/…` URL.
-  A subpath site that works on the homepage and 404s on every deep link is the classic
-  failure this catches.
-- `.github/workflows/deploy.yml` with `actions/configure-pages`, `upload-pages-artifact`,
-  `deploy-pages`, and the `github-pages` environment.
-
-**Exit condition for M1:** a live URL at `https://markkramm.github.io/VA/`, navigable,
-keyboard-operable, responsive at 375 / 768 / 1440, with a deep link surviving a hard
-refresh on the real deployed site — not just locally.
+The fix is a build-time frontmatter transform, which is the M2 MDX pipeline. It was not
+patched at M1 because a hand-rolled YAML parser would duplicate a solved problem and risk
+disagreeing with `gray-matter` on an edge case. It is a real cost on a phone, so it is a
+decision rather than an oversight — see `BACKLOG.md` and `DECISIONS.md` D17.
 
 ---
 
@@ -64,7 +52,12 @@ the remaining entity schemas, lesson and roadmap pages, exercises, and search.
 
 Two things M1 should set up for M2 without building them:
 
-- The stage renderer must **iterate a list**, because roadmaps will have two stages sharing
-  a `kind` (Automation VA does). Do not key a component by stage kind.
-- The MDX component registry should be a small, reviewed set. It is the one place content can
-  become code, so its size is a governance decision, not a convenience one.
+- ~~The stage renderer must **iterate a list**, because roadmaps will have two stages
+  sharing a `kind`. Do not key a component by stage kind.~~ **Done at M1.**
+  `stagesOfRoadmap` returns an ordered array of `{ stage, modules }` and
+  `RoadmapDetailPage` keys by index. `beginner-va` already has two stages sharing a module
+  across different kinds, so the real content exercises the case, and a test asserts all
+  three stages survive.
+- The MDX component registry should be a small, reviewed set. It is the one place content
+  can become code, so its size is a governance decision, not a convenience one. **Still
+  open** — an M2 decision that nothing at M1 depends on.

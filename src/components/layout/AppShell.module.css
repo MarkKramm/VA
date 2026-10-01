@@ -1,0 +1,122 @@
+/*
+ * AppShell styles.
+ *
+ * The grid is the whole responsive strategy for the page furniture:
+ *
+ *   below md   one column, sidebar removed from flow
+ *   md and up  sidebar + fluid main
+ *
+ * `1fr` rather than a fixed main width, so the content column is fluid and there
+ * is no width to hard-code. `--layout-max-width` on the container caps the whole
+ * thing at 76rem.
+ */
+
+.shell {
+  display: flex;
+  flex-direction: column;
+  /* Pushes the footer to the bottom on a short page, so it does not float
+     halfway up a viewport with little content. */
+  min-height: 100dvh;
+}
+
+.body {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-6);
+  flex: 1;
+  /* Vertical rhythm between header, content and footer. */
+  padding-block: var(--space-6) var(--space-8);
+  min-width: 0;
+}
+
+.sidebar {
+  display: none;
+}
+
+.sidebarNav {
+  position: sticky;
+  /* Clears the sticky header, and the small gap is deliberate breathing room. */
+  inset-block-start: calc(var(--size-header-height) + var(--space-5));
+}
+
+.main {
+  min-width: 0;
+  /* `min-width: 0` on a grid item: without it a long unbreakable string sets the
+     column's minimum size and pushes the whole layout wider than the viewport. */
+  outline: none;
+}
+
+/* --- footer -------------------------------------------------------------- */
+
+.footer {
+  border-top: var(--border-width) solid var(--color-border);
+  background-color: var(--color-surface-sunken);
+  padding-block: var(--space-5);
+}
+
+.footerInner {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  align-items: flex-start;
+}
+
+.footerText {
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  /* Caps the line length so the sentence does not run the full width of a wide
+     monitor. */
+  max-width: var(--measure-prose);
+}
+
+.footerNav {
+  margin-top: var(--space-1);
+}
+
+.footerList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+}
+
+.footerLink {
+  display: inline-flex;
+  align-items: center;
+  /* 44px touch target, per DESIGN_SYSTEM.md §7. */
+  min-height: 2.75rem;
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+  text-decoration: none;
+}
+
+.footerLink:hover {
+  color: var(--color-text-primary);
+  text-decoration: underline;
+}
+
+/* --- responsive ---------------------------------------------------------- */
+
+@media (min-width: 48rem) {
+  .body {
+    /* The one structural breakpoint. 15rem matches --layout-nav-width. */
+    grid-template-columns: var(--layout-nav-width) minmax(0, 1fr);
+    gap: var(--space-8);
+  }
+
+  .sidebar {
+    display: block;
+  }
+}
+
+@media (min-width: 64rem) {
+  .footerInner {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-6);
+  }
+
+  .footerNav {
+    margin-top: 0;
+  }
+}

@@ -13,7 +13,21 @@ Nothing here is scheduled. Items are listed so they are not forgotten, not as a 
 - Print stylesheet for checklists, templates and step lists. A VA will print these.
 - Responsive table pattern with a scroll affordance — needed for wide comparison tables
   from M2 onward, and required by `ACCESSIBILITY.md`.
-- `check:paths` script and `postbuild-pages.mjs`, both part of the M1 deployment step.
+- ~~`check:paths` script and `postbuild-pages.mjs`~~ **Done at M1** as
+  `scripts/check-paths.ts` and `scripts/copy-spa-fallback.ts`, both wired into
+  `npm run build`.
+- **`gray-matter` is shipping to the browser (~55 kB gzipped).** `content/index.ts` parses
+  frontmatter at module scope, so the Node YAML parser ends up in the client graph. Measured:
+  the build is 717 kB / 202 kB gzipped, and 469 kB with the parser stubbed out. The fix is a
+  build-time frontmatter transform, which is the M2 MDX pipeline — deliberately not patched
+  at M1, because a hand-rolled YAML parser would duplicate a solved problem and could
+  disagree with `gray-matter` on an edge case. Revisit with M2; if M2 slips, this is the
+  reason to pull it forward.
+- **Reusable dialog primitive.** The mobile nav's focus trap is hand-rolled and tested
+  (`DECISIONS.md` D18). Replace it rather than extend it once a second dialog exists.
+- **Drive a real browser at 375 / 768 / 1440.** The responsive layout is verified by
+  construction — fluid `clamp()` and `auto-fit` grids, one structural breakpoint at `md` —
+  but no screenshot or browser check has confirmed it.
 
 ## M2 content engine
 
