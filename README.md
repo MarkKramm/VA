@@ -3,19 +3,19 @@
 A learning platform that takes a learner from complete beginner to job-ready Virtual
 Assistant, across many career paths.
 
-**Status: Milestone 1 (Application Shell) — the shell works, the learning systems do not
-exist yet.**
+**Status: Milestone 2 (Content Engine) in progress — lessons are readable end to end;
+exercises, progress tracking, quizzes and labs do not exist yet.**
 
-The curriculum lives in `content/` and is validated at build time. There is now a real
-application around it: routing, a responsive shell, a dashboard and a roadmaps index, all
-rendering actual M0 content. **Lesson pages, exercises, progress tracking, quizzes and labs
-arrive in later milestones** — nothing here pretends to work that does not. See
+The curriculum lives in `content/` and is validated and compiled at build time. The
+application renders it: a responsive shell, a dashboard, a roadmaps index, and **lesson pages
+with the compiled MDX body, objectives, prerequisites and previous/next navigation**, all
+reading real content through one seam. **Exercises, progress tracking, quizzes and labs arrive
+in later milestones** — nothing here pretends to work that does not. See
 [project/CURRENT_STATE.md](project/CURRENT_STATE.md) for exactly what exists and works
 today, and [project/NEXT_STEPS.md](project/NEXT_STEPS.md) for what is being built next.
 
-> **Not deployed yet.** The deployment path is committed and locally verified, but the
-> repository has no git remote, so there is no live URL. `CURRENT_STATE.md` records this
-> as the one part of M1's exit condition that is not met.
+> **Live at <https://markkramm.github.io/VA/>.** Pushing to `main` runs CI and then deploys to
+> GitHub Pages. Deep links survive a hard refresh through the SPA fallback.
 
 ---
 

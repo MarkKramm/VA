@@ -12,6 +12,9 @@ All notable changes to this project. Format follows
 
 ### Added
 
+- **The site is deployed.** `https://markkramm.github.io/VA/` is live from
+  `https://github.com/MarkKramm/VA`, with CI and Deploy both green on push to `main`. The
+  deep-link SPA fallback was verified over HTTP. This closes the M1 deployment exit condition.
 - **The lesson experience (M2.3).** The route `/lessons/:lessonId` resolves a lesson by its
   stable id through `lessonContext` in `src/app/content.ts` and renders its title, summary,
   difficulty, time, objectives, advisory prerequisites with reasons, skills, related lessons,

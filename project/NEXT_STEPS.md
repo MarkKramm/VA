@@ -33,9 +33,9 @@ is half-finished. Then update the orientation files and move to M3.
 
 ---
 
-## Carry-over, not M2 — needs a human
+## Carry-over, not M2
 
-**Deploy it.** The M1 exit condition is a live URL at `https://markkramm.github.io/VA/`, with
-a deep link surviving a hard refresh on the real deployed site. Everything needed is
-committed and locally verified, but **there is no git remote**, so the workflow has never run.
-This needs the owner to add the remote and push.
+~~**Deploy it.**~~ **Done.** The repository is `https://github.com/MarkKramm/VA` and the site is
+live at `https://markkramm.github.io/VA/`. The deep-link SPA fallback was verified over HTTP:
+`/VA/lessons/what-is-a-virtual-assistant` serves the `404.html` fallback and boots the app.
+CI and Deploy both run green on push to `main`. The M1 exit condition is closed.

@@ -83,10 +83,17 @@ long-form text — the two questions left open since M1.
 - No custom MDX components registered. The allowlist is still empty.
 - Tables and reference-style links are unsupported (recorded in `BACKLOG.md`).
 
+### Deployed
+
+- **The site is live and the M1 exit condition is closed.** `https://markkramm.github.io/VA/`
+  returns 200 with the real `index.html` and both assets; the deep link
+  `/VA/lessons/what-is-a-virtual-assistant` is served the `404.html` SPA fallback (same bundle,
+  `#root` present) exactly as designed, so it boots the app and resolves the route client-side.
+  The remote is `https://github.com/MarkKramm/VA`; `main` is at this checkpoint's commit and
+  the **CI** and **Deploy** workflows both completed green on the push.
+
 ### Not verified — read this before continuing
 
-- **There is still no live URL.** The repository has no git remote, so `deploy.yml` has never
-  run and M1's deployment exit condition remains unmet.
 - **No browser was driven at 375 / 768 / 1440.** Responsive behaviour is verified by
   construction.
 - **A lesson in more than one roadmap shows one.** The page uses the primary roadmap for the

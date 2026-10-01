@@ -120,8 +120,9 @@ format check, and it is never touched, moved or reformatted (`DECISIONS.md` D20)
 
 - **Tables and reference-style links are unsupported.** Tables need `remark-gfm`;
   reference links are refused with a clear message. Both are in `BACKLOG.md`.
-- **The deployment has not been exercised.** No live URL exists: the repository has no git
-  remote. The M1 exit condition in `NEXT_STEPS.md` is still not met.
+- **The site is deployed.** `https://markkramm.github.io/VA/` is live; the deep-link SPA
+  fallback is verified over HTTP. The repository has a remote
+  (`https://github.com/MarkKramm/VA`), and CI and Deploy run green on push to `main`.
 - **Responsive behaviour is verified by construction, not by screenshot.** No browser was
   driven at 375 / 768 / 1440.
 - **Contrast is verified from token values, not rendered pixels.**
