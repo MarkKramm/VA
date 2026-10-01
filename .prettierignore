@@ -1,0 +1,13 @@
+node_modules
+dist
+coverage
+package-lock.json
+playwright-report
+test-results
+.github
+
+# The long-term project constitution. It is a hand-written design document, not
+# code, and reformatting it would create a large, meaningless diff against a
+# file that is itself the record of architectural decisions.
+PLAN.md
+plan.md

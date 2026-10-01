@@ -1,0 +1,110 @@
+import { describe, expect, it } from 'vitest'
+import { buildRegistry, buildRegistryFromSource, registry } from '../registry.ts'
+import { validateRegistry } from '../validation.ts'
+import {
+  validCareerPath,
+  validLesson,
+  validModule,
+  validRoadmap,
+  validSkill,
+} from '../../../tests/fixtures/content.ts'
+
+describe('the real M0 content', () => {
+  it('loads with no schema errors', () => {
+    const schemaErrors = registry.issues.filter((issue) => issue.rule === 'schema')
+    expect(
+      schemaErrors,
+      schemaErrors.map((i) => `${i.path} ${i.field}: ${i.message}`).join('\n'),
+    ).toEqual([])
+  })
+
+  it('indexes every entity by id', () => {
+    expect(registry.careerPaths.size).toBe(16)
+    expect(registry.roadmaps.size).toBe(2)
+    expect(registry.modules.size).toBe(2)
+    expect(registry.lessons.size).toBe(4)
+    expect(registry.skills.size).toBeGreaterThan(10)
+  })
+
+  it('reports a non-zero content payload, so the eager-glob question is measurable', () => {
+    expect(registry.payloadBytes).toBeGreaterThan(0)
+  })
+
+  it('lists the collections this milestone has not built yet', () => {
+    for (const pending of [
+      'tools',
+      'resources',
+      'exercises',
+      'quizzes',
+      'labs',
+      'assessments',
+      'topics',
+    ]) {
+      expect(registry.pendingCollections).toContain(pending)
+    }
+  })
+
+  it('has no duplicate ids', () => {
+    expect(validateRegistry(registry).issues.filter((i) => i.rule === 'duplicate-id')).toEqual([])
+  })
+
+  it('resolves every reference', () => {
+    expect(
+      validateRegistry(registry).issues.filter((i) => i.rule === 'referential-integrity'),
+    ).toEqual([])
+  })
+
+  it('has no cycles', () => {
+    expect(validateRegistry(registry).issues.filter((i) => i.rule === 'cycle')).toEqual([])
+  })
+
+  it('has no orphans, because the M0 content set is deliberately complete', () => {
+    const orphans = validateRegistry(registry).issues.filter((i) => i.rule === 'orphan')
+    expect(orphans.map((i) => `${i.entity}: ${i.message}`)).toEqual([])
+  })
+
+  it('publishes nothing, because nothing has been human-reviewed yet', () => {
+    const published = [
+      ...registry.lessons.values(),
+      ...registry.modules.values(),
+      ...registry.roadmaps.values(),
+    ].filter((entity) => entity.status === 'published')
+    expect(published).toEqual([])
+  })
+})
+
+describe('buildRegistry is deterministic', () => {
+  it('produces the same indexes on repeated calls', () => {
+    const a = buildRegistry()
+    const b = buildRegistry()
+    expect([...a.lessons.keys()]).toEqual([...b.lessons.keys()])
+    expect([...a.moduleRoadmapIds.entries()]).toEqual([...b.moduleRoadmapIds.entries()])
+    expect(a.payloadBytes).toBe(b.payloadBytes)
+  })
+})
+
+describe('buildRegistryFromSource', () => {
+  it('can be built from fixture content rather than files on disk', () => {
+    const built = buildRegistryFromSource({
+      careerPaths: [validCareerPath()],
+      skills: [validSkill({ id: 'data', parent: undefined }), validSkill()],
+      lessons: [{ path: 'content/fixture.mdx', data: validLesson() }],
+      modules: [{ path: 'content/fixture.mdx', data: validModule() }],
+      roadmaps: [{ path: 'content/fixture.mdx', data: validRoadmap() }],
+    })
+    expect(built.lessons.size).toBe(1)
+    expect(built.moduleRoadmapIds.get('data-cleaning')).toEqual(['data-entry-va'])
+    expect(built.issues).toEqual([])
+  })
+
+  it('reports zero payload bytes for source that is not the real content', () => {
+    const built = buildRegistryFromSource({
+      careerPaths: [],
+      skills: [],
+      lessons: [],
+      modules: [],
+      roadmaps: [],
+    })
+    expect(built.payloadBytes).toBe(0)
+  })
+})

@@ -1,0 +1,29 @@
+# Normalise line endings so Windows and Linux contributors produce identical diffs.
+# Without this, a Windows checkout can rewrite every line of a file that a Linux
+# checkout created, producing whole-file diffs that hide the real change.
+* text=auto eol=lf
+
+*.md text eol=lf
+*.mdx text eol=lf
+*.ts text eol=lf
+*.tsx text eol=lf
+*.js text eol=lf
+*.mjs text eol=lf
+*.cjs text eol=lf
+*.json text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.css text eol=lf
+*.html text eol=lf
+*.svg text eol=lf
+
+# Generated or binary — never diffed
+package-lock.json -diff
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.woff binary
+*.woff2 binary

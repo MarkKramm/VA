@@ -1,0 +1,54 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# A superseded run on the same ref is pointless work.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Verify
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+          cache: npm
+
+      - run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      # Deliberately separate from the build. Vite does not typecheck, so a green
+      # build with red types is the most common CI blind spot there is.
+      - name: Typecheck
+        run: npm run typecheck
+
+      # Its own named step, so a content error is legible in the log rather than
+      # hidden inside a failing test run.
+      - name: Validate content
+        run: npm run content:check
+
+      - name: Test
+        run: npm run test
+
+      - name: Architectural invariants
+        run: npm run test:arch
+
+      - name: Build
+        run: npm run build
+
+      - name: Formatting
+        run: npm run format:check
