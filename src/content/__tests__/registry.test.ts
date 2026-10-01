@@ -30,6 +30,26 @@ describe('the real M0 content', () => {
     expect(registry.payloadBytes).toBeGreaterThan(0)
   })
 
+  it('attaches a compiled body to every real lesson, keyed by lesson id (M2.2)', () => {
+    // The body must be reachable by ID — the stable identity a route uses — not by
+    // the file path it happens to live at. A lesson with no body would render an
+    // empty page, so every real lesson must have one.
+    expect(registry.lessonBodies.size).toBe(registry.lessons.size)
+    for (const lessonId of registry.lessons.keys()) {
+      const body = registry.lessonBodies.get(lessonId)
+      expect(body, `lesson ${lessonId} has no compiled body`).toBeDefined()
+      expect(body?.length).toBeGreaterThan(0)
+    }
+  })
+
+  it('produces a body whose root nodes are all valid compiled kinds', () => {
+    for (const body of registry.lessonBodies.values()) {
+      for (const node of body) {
+        expect(['text', 'element', 'component']).toContain(node.kind)
+      }
+    }
+  })
+
   it('lists the collections this milestone has not built yet', () => {
     for (const pending of [
       'tools',

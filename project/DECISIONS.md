@@ -499,8 +499,169 @@ describes reality.
   problem to clear by touching the file. The correct responses are to validate the
   specific files under test, or to state the limitation explicitly in the report.
 - The provider and model configuration is never edited to make checks pass.
-- Known gap, recorded rather than fixed: because `format:check` globs the whole working
-  tree, an untracked, non-Prettier file anywhere in the root will fail the gate. The durable
-  fix is to scope the format check to tracked and explicitly-listed files, which is a
-  tooling change for a later session — not a reason to remove the configuration now. See
-  `BACKLOG.md`.
+- **Resolved at M2.2.** The gap — `prettier --check .` globbing the working tree and failing
+  on the untracked `opencode.json` — is closed by listing `opencode.json` in `.prettierignore`
+  and `.gitignore`. Both are tracked project files; neither touches the configuration. This
+  is the smallest durable fix: the file is machine-local runtime config that must never be
+  committed or reformatted, so excluding it by name is more precise than scoping the whole
+  format check to a tracked-file list. `npm run check` is green again. See `BACKLOG.md`.
+
+## D21 — Content is ingested at build time through a Vite plugin and a virtual module
+
+**Date:** 2026-10-01 (M2)
+
+**Context.** At M0 and M1, `content/index.ts` imported `gray-matter` and parsed
+`.mdx` frontmatter at module scope, then globbed the files with `import.meta.glob`.
+That file is in the client graph — `DashboardPage → src/app/content.ts →
+registry.ts → content/index.ts` — so a Node YAML parser and its `js-yaml`
+dependency were compiled into the browser bundle. Measured at M1: **717 kB raw /
+202 kB gzipped** total, of which about **249 kB raw / 56 kB gzipped** was the
+parser. The audience is largely on mid-range phones and metered connections, so
+that was a real per-visit cost for machinery the browser never needed.
+`DECISIONS.md` D12 and `vite.config.ts` both named the fix: parse at build time.
+
+**Options.** (a) A Vite plugin that parses frontmatter in Node and serves the
+result as a virtual module. (b) A prebuild script that writes a generated `.ts` or
+`.json` file into the repo. (c) Lazy-load content at runtime so the parser is in a
+separate chunk fetched on demand. (d) Hand-roll a small YAML parser in `content/`.
+
+**Choice.** (a), in `vite-plugin-content.ts`, consumed as `virtual:content-data`.
+
+**Reason.**
+
+- (b) creates a second source of truth on disk that can go stale, needs a
+  gitignore decision, and produces a confusing diff. A virtual module has no
+  file, cannot drift, and is regenerated on every build and every dev request by
+  construction.
+- (c) keeps the parser in the bundle and only defers it, which is worse: the
+  content is needed eagerly to build the reverse indexes the whole model depends
+  on, so the "lazy" chunk would load immediately anyway.
+- (d) is forbidden by D12: a hand-rolled parser duplicates a solved problem and
+  can disagree with `gray-matter` on an edge case. The plugin uses the same
+  `gray-matter`, so no parsing behaviour changed — only _where_ it runs.
+
+The plugin runs under `vite build`, `vite dev` and `vite-node`, so the registry,
+the tests and `content:check` all exercise the same content-loading path the
+browser uses. A plugin that ran only at build time would make the tests a
+different code path from production, which is the class of divergence this project
+guards against everywhere else.
+
+**Consequences.**
+
+- **Measured result:** the client JS went from **717 kB / 202 kB gzipped** to
+  **468 kB / 146 kB gzipped** — a **56 kB gzipped (28%) reduction**. `gray-matter`,
+  `js-yaml` and every YAML signature are absent from the built bundle; the parsed
+  content is embedded as plain JSON.
+- `gray-matter` stays a `devDependency`. It is imported only by the plugin, which
+  is imported only by `vite.config.ts`. A new architecture invariant
+  (`boundaries.test.ts`, invariant 6) asserts nothing under `src/` or `content/`
+  imports it, and that `content/index.ts` no longer globs or parses — so a
+  regression fails `test:arch` rather than silently re-inflating the bundle.
+- The dependency arrow is unchanged: app → registry → content → `virtual:content-data`
+  ← plugin. `content/` still imports nothing from `src/`.
+- The virtual module's shape is declared in `content/virtual-content.d.ts` and
+  typed loosely on purpose. Frontmatter is unvalidated data; the Zod schemas
+  remain the single source of truth for what a valid entity is. A precise type in
+  the declaration would be a second, erasure-prone copy of that contract.
+- Malformed YAML now fails **at parse time, with the file named**, instead of
+  surfacing as a downstream validation message. That is a strictly better failure,
+  and it is what makes the parser legitimately a build concern.
+- **Not yet done:** the `.mdx` _body_ is still opaque text. This decision is about
+  the ingestion pipeline, not MDX rendering. Rendering the body (and the component
+  registry that governs what content can become code) is the next M2 step and is
+  recorded in `BACKLOG.md`.
+
+## D22 — MDX compiles to a serializable element tree, not to a JavaScript module
+
+**Date:** 2026-10-01 (M2.2)
+
+**Context.** D21 moved frontmatter parsing to build time but left the `.mdx` body as
+opaque text, so no lesson could render. M2.2 must make the body renderable without
+re-introducing compiler machinery into the client, and without creating a second way
+for content to become executable code.
+
+**Options.** (a) Compile MDX to a JS module (`@mdx-js/mdx` → JSX → Vite's React
+transform), which is the documented default and what `@mdx-js/rollup` automates.
+(b) Compile MDX to HTML with `remark-rehype` and set it via `dangerouslySetInnerHTML`.
+(c) Compile MDX's markdown AST to a **plain, serializable element tree** at build
+time, and render that tree in React through an explicit component map.
+
+**Choice.** (c).
+
+**Reason.**
+
+- (a) ships an MDX runtime and a JSX component-binding layer into the client graph,
+  and makes "which components exist" a property of a module graph rather than a
+  reviewed list. It is the right choice for a site that _wants_ arbitrary MDX
+  components; this platform explicitly does not.
+- (b) discards the component-name information. This was **measured, not assumed**:
+  `mdast-util-to-hast` renders both `<Callout>` and `<Badge>` as a bare `<div>`.
+  That is a silent downgrade of authored content, and it also removes the trust
+  boundary — HTML strings would have to be trusted.
+- (c) keeps the client free of every MDX and compiler package (the tree is plain
+  JSON), makes the trust boundary a data structure rather than a convention, and is
+  deterministic by construction. It is also the smallest thing that actually renders
+  the current content correctly.
+
+**Parser.** `unified` + `remark-parse` + `remark-mdx` (with `micromark` and its MDX
+extension, transitively) are added as **devDependencies**. This is the same reasoning
+as D12: MDX parsing is a solved problem, and hand-rolling it would duplicate a
+formatter and disagree with the real one on an edge case. Crucially they are build
+dependencies — the runtime dependency count is unchanged at five, well inside the
+budget of twenty (D11), because nothing in this set reaches the bundle.
+
+**The trust boundary.** The compiler walks the mdast and emits a closed set of node
+kinds: `element` (a fixed set of HTML tag names), `text`, and `component` (a _name_
+plus serializable props and children). It **rejects**:
+
+- `mdxFlowExpression` / `mdxJsxExpressionAttribute` — `{ … }` evaluates a JavaScript
+  expression. This is the arbitrary-code vector and it is the reason a
+  component allowlist alone is not sufficient.
+- `html` nodes, and any HTML element written directly in JSX — raw HTML bypasses the
+  element mapping. (`remark-mdx` parses raw HTML as JSX elements rather than `html`
+  nodes, so the practical refusal is the lowercase-tag branch; the `html` case is a
+  backstop.)
+- any attribute that is a JSX expression rather than a literal (`onClick={fn}`,
+  `title={name}`), because a literal prop cannot become a function, and an expression
+  value has no literal representation.
+- an unsafe URL on an `href` or `src`, on **either** syntax, and an `<img>` without alt
+  text, on either syntax.
+- a reference-style link (`[text][ref]`), with an author-facing message.
+
+The **component** half of the boundary is enforced at RENDER time, not compile time,
+and that is deliberate. The compiler records any capitalised JSX name as a `component`
+node; the renderer resolves it against the allowlist and throws
+`UnknownMdxComponentError` for a name that is not there. Two lists, not one, so a
+component can be authored into content before the renderer knows it, and the failure
+is a clear local error rather than a build that will not run.
+
+A rejected construct **fails the build with the file and line named**. It is never
+dropped silently, because a silently dropped `{expression}` is indistinguishable from
+an author who wrote nothing.
+
+**Consequences.**
+
+- New modules: `content/mdx/compile.ts` (parser + mdast → tree, build-time only) and
+  `src/content/mdx/registry.ts` (the render-time allowlist) plus `src/content/mdx/render.ts`
+  (the React renderer). The allowlist is deliberately empty of custom components at M2.2: no
+  current content uses one, and adding the first should be a visible, reviewed act.
+- The compiled tree crosses the virtual-module boundary as JSON and is attached to
+  lessons by **id**, not by path, in the registry (`registry.lessonBodies`). The raw `body`
+  text is measured at build time for the payload report and then **dropped from the shipped
+  module**, so there is one representation of each lesson in the bundle, not two. That choice
+  is what keeps the bundle at or below the M2.1 baseline.
+- Bundle protection extends to the MDX parser: invariant 6 in `boundaries.test.ts` now
+  asserts that no MDX/compiler package is imported from `src/` or `content/`, that the
+  compiler lives at the build edge, and a **built-output** guard in `scripts/check-paths.ts`
+  scans `dist/assets/*.js` for compiler markers, so a leak that only appears after bundling
+  is caught.
+- The **URL policy applies to both syntaxes**. An adversarial review found that JSX
+  `<a href=…>` initially bypassed the filter that Markdown links went through; the policy now
+  runs on every emitted `href`/`src`, and again at render time.
+- Accessibility rules apply to both syntaxes too: an `<img>` written as JSX must have alt
+  text, exactly as a Markdown image must.
+- Tables are **not** supported yet: base `remark-parse` leaves them as text, and enabling
+  `remark-gfm` is a separate, deliberate decision. The renderer defines a `table` mapping but
+  no current content reaches it. Recorded in `BACKLOG.md`.
+- Reference-style links (`[text][ref]`) are refused with an author-facing message rather than
+  an internal AST type name. Supporting them is a small later addition, in `BACKLOG.md`.

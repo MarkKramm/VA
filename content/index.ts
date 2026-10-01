@@ -11,67 +11,85 @@
  * app → registry → content. Content is DATA and knows nothing about schemas,
  * types, or the application.
  *
- * At M0 the MDX *body* is read as raw text and is deliberately not compiled.
- * Frontmatter is parsed and validated; the body is opaque until the MDX pipeline
- * lands at M2. The bodies are kept separate from the validated metadata so that
- * nothing in the application layer can accidentally start depending on lesson
- * prose.
+ * WHERE THE FRONTMATTER IS PARSED (M2.1) AND THE BODY IS COMPILED (M2.2)
+ *
+ * At M0 and M1 this file globbed the `.mdx` files itself (`import.meta.glob`) and
+ * parsed their frontmatter with `gray-matter` at module scope. Because this file
+ * is in the client graph, that shipped a Node YAML parser to the browser -- about
+ * 55 kB gzipped of the M1 bundle, for an audience mostly on phones.
+ *
+ * Both stages now happen at BUILD time, in `vite-plugin-content.ts` (frontmatter)
+ * and `content/mdx/compile.ts` (body), and this file reads the result from a
+ * virtual module. They run in Node under `vite build`, `vite dev` and
+ * `vite-node`, so they are available everywhere needed and reach the browser
+ * nowhere.
+ *
+ * The raw body TEXT does not ship: it is measured at build time for the payload
+ * report and then dropped, so there is one representation of each lesson in the
+ * bundle rather than two. What ships is `rendered`, the compiled element tree,
+ * which is validated metadata-adjacent data rather than lesson prose the
+ * application layer could start depending on.
  */
-import matter from 'gray-matter'
-import { careerPaths } from './career-paths.ts'
-import { skills } from './skills/skill-tree.ts'
+import {
+  careerPaths as rawCareerPaths,
+  contentPayloadBytes,
+  lessons as rawLessons,
+  modules as rawModules,
+  roadmaps as rawRoadmaps,
+  skills as rawSkills,
+} from 'virtual:content-data'
 
-/** One content file, before validation. */
+/**
+ * The compiled-body type is declared once, in `content/mdx/tree.ts`, and aliased
+ * globally there so this file can reference it without turning the ambient
+ * declaration above into a module augmentation. See that file for why.
+ */
+type CompiledBody = GlobalCompiledBody
+
+/**
+ * One content file, as it ships to the application.
+ *
+ * The raw body text is NOT here: it is measured at build time for the payload
+ * report and then dropped, because shipping it beside `rendered` would put two
+ * copies of every lesson in the bundle (see DECISIONS.md D22 and the `shipped`
+ * step in vite-plugin-content.ts).
+ */
 export interface RawContentFile {
   /** Repo-relative path, e.g. "content/lessons/foundations/what-is-a-virtual-assistant.mdx" */
   readonly path: string
   /** Parsed YAML frontmatter. Unvalidated. */
   readonly data: Record<string, unknown>
-  /** File body, opaque text. Not used at M0. */
-  readonly body: string
+  /**
+   * The compiled body tree (M2.2), present only on lesson files.
+   *
+   * The compiler that produces this lives at the build edge
+   * (`content/mdx/compile.ts`), so this field arrives already-built and the
+   * browser never sees `unified`, `remark-parse` or any MDX package.
+   */
+  readonly rendered?: CompiledBody
 }
-
-const parse = (path: string, source: string): RawContentFile => {
-  const { data, content } = matter(source)
-  return { path, data: data as Record<string, unknown>, body: content }
-}
-
-/**
- * Vite's glob import. Eager by design — the registry needs synchronous access to
- * the whole curriculum to build its reverse indexes, and correctness before
- * performance. Revisit when the content payload report in `content:check` says
- * the bundle is a problem. See DECISIONS.md.
- */
-const roadmapFiles = import.meta.glob('./roadmaps/*.mdx', {
-  query: '?raw',
-  import: 'default',
-  eager: true,
-}) as Record<string, string>
-
-const moduleFiles = import.meta.glob('./modules/*.mdx', {
-  query: '?raw',
-  import: 'default',
-  eager: true,
-}) as Record<string, string>
-
-const lessonFiles = import.meta.glob('./lessons/**/*.mdx', {
-  query: '?raw',
-  import: 'default',
-  eager: true,
-}) as Record<string, string>
-
-const toFiles = (files: Record<string, string>): RawContentFile[] =>
-  Object.entries(files)
-    .map(([relative, source]) => parse(`content/${relative.replace(/^\.\//, '')}`, source))
-    .sort((a, b) => a.path.localeCompare(b.path))
 
 export const rawContent = {
-  roadmaps: toFiles(roadmapFiles),
-  modules: toFiles(moduleFiles),
-  lessons: toFiles(lessonFiles),
+  roadmaps: rawRoadmaps as readonly RawContentFile[],
+  modules: rawModules as readonly RawContentFile[],
+  lessons: rawLessons as readonly RawContentFile[],
   /** Plain data arrays. The registry validates these against their schemas. */
-  careerPaths: careerPaths as readonly unknown[],
-  skills: skills as readonly unknown[],
+  careerPaths: rawCareerPaths as readonly unknown[],
+  skills: rawSkills as readonly unknown[],
+  /**
+   * Compiled lesson bodies, keyed by source path (M2.2).
+   *
+   * The registry joins these to validated lessons by path and re-keys the result
+   * by lesson id. Building the map here rather than in the registry keeps the
+   * "only this file reads the virtual module" rule intact.
+   */
+  bodies: new Map(
+    (rawLessons as readonly RawContentFile[])
+      .filter(
+        (file): file is RawContentFile & { rendered: CompiledBody } => file.rendered !== undefined,
+      )
+      .map((file) => [file.path, file.rendered]),
+  ),
 } as const
 
 /**
@@ -79,13 +97,6 @@ export const rawContent = {
  * "eager vs lazy content loading" question can be decided on a measurement
  * rather than on an opinion. See DECISIONS.md.
  *
- * Uses TextEncoder rather than Buffer so the same code runs in the browser at M1
- * without pulling in a Node shim.
+ * Computed by the plugin, at build time, from the same files it parsed.
  */
-const utf8Length = (value: string): number => new TextEncoder().encode(value).length
-
-export const contentPayloadBytes = [
-  ...rawContent.roadmaps,
-  ...rawContent.modules,
-  ...rawContent.lessons,
-].reduce((total, file) => total + utf8Length(file.body), 0)
+export { contentPayloadBytes }

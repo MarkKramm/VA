@@ -54,6 +54,44 @@ const sourceFiles = (dir: string = SRC, extensions: string[] = ['.ts', '.tsx']):
 beforeEach(() => resetEventCounter())
 
 describe('invariant 3 — single content entry point', () => {
+  /**
+   * The invariant is about READING THE CURRICULUM — reaching content data at
+   * runtime. A `import type { … } from '@content/…'` is erased by the compiler and
+   * cannot read anything, so it is not a consumer; it is a shared TYPE.
+   *
+   * This distinction was added at M2.2, when the compiled-body format moved to
+   * `content/mdx/tree.ts` and its types had to be referenceable from `src/`. The
+   * check still has all its teeth for real imports; it simply no longer flags a
+   * type-only import that reaches no data.
+   */
+  /**
+   * True when `source` contains a RUNTIME import from `@content/`.
+   *
+   * Line-based, not statement-based: this codebase uses no semicolons, so
+   * splitting on `;` silently merges unrelated imports into one "statement" and
+   * misattributes a type-only import to a runtime one. Each logical import is
+   * assembled from its `import` line plus continuation lines until the quoted
+   * module specifier is seen.
+   */
+  const importsContentForRuntime = (source: string): boolean => {
+    const lines = source.split('\n')
+    for (let i = 0; i < lines.length; i += 1) {
+      const line = lines[i] ?? ''
+      if (!/^\s*import\b/.test(line)) continue
+      // Assemble a multi-line import into one logical statement.
+      let statement = line
+      let cursor = i
+      while (!/['"][^'"]*['"]/.test(statement) && cursor < lines.length - 1) {
+        cursor += 1
+        statement += ` ${lines[cursor] ?? ''}`
+      }
+      i = cursor
+      if (/^\s*import\s+type\b/.test(statement)) continue
+      if (/from\s+['"]@content\//.test(statement)) return true
+    }
+    return false
+  }
+
   it('only content/index.ts globs or imports content files', () => {
     const offenders: string[] = []
 
@@ -62,7 +100,7 @@ describe('invariant 3 — single content entry point', () => {
       if (file.endsWith(join('content', 'index.ts'))) continue
       // import.meta.glob and the @content alias are the two ways to reach content.
       if (/import\.meta\.glob/.test(source)) offenders.push(`${rel(file)}: uses import.meta.glob`)
-      if (/from\s+['"]@content\//.test(source)) offenders.push(`${rel(file)}: imports @content/*`)
+      if (importsContentForRuntime(source)) offenders.push(`${rel(file)}: imports @content/*`)
       if (/from\s+['"][^'"]*\.\.\/content\//.test(source))
         offenders.push(`${rel(file)}: imports ../content/`)
     }
@@ -75,10 +113,11 @@ describe('invariant 3 — single content entry point', () => {
 
   it('the single permitted consumer is the registry', () => {
     // Pinned explicitly so that adding a second consumer has to be a decision.
+    // Type-only imports are excluded: they reach a shared type, not the data.
     const allowed = 'src/content/registry.ts'
     const consumers = sourceFiles()
       .map(rel)
-      .filter((file) => /from\s+['"]@content\//.test(readFileSync(join(ROOT, file), 'utf8')))
+      .filter((file) => importsContentForRuntime(readFileSync(join(ROOT, file), 'utf8')))
     expect(consumers).toEqual([allowed])
   })
 })
@@ -227,5 +266,96 @@ describe('content stays out of src/', () => {
     }
     // The dependency arrow points one way: app → registry → content.
     expect(offenders).toEqual([])
+  })
+})
+
+describe('invariant 6 — the frontmatter parser stays out of the client', () => {
+  /**
+   * M2 moved `.mdx` frontmatter parsing from the browser to build time. At M1 the
+   * parser ran in the client and cost about 55 kB gzipped; the fix is only real
+   * for as long as nothing re-introduces that path.
+   *
+   * These are the guards. Without them, a future change — an import added to a
+   * component, a helper moved into `content/index.ts` — would pull the parser
+   * back into the bundle, and the only signal would be a size increase on a
+   * learner's phone. The bundle is not built during `test:arch`, so the size
+   * assertion is a separate check; this one is static and fast.
+   */
+  it('only vite-plugin-content.ts imports gray-matter', () => {
+    // The parser lives at the build edge. It may be imported by the plugin (Node)
+    // and by its test (Node). It must never be imported by anything under `src/`
+    // or `content/`, which are the trees that can reach the client graph.
+    const importers = [
+      ...walk(join(ROOT, 'src'), ['.ts', '.tsx']),
+      ...walk(join(ROOT, 'content'), ['.ts']),
+    ]
+      .filter((file) => !file.includes(`${sep}__tests__${sep}`))
+      .filter((file) => /from\s+['"]gray-matter['"]/.test(readFileSync(file, 'utf8')))
+      .map(rel)
+    expect(importers).toEqual([])
+  })
+
+  it('content/index.ts no longer globs or parses; it reads the virtual module', () => {
+    // The two mechanisms that caused the M1 bundle problem, asserted absent from
+    // the one content file the client graph reaches. Comments are stripped first:
+    // the file's own header explains what was removed, and a check that cannot
+    // mention the thing it forbids is a check that gets weakened to pass.
+    const source = readFileSync(join(CONTENT, 'index.ts'), 'utf8').replace(
+      /\/\*[\s\S]*?\*\/|\/\/[^\n]*/g,
+      '',
+    )
+    expect(source).not.toMatch(/import\.meta\.glob/)
+    expect(source).not.toMatch(/from\s+['"]gray-matter['"]/)
+    expect(source).toMatch(/from\s+['"]virtual:content-data['"]/)
+  })
+
+  it('the virtual content module is only imported by content/index.ts', () => {
+    // Same rule as the registry consumer: one named reader, so a second one is a
+    // decision rather than an accident. The walk covers both trees, because the
+    // permitted importer lives in `content/` while an accidental one would most
+    // likely be under `src/`.
+    const importers = [...walk(SRC, ['.ts', '.tsx']), ...walk(CONTENT, ['.ts'])]
+      .filter((file) => !file.includes(`${sep}__tests__${sep}`))
+      .filter((file) => /from\s+['"]virtual:content-data['"]/.test(readFileSync(file, 'utf8')))
+      .map(rel)
+      .sort()
+    expect(importers).toEqual(['content/index.ts'])
+  })
+
+  /**
+   * M2.2 extended this invariant to the MDX compiler. Compilation happens at
+   * build time in `content/mdx/compile.ts`; if any of these packages is imported
+   * from `src/`, the next `vite build` puts an MDX parser in the learner bundle.
+   *
+   * The list is explicit rather than a pattern like `/mdx/`, because a pattern
+   * would also match our own `src/content/mdx/` modules, which are exactly the
+   * files that must NOT be treated as suspicious — they are the renderer.
+   */
+  it('no MDX compiler package is imported from src/ or a runtime content file', () => {
+    const COMPILER_PACKAGES = ['unified', 'remark-parse', 'remark-mdx', 'micromark']
+    const importers: string[] = []
+    for (const file of [...walk(SRC, ['.ts', '.tsx']), ...walk(CONTENT, ['.ts'])]) {
+      if (file.includes(`${sep}__tests__${sep}`)) continue
+      // The compiler itself is the one permitted importer, and it lives under
+      // `content/mdx/` beside the plugin.
+      if (rel(file) === 'content/mdx/compile.ts') continue
+      const source = readFileSync(file, 'utf8')
+      for (const pkg of COMPILER_PACKAGES) {
+        if (
+          new RegExp(`from\\s+['"]${pkg.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}['"]`).test(source)
+        ) {
+          importers.push(`${rel(file)}: imports ${pkg}`)
+        }
+      }
+    }
+    expect(importers).toEqual([])
+  })
+
+  it('the compiler lives at the build edge, not in src/', () => {
+    // The compiler's HOME is the assertion. If it moved into `src/`, a path from
+    // the client graph to it would become possible; keeping it in `content/mdx/`
+    // is what makes "the client cannot reach the compiler" structural.
+    expect(existsSync(join(CONTENT, 'mdx', 'compile.ts'))).toBe(true)
+    expect(existsSync(join(SRC, 'content', 'mdx', 'compile.ts'))).toBe(false)
   })
 })

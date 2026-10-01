@@ -2,8 +2,8 @@
  * `npm run content:check`
  *
  * A standalone validator: no dev server, no test runner, no browser. It runs
- * through vite-node so that `import.meta.glob` — which is a Vite transform, not a
- * Node feature — resolves the same way it does in the app and in tests.
+ * through vite-node so the content plugin's virtual module — a Vite transform,
+ * not a Node feature — resolves the same way it does in the app and in tests.
  *
  * A reference that does not resolve fails the build here rather than producing a
  * broken page for a learner. Content errors get their own named CI step so they

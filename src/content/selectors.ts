@@ -1,4 +1,5 @@
 import type { ContentRegistry } from './registry.ts'
+import type { CompiledBody } from '@content/mdx/tree.ts'
 import type { CareerPath, Lesson, Module, Roadmap, Skill } from './schemas/index.ts'
 
 /**
@@ -13,6 +14,17 @@ import type { CareerPath, Lesson, Module, Roadmap, Skill } from './schemas/index
 
 export const getLesson = (registry: ContentRegistry, lessonId: string): Lesson | undefined =>
   registry.lessons.get(lessonId)
+
+/**
+ * A lesson's compiled body, or `undefined` when the lesson has none.
+ *
+ * `undefined` is a real state, not an error: content that failed validation has
+ * no body, and the UI is expected to render an honest empty state rather than a
+ * broken page. Returning `[]` here would make "no body" and "an empty body"
+ * indistinguishable.
+ */
+export const lessonBody = (registry: ContentRegistry, lessonId: string): CompiledBody | undefined =>
+  registry.lessonBodies.get(lessonId)
 
 export const getModule = (registry: ContentRegistry, moduleId: string): Module | undefined =>
   registry.modules.get(moduleId)

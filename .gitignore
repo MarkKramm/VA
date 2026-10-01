@@ -44,3 +44,9 @@ pnpm-debug.log*
 # Local agent scratch — never committed
 .opencode/
 .claude/
+
+# Local OpenCode runtime configuration — provider/model/keyring for the agent
+# session. It is machine-local, contains no project content, and must never be
+# committed. Ignored here so it cannot be added by accident; ignored by Prettier
+# (.prettierignore) because `format:check` globs the working tree. See DECISIONS.md D20.
+opencode.json

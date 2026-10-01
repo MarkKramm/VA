@@ -10,6 +10,41 @@ All notable changes to this project. Format follows
 
 ## [Unreleased]
 
+### Added
+
+- **Build-time MDX compilation into a renderable element tree.** Lesson `.mdx` bodies are
+  parsed at build time (`unified` + `remark-parse` + `remark-mdx`) and converted into a
+  closed vocabulary of `text`/`element`/`component` nodes, then rendered by
+  `MdxContent` through an explicit component allowlist. No MDX or compiler package reaches
+  the browser. `DECISIONS.md` D22.
+- **An enforced MDX trust boundary.** The compiler refuses JavaScript expressions, JSX
+  spreads, expression-valued attributes, disallowed HTML elements, unsafe URLs
+  (`javascript:`, `data:`, protocol-relative) and reference-style links — each naming the
+  source file and failing the build. The renderer re-checks URLs and drops unknown props.
+  The URL policy and the alt-text requirement apply to both Markdown and JSX syntaxes.
+- **A built-output compiler-leak guard.** `scripts/check-paths.ts` now scans the emitted JS
+  for compiler markers, so a dependency that leaks only after bundling fails the build.
+  Proven to bite by injecting a marker.
+- **Tests: 241 (M1) → 283 (M2.1) → 351 across 21 files (M2.2).** The M2.2 slice adds
+  compiler behaviour and refusals against the real compiler, the renderer's semantic output
+  and trust boundary, the element allowlist, and body attachment by lesson id.
+
+### Changed
+
+- **Content frontmatter is parsed at build time, not in the browser.**
+  `vite-plugin-content.ts` reads and parses `.mdx` frontmatter in Node and serves the result
+  as the virtual module `virtual:content-data`; `content/index.ts` imports that module instead
+  of globbing and parsing. `gray-matter` and `js-yaml` are no longer in the client graph.
+  **The client JS dropped from 717 kB / 202 kB gzipped to ~473 kB / 146 kB** on an audience
+  largely using metered mobile connections. `DECISIONS.md` D21.
+- **The raw body text is measured at build time and dropped from the shipped module**, so the
+  compiled tree replaces it rather than duplicating it. MDX compilation therefore did not
+  regress the M2.1 bundle.
+- **`npm run check` is green end to end again.** `opencode.json` (machine-local OpenCode
+  runtime config) is now listed in `.gitignore` and `.prettierignore`, so the `format:check`
+  failure that had been carried since M1 is closed without touching the file itself
+  (`DECISIONS.md` D20).
+
 ## [0.2.0] — 2026-10-01 — M1 Application Shell
 
 The first usable application. M0 built a validated content pipeline with no interface; M1

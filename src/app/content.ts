@@ -2,12 +2,14 @@ import { registry } from '@/content/registry.ts'
 import {
   getModule,
   getRoadmap,
+  lessonBody,
   lessonsOfModule,
   lessonsOfRoadmap,
   modulesOfRoadmap,
   roadmapsByCareerPath,
 } from '@/content/selectors.ts'
 import type { CareerPath, Lesson, Module, Roadmap, Stage } from '@/content/schemas/index.ts'
+import type { CompiledBody } from '@content/mdx/tree.ts'
 
 /**
  * Content composition for the application layer.
@@ -171,4 +173,27 @@ export const startingLessons = (limit = 3): readonly Lesson[] => {
   const firstRoadmap = allRoadmaps()[0]
   if (!firstRoadmap) return []
   return lessonsOfRoadmap(registry, firstRoadmap.id).slice(0, limit)
+}
+
+/**
+ * A lesson with its compiled body, ready for a lesson page (M2.2).
+ *
+ * This is the seam function the future `LessonPage` consumes. It returns the
+ * validated lesson and its compiled tree together, so a component never has to
+ * join them itself and never touches the registry. `body` is `undefined` when the
+ * lesson has no compiled body, which the page renders as an honest empty state.
+ *
+ * Deliberately narrow: it does not add navigation, progress, or "next lesson".
+ * Those belong to a later milestone, and inventing them here would be exactly the
+ * scope creep `AGENTS.md` rule 6 forbids.
+ */
+export interface LessonWithBody {
+  readonly lesson: Lesson
+  readonly body: CompiledBody | undefined
+}
+
+export const findLesson = (lessonId: string): LessonWithBody | undefined => {
+  const lesson = registry.lessons.get(lessonId)
+  if (!lesson) return undefined
+  return { lesson, body: lessonBody(registry, lessonId) }
 }

@@ -8,56 +8,41 @@ is too large or work is not being closed out.
 
 ---
 
-## Current milestone: M1 — Application Shell · **complete, awaiting review**
+## Current milestone: M2 — Content Engine · **in progress**
 
-All three items are done. What follows is what remains, including the one thing that is
-**not** done.
+Two M2 slices are done. **M2.1** moved frontmatter parsing out of the browser (bundle
+717 kB → 468 kB gzipped: −56 kB). **M2.2** compiles lesson bodies at build time into a
+renderable tree and renders them through an explicit component allowlist, with no compiler in
+the client (473 kB / 146 kB gzipped). See `CHECKPOINT.md` and `DECISIONS.md` D21/D22. The
+three items below are the rest of M2.
 
-### 1. Deploy it — the M1 exit condition is not met
+### 1. A lesson page, rendering the compiled body
 
-`NEXT_STEPS.md` set M1's exit condition as a live URL at
-`https://markkramm.github.io/VA/`, navigable, keyboard-operable, responsive at 375 / 768 /
-1440, with a deep link surviving a hard refresh **on the real deployed site**.
+`findLesson(lessonId)` already returns the validated lesson and its compiled tree, and
+`MdxContent` renders it. Add the route and page. This is the first thing that exercises
+`prose.module.css`, the type scale and prose contrast against real long-form text — the two
+questions left open since M1 — so **look at it before declaring it done**.
 
-Everything needed is committed and locally verified: `deploy.yml`, `public/.nojekyll`, the
-`404.html` fallback, and `check-paths` (proven to fail on a deliberately broken build).
-**There is no git remote**, so the workflow has never run and there is no live URL.
+The route must be `:lessonId` (the stable id), never a file path.
 
-This needs a human: add the remote, push to `main`, and confirm the deployed deep-link
-refresh.
+### 2. Complete the roadmap page against the same data
 
-### 2. Review the shell in a browser at three widths
+Finish the roadmap page so a roadmap's stages, modules and lessons are navigable, reading
+through `src/app/content.ts` and `selectors.ts`. **Do not add placeholder routes** for
+anything not in this list.
 
-The responsive layout is verified by construction — fluid `clamp()` and `auto-fit` grids
-with one structural breakpoint at `md` — but no browser was driven at 375 / 768 / 1440.
-Worth doing before M2 builds on it.
+### 3. Exercises: the first entity that makes a lesson reach practice
 
-### 3. Decide whether the bundle size is acceptable to defer
-
-The build is **717 kB / 202 kB gzipped**, of which roughly **55 kB gzipped is
-`gray-matter`**, a Node YAML parser shipping to the browser. Measured by rebuilding with the
-parser stubbed out (717 kB → 469 kB).
-
-The fix is a build-time frontmatter transform, which is the M2 MDX pipeline. It was not
-patched at M1 because a hand-rolled YAML parser would duplicate a solved problem and risk
-disagreeing with `gray-matter` on an edge case. It is a real cost on a phone, so it is a
-decision rather than an oversight — see `BACKLOG.md` and `DECISIONS.md` D17.
+Every M0 lesson raises `quality/no-practice`. Add the exercise entity and its schema, wire
+lesson → exercise references, and let at least one real lesson reach practice, so the warning
+count falls by fact rather than by suppressing the check. Exercise content stays ungraded;
+scored assessment is M4.
 
 ---
 
-## After M1
+## Carry-over, not M2 — needs a human
 
-M2 (content engine) is scoped in `PLAN.md` section 16: MDX pipeline and component registry,
-the remaining entity schemas, lesson and roadmap pages, exercises, and search.
-
-Two things M1 should set up for M2 without building them:
-
-- ~~The stage renderer must **iterate a list**, because roadmaps will have two stages
-  sharing a `kind`. Do not key a component by stage kind.~~ **Done at M1.**
-  `stagesOfRoadmap` returns an ordered array of `{ stage, modules }` and
-  `RoadmapDetailPage` keys by index. `beginner-va` already has two stages sharing a module
-  across different kinds, so the real content exercises the case, and a test asserts all
-  three stages survive.
-- The MDX component registry should be a small, reviewed set. It is the one place content
-  can become code, so its size is a governance decision, not a convenience one. **Still
-  open** — an M2 decision that nothing at M1 depends on.
+**Deploy it.** The M1 exit condition is a live URL at `https://markkramm.github.io/VA/`, with
+a deep link surviving a hard refresh on the real deployed site. Everything needed is
+committed and locally verified, but **there is no git remote**, so the workflow has never run.
+This needs the owner to add the remote and push.

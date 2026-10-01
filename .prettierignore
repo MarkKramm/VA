@@ -11,3 +11,9 @@ test-results
 # file that is itself the record of architectural decisions.
 PLAN.md
 plan.md
+
+# Local OpenCode runtime configuration. It is not project code, must never be
+# committed (see .gitignore), and must never be reformatted — `format:check`
+# globs the working tree, so without this line the single CI gate fails on a file
+# nobody may touch. See DECISIONS.md D20.
+opencode.json

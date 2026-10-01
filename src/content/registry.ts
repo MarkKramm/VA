@@ -1,5 +1,6 @@
 import { contentPayloadBytes, rawContent } from '@content/index.ts'
 import { type z } from 'zod'
+import type { CompiledBody } from '@content/mdx/tree.ts'
 import { CareerPathSchema, type CareerPath } from './schemas/career-path.ts'
 import { SkillSchema, type Skill } from './schemas/skill.ts'
 import { ModuleSchema, type Module } from './schemas/module.ts'
@@ -61,6 +62,15 @@ export interface ContentRegistry {
   readonly skillModuleIds: ReadonlyMap<string, readonly string[]>
   /** lessonId -> careerPathId, via the owning modules' roadmaps. */
   readonly lessonCareerPathIds: ReadonlyMap<string, readonly string[]>
+  /**
+   * lessonId -> its compiled body tree (M2.2).
+   *
+   * Keyed by ID, not path, because the id is the stable identity a route uses.
+   * Built by joining each validated lesson's source path to the compiled tree the
+   * build produced for that path, so a lesson that fails validation has no body
+   * and a body can never be attributed to the wrong lesson.
+   */
+  readonly lessonBodies: ReadonlyMap<string, CompiledBody>
   /** Entity types this milestone has not created a collection for yet. */
   readonly pendingCollections: readonly string[]
   readonly issues: readonly RegistryIssue[]
@@ -84,6 +94,15 @@ export interface ContentSource {
   readonly lessons: readonly ContentFile[]
   readonly careerPaths: readonly unknown[]
   readonly skills: readonly unknown[]
+  /**
+   * Compiled lesson bodies, keyed by source path (M2.2).
+   *
+   * Optional because fixtures should not have to fabricate a body: a test that
+   * cares about validation has no reason to produce a compiled tree, and forcing
+   * one would make every existing fixture verbose for no gain. Production always
+   * supplies it (see `buildRegistry`).
+   */
+  readonly bodies?: ReadonlyMap<string, CompiledBody>
 }
 
 /**
@@ -261,6 +280,18 @@ export function buildRegistryFromSource(source: ContentSource): ContentRegistry 
     }
   }
 
+  // lessonId -> compiled body. The join is on the lesson's SOURCE PATH, because
+  // that is what the build compiler keyed its output by. Keying the result by id
+  // is what lets a route ask for a lesson body without knowing where the file
+  // lives -- file layout is an authoring detail, the id is the contract.
+  const lessonBodies = new Map<string, CompiledBody>()
+  if (source.bodies) {
+    for (const { value, path } of lessons) {
+      const body = source.bodies.get(path)
+      if (body) lessonBodies.set(value.id, body)
+    }
+  }
+
   return {
     careerPaths: indexById(careerPathValues),
     skills: indexById(skillValues),
@@ -276,6 +307,7 @@ export function buildRegistryFromSource(source: ContentSource): ContentRegistry 
     skillLessonIds,
     skillModuleIds,
     lessonCareerPathIds,
+    lessonBodies,
     pendingCollections: [
       'tools',
       'resources',

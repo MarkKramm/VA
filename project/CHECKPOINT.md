@@ -5,7 +5,210 @@ something that works.
 
 ---
 
-## Checkpoint: v0.2.0-application-shell
+## Checkpoint: M2.2 MDX compilation + rendering foundation (uncommitted with M2.1)
+
+**Date:** 2026-10-01
+**Milestone:** M2 — Content Engine (second slice)
+**Tag:** none — `v0.1.0-foundation` remains the only tag
+**Branch:** `main` · **HEAD:** `43a9a94` (M1 audit fixes) with M2.1 + M2.2 in the working tree
+
+### What this checkpoint is
+
+Lesson bodies now compile at **build time** into a plain, serializable element tree, and
+render in React through an explicit component allowlist. M2.1 moved frontmatter parsing out of
+the browser; M2.2 does the same for MDX compilation, so the client receives renderable data
+and no compiler. There is still **no lesson page** — that is the next slice.
+
+### Verified working
+
+- `npm run check` **passes end to end** — the canonical gate: format, lint, typecheck, content
+  validation, `check:contrast`, **351 tests across 21 files**, **16 architectural invariants**,
+  a build with the SPA fallback and the subpath verification, and the new built-output
+  compiler-leak guard.
+- **The bundle did not regress: 473.30 kB raw / 145.57 kB gzipped**, versus the M2.1 baseline
+  of 468.22 kB / 146.22 kB. Gzipped it is marginally _smaller_: the compiled tree replaced the
+  raw body text, which is dropped from the shipped module.
+- **No compiler in the client.** The built JS contains none of `YAMLException`, `mdast-util`,
+  `micromark`, `unified`, `hast-util`, `remark-parse`, `remark-mdx`, `gray-matter` or
+  `js-yaml`, while the compiled content is present.
+- **The built-output guard bites.** Injecting `YAMLException` into a built asset makes
+  `check-paths` fail with a message naming the leaked dependency. Proven, not assumed.
+- **The compiler's refusals are tested against the real compiler**, including the ones an
+  adversarial review found broken and that are now fixed: expression attributes, JSX spreads,
+  unsafe URLs on **both** syntaxes, and `<img>` without alt on either syntax.
+- **The renderer's output is semantic**, asserted through Testing Library roles: headings are
+  `h2`/`h3`, lists are `ul`/`ol`, links are focusable anchors, images carry alt, and text is
+  escaped (no `script` element appears).
+
+### Bugs caught during M2.2, and fixed
+
+Each was found by an adversarial review and then proven with a test:
+
+1. **Expression attributes silently became object props.** `<Callout title={name}>` stored the
+   whole AST node as the prop value and shipped it to the client, rendering `[object Object]`.
+   The documented refusal was false. Now any non-literal attribute value is refused.
+2. **The URL filter was bypassed by JSX syntax.** `[x](javascript:…)` was refused but
+   `<a href="javascript:…">` was not, so a writer could walk around the boundary by changing
+   syntax. The policy now runs on every emitted URL, on both syntaxes, and again at render.
+3. **JSX `<img>` skipped the alt-text requirement** that the Markdown image path enforced.
+   Now enforced for any `img`, whichever path produced it.
+4. **Reference-style links failed with an internal AST name.** `[text][ref]` threw
+   `unsupported MDX construct "linkReference"`, which an author cannot act on, behind a
+   comment that claimed `remark-parse` resolved references (it does not). Now refused with a
+   message that names the construct and the supported alternative.
+5. **Inline code compiled to an empty `<code>`.** `inlineCode` carries its text in `value`,
+   not `children`, so the generic child walk produced nothing. Fixed and noted in a comment.
+6. **The compiler/renderer element lists could drift.** A registry test asserts the allowlist
+   contains no scripting-capable element and does contain the semantic ones.
+7. **The ESLint content-boundary pattern did not match nested paths.** `@content/mdx/…` was
+   not caught by `@content/*` (minimatch `*` does not cross `/`); `@content/**` was added.
+
+### Not done, deliberately
+
+- **No lesson or roadmap page.** The tree renders, but no route displays it, so the renderer
+  is tree-shaken out of the current build. That is correct for a foundation slice, and the
+  renderer is covered by direct tests instead.
+- No exercises, search, progress UI, quizzes, tool directory, labs or career preparation.
+- **No custom components registered.** The allowlist is empty; no current content uses one.
+- Tables and reference-style links are unsupported (recorded in `BACKLOG.md`).
+- No new runtime dependency: `unified`, `remark-parse` and `remark-mdx` are devDependencies.
+
+### Not verified — read this before continuing
+
+- **There is still no live URL.** The repository has no git remote, so `deploy.yml` has never
+  run and M1's deployment exit condition remains unmet.
+- **No browser was driven at 375 / 768 / 1440.**
+- **M2 is not finished.** The lesson and roadmap pages are next, then exercises.
+
+The `format:check` failure carried since M1 — `prettier --check .` globbing the untracked,
+untouchable `opencode.json` — is resolved without touching that file: it is now listed in
+`.gitignore` and `.prettierignore` (`DECISIONS.md` D20). `npm run check` is fully green.
+
+### Files that must be understood before changing anything
+
+New at M2.2, in addition to the M2.1 table:
+
+| File                                      | Why it matters                                                            |
+| ----------------------------------------- | ------------------------------------------------------------------------- |
+| `content/mdx/compile.ts`                  | The build-time compiler. The trust boundary: what a body may become       |
+| `content/mdx/tree.ts`                     | The closed node vocabulary + `isSafeUrl`, shared by compiler and renderer |
+| `src/content/mdx/registry.ts`             | The component allowlist. The one place content can become code            |
+| `src/content/mdx/render.ts`               | The React renderer. Re-checks URLs; throws on an unknown component        |
+| `src/content/mdx/prose.module.css`        | Typography for every construct the compiler can emit                      |
+| `scripts/check-paths.ts`                  | Now also guards the built output against a compiler leak                  |
+| `src/domain/__tests__/boundaries.test.ts` | Invariant 6: the compiler stays at the build edge                         |
+
+### Do not change without a decision
+
+Everything in the M0/M1/M2.1 lists below, plus M2.2's: the "tree not a JavaScript module"
+choice, the closed node vocabulary, the URL policy and its application to both syntaxes, the
+alt-text requirement, the empty component allowlist, and the built-output leak guard.
+
+### Recommended next task
+
+**A lesson page**, rendering `findLesson(lessonId).body` through `MdxContent`. It is the
+first thing that exercises `prose.module.css`, the type scale and prose contrast against real
+long-form text — the two questions left open since M1.
+
+---
+
+## Earlier checkpoint: M2.1 content ingestion pipeline
+
+**Date:** 2026-10-01
+**Milestone:** M2 — Content Engine (first slice)
+**Tag:** none — `v0.1.0-foundation` remains the only tag
+**Branch:** `main` · **HEAD:** `43a9a94` (M1 audit fixes) with M2 changes in the working tree
+
+### What this checkpoint is
+
+The frontmatter parser moved out of the browser and into the build. At M1, `content/index.ts`
+imported `gray-matter` and called it at module scope, and that file is in the client graph, so
+a Node YAML parser shipped to every learner. M2 replaces that with `vite-plugin-content.ts`,
+which parses `.mdx` frontmatter in Node and serves a virtual module of plain data. Rendering
+the `.mdx` body is **not** part of this slice.
+
+### Verified working
+
+- `npm run check` passes end to end, **except** the one untracked-file caveat below:
+  `format:check` (on tracked files), lint, typecheck, content validation, `check:contrast`,
+  **283 tests across 18 files**, **14 architectural invariants**, a build with the SPA
+  fallback, and the subpath verification.
+- **The bundle shrank by a measured 56 kB gzipped: 717 kB / 202 kB → 468 kB / 146 kB
+  (raw −34.7%, gzipped −27.6%).** This is the whole reason for the change, and it was
+  measured by before/after builds rather than assumed.
+- **`gray-matter` and `js-yaml` are absent from the built JS.** Asserted by grepping the
+  built asset for `gray-matter`, `js-yaml`, `YAMLException`, `safeLoad` and others — all
+  absent — while the parsed content itself (`va-foundations`, `what-is-a-virtual-assistant`)
+  is present, proving the pipeline ran rather than the content being dropped.
+- **Invariant 6 is proven to bite, not just to pass.** Re-importing `gray-matter` into
+  `content/index.ts` makes two `test:arch` tests fail; restoring the file makes them pass.
+- **Malformed YAML now fails at parse time, with the file named**, instead of surfacing as a
+  downstream validation message. Tested with an unterminated string and a duplicate key.
+- The pipeline is exercised through the same path in every context: `content:check` runs the
+  registry through `vite-node`, which applies the plugin, and the counts (16 career paths,
+  2 roadmaps, 2 modules, 4 lessons, 19 skills) match the M1 baseline exactly.
+- The file walk is pinned against the **real** `content/` tree, not a fixture: it finds the
+  real counts, walks lessons recursively, returns sorted repo-relative paths, and ignores
+  non-`.mdx` files.
+
+### Bugs caught while building M2, and fixed
+
+1. **Generated import bindings contained hyphens.** The first plugin draft aliased
+   `careerPaths as __career-paths`, an invalid JS identifier. Found immediately by running
+   `content:check` rather than by inspecting the plugin.
+2. **The static data import specifier did not resolve.** `"content/career-paths.ts"` is not a
+   resolvable specifier in every context; changed to a root-relative `"/content/..."` that
+   Vite resolves identically in build, dev and `vite-node`.
+3. **A tab-indented YAML block does not throw in `gray-matter`.** An early malformed-input
+   test asserted it would, and failed. The test was wrong, not the parser; it was replaced
+   with inputs that genuinely are malformed (an unterminated string, a duplicate key).
+4. **The boundary check matched its own explanatory comment.** `content/index.ts` documents
+   that it no longer uses `import.meta.glob`, and the first version of the check matched that
+   prose. Comments are now stripped before matching — a check that cannot name the thing it
+   forbids is a check that gets weakened to pass.
+
+### Not done, deliberately
+
+- **No MDX compilation or rendering.** The body is still opaque text. This slice is the
+  ingestion pipeline only.
+- No lesson pages, no exercises, no search, no progress UI, no quizzes, no tool directory,
+  no labs, no career preparation. No placeholder routes.
+- No new runtime dependency. `gray-matter` remains a `devDependency`; the plugin is a build
+  concern and is imported only by `vite.config.ts`.
+
+### Not verified — read this before continuing
+
+- **There is still no live URL.** The repository has no git remote, so `deploy.yml` has never
+  run and M1's deployment exit condition remains unmet.
+- **No browser was driven at 375 / 768 / 1440.** Unchanged from M1.
+- **M2 is not finished.** This was the first of several M2 slices; MDX rendering followed at
+  M2.2.
+
+### Files that must be understood before changing anything
+
+New at M2, in addition to the M1 table below:
+
+| File                                      | Why it matters                                                                       |
+| ----------------------------------------- | ------------------------------------------------------------------------------------ |
+| `vite-plugin-content.ts`                  | The build-time ingestion. Only file that reads `content/` from disk and parses YAML  |
+| `content/virtual-content.d.ts`            | The contract between the plugin and `content/index.ts`. Deliberately loosely typed   |
+| `content/index.ts`                        | Now imports `virtual:content-data` instead of globbing. Still the single entry point |
+| `src/domain/__tests__/boundaries.test.ts` | Invariant 6 lives here: the parser must not reach the client                         |
+
+### Do not change without a decision
+
+Everything in the M0/M1 lists below, plus M2's: the build-time ingestion approach, the
+virtual-module shape, and the rule that `gray-matter` is build-only (D21).
+
+### Recommended next task
+
+**Compile and render the `.mdx` body**, with a small, reviewed component registry. That is
+the remaining M2 work named in `BACKLOG.md`, and the type-scale and prose-contrast questions
+above can only be answered once it exists.
+
+---
+
+## Earlier checkpoint: v0.2.0-application-shell
 
 **Date:** 2026-10-01
 **Milestone:** M1 — Application Shell

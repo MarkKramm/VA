@@ -16,13 +16,10 @@ Nothing here is scheduled. Items are listed so they are not forgotten, not as a 
 - ~~`check:paths` script and `postbuild-pages.mjs`~~ **Done at M1** as
   `scripts/check-paths.ts` and `scripts/copy-spa-fallback.ts`, both wired into
   `npm run build`.
-- **`gray-matter` is shipping to the browser (~55 kB gzipped).** `content/index.ts` parses
-  frontmatter at module scope, so the Node YAML parser ends up in the client graph. Measured:
-  the build is 717 kB / 202 kB gzipped, and 469 kB with the parser stubbed out. The fix is a
-  build-time frontmatter transform, which is the M2 MDX pipeline — deliberately not patched
-  at M1, because a hand-rolled YAML parser would duplicate a solved problem and could
-  disagree with `gray-matter` on an edge case. Revisit with M2; if M2 slips, this is the
-  reason to pull it forward.
+- ~~**`gray-matter` is shipping to the browser (~55 kB gzipped).**~~ **Done at M2.** The
+  build-time ingestion plugin (`vite-plugin-content.ts`) parses `.mdx` frontmatter in Node
+  and serves `virtual:content-data`; the client bundle went from 717 kB / 202 kB gzipped to
+  468 kB / 146 kB. See `DECISIONS.md` D21 and invariant 6.
 - **Reusable dialog primitive.** The mobile nav's focus trap is hand-rolled and tested
   (`DECISIONS.md` D18). Replace it rather than extend it once a second dialog exists.
 - **Drive a real browser at 375 / 768 / 1440.** The responsive layout is verified by
@@ -31,6 +28,24 @@ Nothing here is scheduled. Items are listed so they are not forgotten, not as a 
 
 ## M2 content engine
 
+- **MDX compilation and rendering, plus the component registry.** ~~Done at M2.2~~
+  `content/mdx/compile.ts` compiles bodies at build time into a serializable tree, and
+  `src/content/mdx/render.ts` renders it through the allowlist in `registry.ts`. The **lesson
+  page** that consumes it is the remaining M2 work.
+- **GFM tables.** Base `remark-parse` leaves tables as text. Enabling `remark-gfm` is a
+  deliberate, separate decision (it changes the parser's behaviour for several constructs at
+  once). The renderer and `ALLOWED_ELEMENTS` already define the `table`/`thead`/`tbody`/`tr`/
+  `th`/`td` mappings, so the work is the parser change plus tests.
+- **Reference-style links and footnotes.** `[text][ref]` and `[^1]` are refused with an
+  author-facing message, because resolving them needs a remark pass the compiler does not run.
+  Supporting them is a small addition to `content/mdx/compile.ts`.
+- **A second custom MDX component.** The allowlist is empty on purpose. When the first real
+  component is authored (a `Callout`, a `KeyPoint`), add one entry to
+  `src/content/mdx/registry.ts` and a test that it renders. Two components is when a
+  block-vs-inline distinction may become worth expressing in the tree.
+- **A heading-level rule for lesson bodies.** A lesson body may contain `#`, which would put
+  an `h1` next to the page's own `h1`. Decide whether lesson bodies should be refused an `h1`
+  (and the page owns the only one), or whether the page renders no `h1`. No test covers this.
 - **The stale-tool report.** A tool whose `updatedAt` is newer than the `updatedAt` of the
   lessons referencing it. Needs the tools collection (M5); a derivation over the existing
   reverse indexes, so a few lines once the collection exists.
@@ -39,13 +54,13 @@ Nothing here is scheduled. Items are listed so they are not forgotten, not as a 
 
 ## Development environment
 
-- **Scope `format:check` to tracked and explicitly-listed files.** `prettier --check .`
-  globs the whole working tree, so any untracked, non-Prettier file in the root fails the
-  gate. Today that file is `opencode.json`, which is live OpenCode runtime configuration
-  and must not be moved or reformatted to clear the failure (`DECISIONS.md` D20). The fix
-  is to pass Prettier the tracked file list (plus `dist`-free globs) instead of `.`. Until
-  then, validate the files under test and report the limitation rather than touching the
-  configuration.
+- ~~**Scope `format:check` so it does not fail on untracked local config.**~~ **Resolved at
+  M2.2.** The immediate failure — `prettier --check .` flagging the untracked `opencode.json`
+  — is fixed by listing it in `.prettierignore` and `.gitignore` (`DECISIONS.md` D20), which
+  is the durable fix for that specific file: it is machine-local runtime config that must
+  never be committed or reformatted. A broader "check tracked files only" change is still
+  available if a _different_ untracked file ever trips the gate, but it is no longer needed
+  to keep CI green.
 
 ## Milestone-gated
 

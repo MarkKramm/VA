@@ -1,6 +1,7 @@
 import { fileURLToPath, URL } from 'node:url'
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import { contentPlugin } from './vite-plugin-content.ts'
 
 /**
  * Vite configuration.
@@ -14,7 +15,13 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   base: '/VA/',
 
-  plugins: [react()],
+  /*
+   * `contentPlugin()` runs first (`enforce: 'pre'`) so the virtual content module
+   * resolves before anything tries to bundle it. It parses `.mdx` frontmatter in
+   * Node, at build time, and is the reason `gray-matter` no longer reaches the
+   * browser. See vite-plugin-content.ts and DECISIONS.md D12/D21.
+   */
+  plugins: [contentPlugin(), react()],
 
   resolve: {
     alias: {
@@ -45,24 +52,16 @@ export default defineConfig({
     /*
      * The bundle-size warning budget.
      *
-     * Set from the M1 build's MEASURED size (717 kB raw / 202 kB gzipped) plus
-     * headroom, not a guess. Its job is to catch an unanticipated jump in review,
-     * and it has done that already — see the note below.
+     * RESOLVED AT M2. At M1 the build was 717 kB / 202 kB gzipped, of which about
+     * 248 kB raw / 55 kB gzipped was `gray-matter` and `js-yaml`, a Node YAML
+     * parser compiled into the browser because `content/index.ts` parsed `.mdx`
+     * frontmatter at module scope.
      *
-     * KNOWN AND MEASURED: roughly 248 kB raw / 55 kB gzipped of this bundle is
-     * `gray-matter`, a Node YAML parser, shipping to the browser. It is included
-     * because `content/index.ts` parses `.mdx` frontmatter at module scope, and
-     * that module is in the client graph.
-     *
-     * The correct fix is a build-time transform that pre-parses frontmatter into
-     * plain data, which is exactly the MDX pipeline scheduled for M2. It is NOT
-     * patched here: M1 is explicitly scoped to the shell, and a half-fix (a
-     * hand-rolled YAML parser in `content/`) would duplicate a solved problem and
-     * risk disagreeing with `gray-matter` on an edge case. Recorded in
-     * `project/BACKLOG.md` with the measurement.
-     *
-     * This matters because the audience is largely on mobile connections, where
-     * 55 kB of unused parser is a real cost on every first load.
+     * `vite-plugin-content.ts` now does that parsing in Node at build time and
+     * serves the result as a virtual module, so the parser no longer reaches the
+     * client graph. The budget is kept as a regression guard: if the parser ever
+     * leaks back in, this limit catches it in review rather than on a learner's
+     * phone. See `project/CHECKPOINT.md` for the measured before/after.
      */
     chunkSizeWarningLimit: 750,
   },

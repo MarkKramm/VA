@@ -160,6 +160,48 @@ for (const asset of referencedAssets) {
   }
 }
 
+/*
+ * No MDX/frontmatter compiler in the client bundle.
+ *
+ * THE FAILURE THIS CATCHES
+ *
+ * M2.1 moved YAML frontmatter parsing and M2.2 moved MDX compilation to build
+ * time, specifically so neither reaches a learner. A source-level check
+ * (`boundaries.test.ts`, invariant 6) asserts no `src/` file imports the parser,
+ * but a source check cannot see a transitive re-export, a plugin, or a bundler
+ * transform. The only way to know what shipped is to look at what shipped.
+ *
+ * The markers are distinctive strings from the packages themselves — a runtime
+ * error class, a package-internal identifier — rather than the bare package name,
+ * which could appear in a comment or a source map. If any is present, a compiler
+ * leaked into the client and the bundle has regressed even though every test
+ * passed.
+ */
+const FORBIDDEN_IN_CLIENT = [
+  'YAMLException', // js-yaml / gray-matter
+  'mdast-util', // remark pipeline
+  'micromark', // remark-parse's engine
+  'unified', // the processor framework
+  'hast-util', // remark/rehype bridge
+]
+
+const builtJs = existsSync(join(DIST, 'assets'))
+  ? readdirSync(join(DIST, 'assets')).filter((name) => name.endsWith('.js'))
+  : []
+
+for (const asset of builtJs) {
+  const contents = readFileSync(join(DIST, 'assets', asset), 'utf8')
+  for (const marker of FORBIDDEN_IN_CLIENT) {
+    if (contents.includes(marker)) {
+      failures.push(
+        `assets/${asset} contains "${marker}". A build-only dependency has leaked into\n` +
+          '    the client bundle. Content parsing and MDX compilation must stay at build time\n' +
+          '    (DECISIONS.md D21/D22).',
+      )
+    }
+  }
+}
+
 /* --- report -------------------------------------------------------------- */
 
 const assetFiles = existsSync(join(DIST, 'assets')) ? readdirSync(join(DIST, 'assets')).length : 0

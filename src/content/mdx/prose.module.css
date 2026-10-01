@@ -1,0 +1,197 @@
+/*
+ * Prose styles for compiled lesson bodies (M2.2).
+ *
+ * This is the ONE place lesson long-form text is styled, and it is deliberately
+ * scoped to the `.prose` root that `MdxContent` renders. It does not use
+ * descendant selectors to reach into unrelated components; every rule here is
+ * about an element a compiled body can actually produce, which is the set in
+ * `content/mdx/tree.ts#ALLOWED_ELEMENTS`.
+ *
+ * The rules are element-based on purpose. The renderer emits real HTML elements
+ * (`<h2>`, `<p>`, `<ul>`, `<blockquote>`), so the styling attaches to semantics
+ * rather than to generated class names, and a heading is visually a heading even
+ * if this stylesheet is never loaded. That is the accessibility posture the
+ * design system commits to: structure is real, presentation is a layer on top.
+ *
+ * Every value is a token. There are no magic numbers, and no colour is chosen
+ * here — `DESIGN_SYSTEM.md` §4 makes the type scale and `tokens.css` makes the
+ * palette, and this file consumes both.
+ */
+
+.prose {
+  /* Lesson text is capped at the prose measure, not the full container width. */
+  max-width: var(--measure-prose);
+  color: var(--color-text-primary);
+  font-size: var(--text-base);
+  line-height: var(--leading-relaxed);
+}
+
+/* --- vertical rhythm ------------------------------------------------------ *
+ * A single owl selector gives consistent space between blocks without a margin
+ * on every element, so an element's own margin never fights another's. The `+`
+ * means only the start of the body and after an element get spacing.
+ */
+
+.prose > * + * {
+  margin-top: var(--space-5);
+}
+
+.prose h2,
+.prose h3,
+.prose h4,
+.prose h5,
+.prose h6 {
+  /* More space above a heading than below it ties it to the text it introduces. */
+  margin-top: var(--space-8);
+  color: var(--color-text-primary);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-tight);
+  letter-spacing: var(--tracking-tight);
+}
+
+.prose > * + h2,
+.prose > * + h3,
+.prose > * + h4 {
+  margin-top: var(--space-8);
+}
+
+.prose h2 {
+  font-size: var(--text-2xl);
+}
+
+.prose h3 {
+  font-size: var(--text-xl);
+}
+
+.prose h4 {
+  font-size: var(--text-lg);
+}
+
+.prose h5,
+.prose h6 {
+  font-size: var(--text-md);
+}
+
+.prose p {
+  /* `overflow-wrap` is set globally on `body`; inherited here by default. */
+  margin: 0;
+}
+
+.prose a {
+  color: var(--color-accent-text);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+  /* Links must remain keyboard-visible; the global focus ring supplies the rest. */
+  text-decoration-thickness: from-font;
+}
+
+.prose a:hover {
+  color: var(--color-accent-hover);
+}
+
+.prose strong {
+  font-weight: var(--weight-semibold);
+  color: var(--color-text-primary);
+}
+
+.prose em {
+  font-style: italic;
+}
+
+/* --- lists ---------------------------------------------------------------- */
+
+.prose ul,
+.prose ol {
+  /* The list keeps its marker but gains its own measure, so a wrapped item does
+     not run under the marker. */
+  padding-inline-start: var(--space-6);
+}
+
+.prose li + li {
+  margin-top: var(--space-2);
+}
+
+/* A markdown list item wraps its text in a `<p>`. That paragraph must not add
+   its own block spacing inside the item, or every bullet gap doubles. */
+.prose li > p {
+  margin: 0;
+}
+
+/* --- code ----------------------------------------------------------------- */
+
+.prose code {
+  /* Inline code only; a fenced block's `<code>` is reset below. */
+  padding: 0.1em 0.35em;
+  border-radius: var(--radius-sm);
+  background-color: var(--color-surface-inset);
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+}
+
+.prose pre {
+  overflow-x: auto;
+  padding: var(--space-4);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-md);
+  background-color: var(--color-surface-sunken);
+  /* A long line scrolls inside the block rather than widening the page. */
+  max-width: 100%;
+}
+
+.prose pre code {
+  padding: 0;
+  background: none;
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+}
+
+/* --- quotes and rules ----------------------------------------------------- */
+
+.prose blockquote {
+  padding-inline-start: var(--space-5);
+  border-inline-start: var(--border-width-thick) solid var(--color-accent-border);
+  color: var(--color-text-secondary);
+}
+
+.prose blockquote p + p {
+  margin-top: var(--space-4);
+}
+
+.prose hr {
+  border: none;
+  border-top: var(--border-width) solid var(--color-border);
+}
+
+/* --- media ---------------------------------------------------------------- */
+
+.prose img {
+  max-width: 100%;
+  height: auto;
+  border-radius: var(--radius-md);
+}
+
+/* --- tables --------------------------------------------------------------- *
+ * Not reachable with current content (GFM tables are off), but styled so
+ * enabling `remark-gfm` later is a compiler change and nothing else. A wide
+ * table scrolls rather than breaking the layout.
+ */
+
+.prose table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+  display: block;
+  overflow-x: auto;
+}
+
+.prose th,
+.prose td {
+  padding: var(--space-2) var(--space-3);
+  border: var(--border-width) solid var(--color-border);
+  text-align: start;
+}
+
+.prose th {
+  background-color: var(--color-surface-sunken);
+  font-weight: var(--weight-semibold);
+}

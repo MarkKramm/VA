@@ -20,7 +20,7 @@ import tseslint from 'typescript-eslint'
 const NO_DIRECT_CONTENT_IMPORTS = {
   patterns: [
     {
-      group: ['@content/*', '**/content/*'],
+      group: ['@content/*', '@content/**', '**/content/*', '**/content/**'],
       message:
         'UI code must not import from content/. Read the curriculum through the registry in src/content/ (selectors). See ARCHITECTURE.md.',
     },
@@ -40,7 +40,7 @@ const DOMAIN_ISOLATION = {
         'src/domain/ must not depend on the app or feature layers. Dependencies point one way.',
     },
     {
-      group: ['@content/*', '**/content/*'],
+      group: ['@content/*', '@content/**', '**/content/*', '**/content/**'],
       message:
         'src/domain/ takes plain data as arguments rather than importing content. Composition happens in src/app/ hooks.',
     },
