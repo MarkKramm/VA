@@ -10,33 +10,26 @@ is too large or work is not being closed out.
 
 ## Current milestone: M2 — Content Engine · **in progress**
 
-Two M2 slices are done. **M2.1** moved frontmatter parsing out of the browser (bundle
+Three M2 slices are done. **M2.1** moved frontmatter parsing out of the browser (bundle
 717 kB → 468 kB gzipped: −56 kB). **M2.2** compiles lesson bodies at build time into a
 renderable tree and renders them through an explicit component allowlist, with no compiler in
-the client (473 kB / 146 kB gzipped). See `CHECKPOINT.md` and `DECISIONS.md` D21/D22. The
-three items below are the rest of M2.
+the client. **M2.3** connects that tree to the application: `/lessons/:lessonId`, the lesson
+page, roadmap → module → lesson navigation, breadcrumbs, deterministic previous/next, and the
+missing-content states (482 kB / 148 kB gzipped; the small increase is the lesson page and
+renderer now shipping). See `CHECKPOINT.md` and `DECISIONS.md` D21/D22/D23. Two items remain.
 
-### 1. A lesson page, rendering the compiled body
-
-`findLesson(lessonId)` already returns the validated lesson and its compiled tree, and
-`MdxContent` renders it. Add the route and page. This is the first thing that exercises
-`prose.module.css`, the type scale and prose contrast against real long-form text — the two
-questions left open since M1 — so **look at it before declaring it done**.
-
-The route must be `:lessonId` (the stable id), never a file path.
-
-### 2. Complete the roadmap page against the same data
-
-Finish the roadmap page so a roadmap's stages, modules and lessons are navigable, reading
-through `src/app/content.ts` and `selectors.ts`. **Do not add placeholder routes** for
-anything not in this list.
-
-### 3. Exercises: the first entity that makes a lesson reach practice
+### 1. Exercises: the first entity that makes a lesson reach practice
 
 Every M0 lesson raises `quality/no-practice`. Add the exercise entity and its schema, wire
 lesson → exercise references, and let at least one real lesson reach practice, so the warning
 count falls by fact rather than by suppressing the check. Exercise content stays ungraded;
 scored assessment is M4.
+
+### 2. Close out M2
+
+Re-read `PLAN.md` §60/§73/§84 against what M2 actually built. Confirm the slice boundaries are
+recorded, the `quality/no-practice` warnings have fallen by fact, and nothing in the milestone
+is half-finished. Then update the orientation files and move to M3.
 
 ---
 

@@ -1,6 +1,7 @@
 import { createBrowserRouter } from 'react-router'
 import { AppShell } from '@/components/layout/AppShell.tsx'
 import { DashboardPage } from '@/features/dashboard/DashboardPage.tsx'
+import { LessonPage } from '@/features/lessons/LessonPage.tsx'
 import { NotFoundPage, RouteErrorPage } from '@/features/roadmaps/NotFoundPage.tsx'
 import { RoadmapDetailPage } from '@/features/roadmaps/RoadmapDetailPage.tsx'
 import { RoadmapsPage } from '@/features/roadmaps/RoadmapsPage.tsx'
@@ -55,6 +56,13 @@ export const router = createBrowserRouter(
           path: 'roadmaps/:roadmapId',
           element: <RoadmapDetailPage />,
         },
+        /*
+         * Lessons are addressed by their stable ID (`:lessonId`), never by file
+         * path. The id is immutable once published (see `primitives.ts`), so a
+         * URL stays valid across a content reorganisation — which is the whole
+         * reason the route is keyed on it.
+         */
+        { path: 'lessons/:lessonId', element: <LessonPage /> },
         { path: '*', element: <NotFoundPage /> },
       ],
     },

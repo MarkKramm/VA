@@ -164,6 +164,31 @@ describe('shell — routing', () => {
     expect(screen.getByRole('heading', { level: 1, name: 'Beginner VA' })).toBeInTheDocument()
   })
 
+  it('opens a lesson from a roadmap by clicking its title (M2.3)', async () => {
+    const user = userEvent.setup()
+    renderApp({ initialEntries: ['/roadmaps/beginner-va'] })
+    // The roadmap page lists lessons as links now that lesson pages exist. The
+    // "Open <first lesson>" card button also links to the same lesson, so this
+    // scopes to the stage list rather than matching either by accident.
+    const stages = screen.getByRole('heading', { name: 'Stages' }).closest('section')
+    expect(stages).not.toBeNull()
+    await user.click(
+      within(stages as HTMLElement).getByRole('link', { name: /what is a virtual assistant/i }),
+    )
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(
+      /what is a virtual assistant/i,
+    )
+  })
+
+  it('opens a lesson from the dashboard "Start here" list (M2.3)', async () => {
+    const user = userEvent.setup()
+    renderApp({ initialEntries: ['/'] })
+    await user.click(screen.getByRole('link', { name: /what is a virtual assistant/i }))
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(
+      /what is a virtual assistant/i,
+    )
+  })
+
   it('renders the in-app 404 for an unknown roadmap id, not an error', () => {
     renderApp({ initialEntries: ['/roadmaps/does-not-exist'] })
     // A 404 is the learner's URL being wrong, so it must not read as a failure.

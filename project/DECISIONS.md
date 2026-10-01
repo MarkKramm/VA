@@ -665,3 +665,89 @@ an author who wrote nothing.
   no current content reaches it. Recorded in `BACKLOG.md`.
 - Reference-style links (`[text][ref]`) are refused with an author-facing message rather than
   an internal AST type name. Supporting them is a small later addition, in `BACKLOG.md`.
+
+---
+
+## D23 — The MDX renderer is a presentation component; the compiled-body format is read through a seam
+
+**Date:** 2026-10-01 (M2.3)
+
+**Context.** D22 put the renderer (`MdxContent`), the component allowlist and the prose
+stylesheet under `src/content/mdx/`, beside the build-time compiler. At M2.2 nothing in
+`src/features/` rendered a body, so the placement was never tested against the ESLint layer
+rule. M2.3 adds the lesson page, which must render a compiled body — and the rule forbids
+`src/features/` and `src/components/` from importing anything matching `content/*`. The lesson
+page's first import of the renderer failed lint, correctly.
+
+**Options.** (a) Add an ESLint exemption for the renderer path. (b) Re-export the renderer from
+`src/app/content.ts` (the data seam) and import it from there. (c) Move the renderer, the
+allowlist and the prose CSS to `src/components/mdx/`, and expose only the format types and the
+one runtime helper (`isSafeUrl`) the renderer needs through a new `src/app/mdx.ts` seam.
+
+**Choice.** (c).
+
+**Reason.**
+
+- (a) is the escape hatch the architecture exists to prevent. "Just this once, import from
+  `content/`" is exactly how a boundary becomes decorative, and `ARCHITECTURE.md` places a
+  UI component used by a feature in the components layer, not the data layer.
+- (b) would put a React component in a file whose job is composing DATA for pages. The renderer
+  is presentation; it belongs where presentation lives.
+- (c) is the placement the architecture already describes. The renderer turns data into DOM —
+  the definition of the components layer — and it is used by a feature, which is what makes it
+  cross-feature. It depends on exactly two things from the data layer: the node **types** and
+  `isSafeUrl`. Types are erased; `isSafeUrl` is a pure function with no parser. Exposing those
+  two through `src/app/mdx.ts` mirrors the existing content seam and means no feature or
+  component imports `content/` at all.
+
+**What moved.** `src/content/mdx/{render.ts, registry.ts, prose.module.css}` →
+`src/components/mdx/{render.tsx, registry.ts, prose.module.css}`. The tree FORMAT stays at
+`content/mdx/tree.ts`: it is a property of what the build produces, not of the application.
+
+**Consequences.**
+
+- New file `src/app/mdx.ts`: re-exports the compiled-body types and `isSafeUrl`. It is the
+  second permitted UI-side seam, and the only other consumer of `@content/` besides
+  `src/content/registry.ts`.
+- Invariant 3 (single content entry point) is narrowed, not weakened: it now exempts (i) a
+  `type`-only import and (ii) an import of `content/mdx/tree.ts`, the format contract that
+  holds no curriculum data. Both exemptions are named and documented; every real curriculum
+  read still fails the check. This is the same reasoning the file already used for type-only
+  imports at M2.2.
+- Invariant 6 keeps its explicit package list rather than a `/mdx/` pattern, so our own
+  `src/components/mdx/` modules are not mistaken for the compiler.
+- The renderer now applies its **own** `.prose` class. Relying on the caller to pass one was a
+  latent bug: the caller's `.prose` was a layout rule, so the typography never loaded, and a
+  test passed anyway because the harness passed the literal string `'prose'`. The class now
+  comes from the renderer's CSS module and is combined with, not replaced by, the caller's.
+
+---
+
+## D24 — A lesson body may not contain an h1
+
+**Date:** 2026-10-01 (M2.3)
+
+**Context.** The lesson page renders the lesson title as the page's single `<h1>`. The
+compiler's element allowlist included `h1`, so a body containing `# Heading` (or a setext
+`===` heading) would produce a second `<h1>` and a page whose outline claims two different
+things are the title. No current content does this, so the bug was latent — but "no current
+content does this" is not a guarantee about future content.
+
+**Options.** (a) Allow `h1` and accept a duplicate. (b) Silently demote a body's `h1` to `h2`
+in the compiler. (c) Refuse an `h1` in a lesson body at compile time, naming the file.
+
+**Choice.** (c).
+
+**Reason.** (a) breaks the accessibility commitment the design system makes. (b) hides a real
+authoring mistake and, worse, teaches the author the wrong level: they would never learn that
+body headings start at `h2`. Every other unsupported construct in this compiler is refused
+loudly with the file and line named; an `h1` is no different.
+
+**Consequences.**
+
+- `content/mdx/compile.ts` refuses `depth <= 1` in the `heading` case, with an author-facing
+  message. `headingTag` clamps to `h2`–`h6` as a belt-and-braces floor.
+- The compiler tests assert both the refusal and the remaining `h2`–`h6` behaviour, and the
+  lesson page test asserts exactly one `h1` on a rendered page.
+- Existing M2.2 test fixtures that compiled `# Heading` bodies were corrected to `##`, which is
+  the level a body should use.

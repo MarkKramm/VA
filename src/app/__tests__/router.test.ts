@@ -87,30 +87,29 @@ describe('router — basename', () => {
 })
 
 describe('router — route table', () => {
-  it('defines the M1 routes', () => {
+  it('defines the routes that exist at M2.3', () => {
     const source = read('src/app/router.tsx')
     expect(source).toContain('index: true')
     expect(source).toContain("path: 'roadmaps'")
     expect(source).toContain("path: 'roadmaps/:roadmapId'")
+    // The lesson route arrived at M2.3. It is keyed on the stable lesson id.
+    expect(source).toContain("path: 'lessons/:lessonId'")
     expect(source).toContain("path: '*'")
     expect(source).toContain('errorElement')
   })
 
   it('contains no route from a later milestone', () => {
-    // `PLAN.md` §73 and the M1 brief both forbid building future features. A nav
-    // entry or route pointing at something that does not exist is worse than
-    // nothing: it promises a feature and then 404s.
+    // `PLAN.md` §73 and the milestone briefs both forbid building future
+    // features. A nav entry or route pointing at something that does not exist is
+    // worse than nothing: it promises a feature and then 404s.
+    //
+    // `/lessons` was removed from this list at M2.3, because the lesson route now
+    // exists. The rule is not "these paths are forbidden forever" — it is "no
+    // route may point at a feature that has not been built". What remains below
+    // genuinely does not exist yet.
     const source = read('src/app/router.tsx')
-    for (const future of [
-      '/lessons',
-      '/quiz',
-      '/labs',
-      '/tools',
-      '/portfolio',
-      '/jobs',
-      '/skills',
-    ]) {
-      expect(source, `route ${future} must not exist at M1`).not.toContain(`path: '${future}'`)
+    for (const future of ['/quiz', '/labs', '/tools', '/portfolio', '/jobs', '/skills']) {
+      expect(source, `route ${future} must not exist yet`).not.toContain(`path: '${future}'`)
     }
   })
 

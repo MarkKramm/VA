@@ -192,7 +192,9 @@ export const DashboardPage = () => {
                       {index + 1}
                     </span>
                     <div className={styles.lessonText}>
-                      <p className={styles.lessonTitle}>{lesson.title}</p>
+                      <Link to={`/lessons/${lesson.id}`} className={styles.lessonTitle}>
+                        {lesson.title}
+                      </Link>
                       <p className={styles.lessonMeta}>
                         {formatDuration(lesson.estimatedMinutes)} · {lesson.difficulty}
                       </p>

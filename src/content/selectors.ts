@@ -89,6 +89,34 @@ export const lessonsForSkill = (registry: ContentRegistry, skillId: string): Les
     return lesson ? [lesson] : []
   })
 
+/**
+ * Resolve a list of lesson ids to lesson records, dropping unknown ids.
+ *
+ * Order is PRESERVED exactly as given, and duplicates are dropped the same way
+ * `lessonsOfRoadmap` drops them. This is what lets a caller turn a lesson's
+ * `related` (or `prerequisites`) ids into records without reaching into the raw
+ * map, and without the order-in / order-out guarantee being lost.
+ */
+export const lessonsByIds = (registry: ContentRegistry, lessonIds: readonly string[]): Lesson[] => {
+  const seen = new Set<string>()
+  const out: Lesson[] = []
+  for (const id of lessonIds) {
+    if (seen.has(id)) continue
+    const lesson = registry.lessons.get(id)
+    if (!lesson) continue
+    seen.add(id)
+    out.push(lesson)
+  }
+  return out
+}
+
+/** Resolve a list of skill ids to skill records, in the order given, dropping unknown ids. */
+export const skillsByIds = (registry: ContentRegistry, skillIds: readonly string[]): Skill[] =>
+  skillIds.flatMap((id) => {
+    const skill = registry.skills.get(id)
+    return skill ? [skill] : []
+  })
+
 export const modulesForSkill = (registry: ContentRegistry, skillId: string): Module[] =>
   (registry.skillModuleIds.get(skillId) ?? []).flatMap((id) => {
     const module = registry.modules.get(id)
@@ -107,6 +135,39 @@ export const careerPathsOfLesson = (registry: ContentRegistry, lessonId: string)
     const careerPath = registry.careerPaths.get(id)
     return careerPath ? [careerPath] : []
   })
+
+/**
+ * The FIRST module that declares a lesson, in registry order.
+ *
+ * `lessonModuleIds` is a reverse index, so it is already in the order the modules
+ * were indexed. A lesson can legitimately appear in more than one module (that is
+ * the whole reuse model), but a lesson page needs ONE parent to build a
+ * breadcrumb and a "where this sits" statement. Returning the first is
+ * deterministic because the registry indexes in sorted file order, and returning
+ * a single module rather than a list keeps the caller from having to invent a
+ * rule for what "the" parent is.
+ *
+ * The full list is still available via `modulesOfLesson` for any caller that
+ * genuinely needs every membership.
+ */
+export const primaryModuleOfLesson = (
+  registry: ContentRegistry,
+  lessonId: string,
+): Module | undefined => {
+  const [firstModuleId] = registry.lessonModuleIds.get(lessonId) ?? []
+  return firstModuleId ? registry.modules.get(firstModuleId) : undefined
+}
+
+/** The first roadmap that contains a lesson, through its primary module. */
+export const primaryRoadmapOfLesson = (
+  registry: ContentRegistry,
+  lessonId: string,
+): Roadmap | undefined => {
+  const module = primaryModuleOfLesson(registry, lessonId)
+  if (!module) return undefined
+  const [firstRoadmapId] = registry.moduleRoadmapIds.get(module.id) ?? []
+  return firstRoadmapId ? registry.roadmaps.get(firstRoadmapId) : undefined
+}
 
 /** The roadmaps grouped under each career path, in display order. */
 export const roadmapsByCareerPath = (registry: ContentRegistry): Map<string, Roadmap[]> => {

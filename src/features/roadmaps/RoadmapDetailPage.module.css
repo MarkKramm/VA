@@ -194,6 +194,14 @@
   min-width: 0;
   font-weight: var(--weight-medium);
   overflow-wrap: break-word;
+  color: var(--color-text-primary);
+  text-decoration: none;
+}
+
+.lessonTitle:hover {
+  color: var(--color-accent-text);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
 }
 
 .lessonMeta {

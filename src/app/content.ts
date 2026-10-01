@@ -3,12 +3,16 @@ import {
   getModule,
   getRoadmap,
   lessonBody,
+  lessonsByIds,
   lessonsOfModule,
   lessonsOfRoadmap,
   modulesOfRoadmap,
+  primaryModuleOfLesson,
+  primaryRoadmapOfLesson,
   roadmapsByCareerPath,
+  skillsByIds,
 } from '@/content/selectors.ts'
-import type { CareerPath, Lesson, Module, Roadmap, Stage } from '@/content/schemas/index.ts'
+import type { CareerPath, Lesson, Module, Roadmap, Skill, Stage } from '@/content/schemas/index.ts'
 import type { CompiledBody } from '@content/mdx/tree.ts'
 
 /**
@@ -196,4 +200,122 @@ export const findLesson = (lessonId: string): LessonWithBody | undefined => {
   const lesson = registry.lessons.get(lessonId)
   if (!lesson) return undefined
   return { lesson, body: lessonBody(registry, lessonId) }
+}
+
+/**
+ * A resolved reference to another lesson, for navigation and link lists.
+ *
+ * Only what a link needs: the id (the route), the title, and enough context to
+ * tell two lessons apart at a glance. Resolved here rather than in the component
+ * so a feature never holds a raw id and never touches the registry.
+ */
+export interface LessonLink {
+  readonly id: string
+  readonly title: string
+  readonly estimatedMinutes: number
+}
+
+const toLessonLink = (lesson: Lesson): LessonLink => ({
+  id: lesson.id,
+  title: lesson.title,
+  estimatedMinutes: lesson.estimatedMinutes,
+})
+
+/** Turn lessons into link references, for a page that lists them. */
+export const toLessonLinks = (lessons: readonly Lesson[]): readonly LessonLink[] =>
+  lessons.map(toLessonLink)
+
+/**
+ * Everything a lesson page needs, in one read.
+ *
+ * WHY ONE FUNCTION AND NOT SIX
+ *
+ * The page needs the lesson, its body, its position in a roadmap, the previous
+ * and next lessons in that roadmap's order, its prerequisites, its related
+ * lessons, and its skills. Exposing seven separate seam functions would push the
+ * job of joining them — and the job of deciding what "previous lesson" means —
+ * into the component, which is precisely where `ARCHITECTURE.md` says it must
+ * not live. So the join happens here, once, against selectors.
+ *
+ * ORDERING IS THE ROADMAP'S ORDER, NOT THE MODULE'S
+ *
+ * "Previous" and "next" follow `lessonsOfRoadmap` — the roadmap's stage-then-
+ * module-then-lesson sequence — because that is the order a learner actually
+ * moves through the curriculum. A lesson that appears in more than one module
+ * appears once in that sequence (it is de-duplicated), so its neighbours are
+ * stable. When a lesson belongs to no roadmap at all, there is no sequence and
+ * prev/next are both `undefined`: an honest absence rather than an invented
+ * order.
+ *
+ * The `index` is 1-based within the sequence, for "Lesson 3 of 4" and for the
+ * accessible label on the next/previous controls.
+ */
+/**
+ * A prerequisite: the lesson it points at, plus the reason it is advisory.
+ *
+ * The reason is carried alongside the link rather than looked up in the page,
+ * because looking it up in the page means iterating the RAW prerequisite list
+ * while the resolved links are separate — and that is how a prerequisite whose
+ * lesson did not resolve becomes a link to a non-existent page. Resolving them
+ * together means a prerequisite without a lesson is dropped entirely, reason and
+ * all, rather than leaving a dead link with a reason attached to it.
+ */
+export interface PrerequisiteLink extends LessonLink {
+  readonly reason: string
+}
+
+export interface LessonContext {
+  readonly lesson: Lesson
+  readonly body: CompiledBody | undefined
+  readonly module: Module | undefined
+  readonly roadmap: Roadmap | undefined
+  /** 1-based position in the roadmap's lesson sequence, or `undefined` if unfiled. */
+  readonly position: number | undefined
+  /** How many lessons the roadmap contains, or `undefined` if unfiled. */
+  readonly total: number | undefined
+  readonly previous: LessonLink | undefined
+  readonly next: LessonLink | undefined
+  readonly prerequisites: readonly PrerequisiteLink[]
+  readonly related: readonly LessonLink[]
+  readonly skills: readonly Skill[]
+}
+
+export const lessonContext = (lessonId: string): LessonContext | undefined => {
+  const lesson = registry.lessons.get(lessonId)
+  if (!lesson) return undefined
+
+  const module = primaryModuleOfLesson(registry, lessonId)
+  const roadmap = primaryRoadmapOfLesson(registry, lessonId)
+
+  // The ordered sequence the learner moves through. Empty when the lesson is not
+  // in any roadmap, which makes both neighbours undefined below.
+  const sequence = roadmap ? lessonsOfRoadmap(registry, roadmap.id) : []
+  const index = sequence.findIndex((candidate) => candidate.id === lessonId)
+  const previousLesson = index > 0 ? sequence[index - 1] : undefined
+  const nextLesson = index >= 0 ? sequence[index + 1] : undefined
+
+  // Pair each prerequisite with its resolved lesson in one pass, so an
+  // unresolvable prerequisite is dropped WITH its reason rather than rendered as
+  // a dead link. Referential integrity already forbids an unknown reference, but
+  // a link is still only built from an id that resolved.
+  const prerequisites: PrerequisiteLink[] = []
+  for (const prerequisite of lesson.prerequisites) {
+    const target = registry.lessons.get(prerequisite.id)
+    if (!target) continue
+    prerequisites.push({ ...toLessonLink(target), reason: prerequisite.reason })
+  }
+
+  return {
+    lesson,
+    body: lessonBody(registry, lessonId),
+    module,
+    roadmap,
+    position: index >= 0 ? index + 1 : undefined,
+    total: roadmap ? sequence.length : undefined,
+    previous: previousLesson ? toLessonLink(previousLesson) : undefined,
+    next: nextLesson ? toLessonLink(nextLesson) : undefined,
+    prerequisites,
+    related: lessonsByIds(registry, lesson.related).map(toLessonLink),
+    skills: skillsByIds(registry, lesson.skills),
+  }
 }

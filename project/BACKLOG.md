@@ -30,8 +30,9 @@ Nothing here is scheduled. Items are listed so they are not forgotten, not as a 
 
 - **MDX compilation and rendering, plus the component registry.** ~~Done at M2.2~~
   `content/mdx/compile.ts` compiles bodies at build time into a serializable tree, and
-  `src/content/mdx/render.ts` renders it through the allowlist in `registry.ts`. The **lesson
-  page** that consumes it is the remaining M2 work.
+  `src/components/mdx/render.tsx` renders it through the allowlist in `registry.ts`.
+  ~~The **lesson page** that consumes it is the remaining M2 work.~~ **Done at M2.3** — the
+  lesson route and page exist and render the body.
 - **GFM tables.** Base `remark-parse` leaves tables as text. Enabling `remark-gfm` is a
   deliberate, separate decision (it changes the parser's behaviour for several constructs at
   once). The renderer and `ALLOWED_ELEMENTS` already define the `table`/`thead`/`tbody`/`tr`/
@@ -41,11 +42,17 @@ Nothing here is scheduled. Items are listed so they are not forgotten, not as a 
   Supporting them is a small addition to `content/mdx/compile.ts`.
 - **A second custom MDX component.** The allowlist is empty on purpose. When the first real
   component is authored (a `Callout`, a `KeyPoint`), add one entry to
-  `src/content/mdx/registry.ts` and a test that it renders. Two components is when a
+  `src/components/mdx/registry.ts` and a test that it renders. Two components is when a
   block-vs-inline distinction may become worth expressing in the tree.
-- **A heading-level rule for lesson bodies.** A lesson body may contain `#`, which would put
-  an `h1` next to the page's own `h1`. Decide whether lesson bodies should be refused an `h1`
-  (and the page owns the only one), or whether the page renders no `h1`. No test covers this.
+- **A lesson in more than one roadmap shows one.** The lesson page uses the lesson's PRIMARY
+  roadmap for the breadcrumb, position and previous/next, chosen deterministically as the
+  first. All four current lessons sit in both `beginner-va` and `data-entry-va`, so the page
+  always says "Beginner VA". Showing every roadmap a lesson belongs to (e.g. "in Beginner VA
+  and Data Entry VA") is the fuller statement; revisit if a learner is genuinely confused, not
+  before.
+- **A lesson's topic anchors.** A lesson can declare `topics` with inline anchors that match
+  MDX heading ids. The lesson page does not yet render a topic list or link to anchors — no
+  current content has a shared topic. Add it when the first shared topic lands.
 - **The stale-tool report.** A tool whose `updatedAt` is newer than the `updatedAt` of the
   lessons referencing it. Needs the tools collection (M5); a derivation over the existing
   reverse indexes, so a few lines once the collection exists.

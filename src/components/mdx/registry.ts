@@ -1,8 +1,8 @@
 import type { ComponentType } from 'react'
-import type { CompiledNode, ElementProp } from './tree.ts'
+import type { CompiledNode, ElementProp } from '@/app/mdx.ts'
 
 /**
- * THE MDX COMPONENT REGISTRY (M2.2).
+ * THE MDX COMPONENT REGISTRY (M2.2, moved to `src/components/` at M2.3).
  *
  * The one place content can become code. It is deliberately a plain object,
  * enumerated by hand, and it is the SECOND half of the trust boundary described

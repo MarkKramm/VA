@@ -61,17 +61,26 @@ describe('the MDX compiler — Markdown it must accept', () => {
     expect(link?.children?.[0]?.value).toBe('link')
   })
 
-  it('compiles headings at the correct level, clamped to h1..h6', () => {
-    const tree = compile('# One\n\n## Two\n\n### Three\n\n#### Four\n\n##### Five\n\n###### Six')
+  it('compiles headings at the correct level, clamped to h2..h6 (M2.3)', () => {
+    // `h1` is refused — the lesson page owns the page heading — so a body heading
+    // starts at `h2`, and the tags below are the levels a body may produce.
+    const tree = compile('## Two\n\n### Three\n\n#### Four\n\n##### Five\n\n###### Six')
     const tags = (tree as unknown as AnyNode[]).map((n) => n.tag)
-    expect(tags).toEqual(['h1', 'h2', 'h3', 'h4', 'h5', 'h6'])
+    expect(tags).toEqual(['h2', 'h3', 'h4', 'h5', 'h6'])
   })
 
-  it('compiles a setext heading (underlined with ===) as an h1', () => {
-    // `Title\n=====` is an h1 in Markdown, and is easy to lose in a hand-rolled
-    // parser. This is exactly the class of edge case D12 says not to reimplement.
-    const tree = compile('Title\n=====\n\nbody')
-    expect((tree as unknown as AnyNode[])[0]?.tag).toBe('h1')
+  it('refuses an h1 in a lesson body, naming the file (M2.3)', () => {
+    // The lesson page renders the lesson title as the page's single h1. A body
+    // that also produced an h1 would give the outline two top-level entries and
+    // break the "one h1 per page" accessibility commitment.
+    const message = failure('# A top-level heading')
+    expect(message).toContain(PATH)
+    expect(message).toMatch(/h1|page heading/i)
+  })
+
+  it('refuses a setext heading, which is an h1 by another syntax (M2.3)', () => {
+    // `Title\n=====` is an h1 in Markdown, so it is refused for the same reason.
+    expect(() => compile('Title\n=====\n\nbody')).toThrow(MdxCompileError)
   })
 
   it('distinguishes an unordered list from an ordered one', () => {
@@ -244,7 +253,7 @@ describe('the MDX compiler — alt text is required whichever syntax is used', (
 
 describe('the MDX compiler — the tree is a closed vocabulary', () => {
   it('emits only the three node kinds', () => {
-    const tree = compile('# H\n\nText **bold** and `code`.\n\n- a\n- b\n\n```js\nx\n```')
+    const tree = compile('## H\n\nText **bold** and `code`.\n\n- a\n- b\n\n```js\nx\n```')
     for (const node of flatten(tree as unknown as AnyNode[])) {
       expect(['text', 'element', 'component']).toContain(node.kind)
     }
@@ -262,7 +271,7 @@ describe('the MDX compiler — the tree is a closed vocabulary', () => {
   })
 
   it('is deterministic — the same source compiles to a deep-equal tree', () => {
-    const src = '# H\n\nText with [a link](https://example.com) and `code`.\n\n- one\n- two'
+    const src = '## H\n\nText with [a link](https://example.com) and `code`.\n\n- one\n- two'
     expect(compile(src)).toEqual(compile(src))
   })
 

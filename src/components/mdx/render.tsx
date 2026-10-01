@@ -1,13 +1,29 @@
 import { createElement, type ReactNode } from 'react'
-import type { CompiledNode, ElementNode } from './tree.ts'
-import { isSafeUrl } from './tree.ts'
+import type { CompiledNode, ElementNode } from '@/app/mdx.ts'
+import { isSafeUrl } from '@/app/mdx.ts'
 import { curriculumComponents, type CurriculumComponent } from './registry.ts'
+import styles from './prose.module.css'
 
 /**
- * THE COMPILED-BODY RENDERER (M2.2).
+ * THE COMPILED-BODY RENDERER (M2.2, moved to `src/components/` at M2.3).
  *
  * Renders the tree produced at build time by `content/mdx/compile.ts`. See
  * `DECISIONS.md` D22 for why content is a tree rather than compiled JavaScript.
+ *
+ * WHY THIS LIVES IN `src/components/` AND NOT `src/content/`
+ *
+ * It is a PRESENTATION component: it turns data into DOM, which is the definition
+ * of the components layer, and it is used by a feature (the lesson page), which
+ * is what makes it cross-feature rather than feature-local. `ARCHITECTURE.md` is
+ * explicit that UI code may not import from `content/`; before M2.3 nothing in
+ * `src/features/` rendered a body, so the violation was latent. The lesson page
+ * is what surfaced it, and the fix is to put the renderer where the architecture
+ * says a cross-feature component belongs.
+ *
+ * The tree FORMAT still lives in `content/mdx/tree.ts` — it is a property of what
+ * the build produces, not of the application. This file reads it through the
+ * `src/app/mdx.ts` seam, exactly as a feature reads curriculum through
+ * `src/app/content.ts`.
  *
  * WHAT THIS FILE'S JOB IS
  *
@@ -29,7 +45,7 @@ import { curriculumComponents, type CurriculumComponent } from './registry.ts'
 export class UnknownMdxComponentError extends Error {
   constructor(readonly componentName: string) {
     super(
-      `Unknown MDX component <${componentName}>. Add it to src/content/mdx/registry.ts to allow it in lesson content.`,
+      `Unknown MDX component <${componentName}>. Add it to src/components/mdx/registry.ts to allow it in lesson content.`,
     )
     this.name = 'UnknownMdxComponentError'
   }
@@ -105,8 +121,15 @@ const renderNode = (
  * Render a compiled lesson body.
  *
  * `keyPrefix` namespaces React keys, so two bodies on one page cannot collide.
- * The `.prose` class is the single styling hook for lesson text; typography is
- * layered on semantic elements in `prose.module.css`, not on wrapper divs.
+ *
+ * THE `.prose` CLASS IS APPLIED HERE, NOT BY THE CALLER
+ *
+ * The prose stylesheet is what makes a compiled body readable — heading rhythm,
+ * list spacing, code blocks. It is attached by the renderer so that ANY caller
+ * gets styled body text, and so the typography cannot silently go missing
+ * because a page forgot to pass a class name. The `className` prop is ADDITIONAL,
+ * for layout the surrounding page owns (a margin, a grid slot); it is combined
+ * with the prose class rather than replacing it.
  */
 export const MdxContent = ({
   nodes,
@@ -127,6 +150,6 @@ export const MdxContent = ({
 }): ReactNode =>
   createElement(
     'div',
-    { className },
+    { className: className ? `${styles.prose} ${className}` : styles.prose },
     ...nodes.map((node, index) => renderNode(node, `${keyPrefix}.${index}`, components)),
   )

@@ -5,7 +5,125 @@ something that works.
 
 ---
 
-## Checkpoint: M2.2 MDX compilation + rendering foundation (uncommitted with M2.1)
+## Checkpoint: M2.3 lesson and roadmap content experience
+
+**Date:** 2026-10-01
+**Milestone:** M2 — Content Engine (third slice)
+**Tag:** none — `v0.1.0-foundation` remains the only tag
+**Branch:** `main` · **HEAD:** `6f5adbb` (M2.1 + M2.2) with M2.3 committed on top
+
+### What this checkpoint is
+
+The M2.2 compiled tree now reaches a learner. The route `/lessons/:lessonId` resolves a lesson
+by its **stable id** through `lessonContext` in `src/app/content.ts` and renders its whole
+page: metadata, objectives, advisory prerequisites with reasons, skills, related lessons,
+deterministic previous/next navigation in roadmap order, breadcrumbs, and the compiled MDX
+body through `MdxContent`. Lessons are reachable from the roadmap page and the dashboard.
+
+This is the slice that finally exercises `prose.module.css` and the type scale against real
+long-form text — the two questions left open since M1.
+
+### Verified working
+
+- `npm run check` **passes end to end**: format, lint, typecheck, content validation,
+  `check:contrast`, **389 tests across 23 files**, **16 architectural invariants**, a build with
+  the SPA fallback and the subpath verification, and the built-output compiler-leak guard.
+- **The bundle grew by ~9 kB raw / ~2 kB gzipped to 482 kB / 148 kB**, over the M2.2 baseline
+  of 473.30 kB / 145.57 kB. That increase is the lesson page and the renderer actually
+  shipping — at M2.2 the renderer was tree-shaken out because nothing rendered a body. The
+  compiler boundary did **not** regress.
+- **No compiler in the client.** The built JS contains none of `YAMLException`, `mdast-util`,
+  `micromark`, `unified`, `hast-util`, `remark-parse`, `remark-mdx`, `gray-matter` or
+  `js-yaml`, while the content and the lesson page are present.
+- **The renderer now applies its own prose class.** Found by audit: `MdxContent` relied on the
+  caller to pass a `prose` class, and the caller's `.prose` was a layout rule, so the prose
+  typography never loaded. The class now comes from the renderer's own CSS module and is
+  combined with the caller's, and a test asserts the hashed class is present with no caller
+  className.
+- **An `h1` in a lesson body is refused at build time**, naming the file — the lesson page owns
+  the single page heading, so a body heading can never introduce a second one. The compiler
+  test covers both `#` and setext (`===`) syntax.
+- **The renderer moved to `src/components/mdx/`**, and the compiled-body format/URL policy is
+  read through a new `src/app/mdx.ts` seam. Before this slice, a feature importing the renderer
+  would have imported `content/`, which the ESLint boundary rule forbids; the move closes that
+  and mirrors the existing `src/app/content.ts` seam (D23).
+- **Navigation ordering is deterministic.** Position and previous/next come from the roadmap's
+  ordered lesson sequence (`lessonsOfRoadmap`), 1-based, de-duplicated. The first lesson has no
+  previous and the last no next. Asserted against the real content
+  (`what-is-a-virtual-assistant → who-hires-virtual-assists → files-and-folders → browser-basics`).
+- **An unknown lesson id is a 404 inside the shell**, not an error, with the header and nav
+  intact so there is a way out.
+- **Deep links render on first load** — the SPA-fallback case, asserted directly.
+- **Accessibility**: exactly one `h1`; no skipped heading level (scoped to `<main>`); breadcrumb
+  and lesson navigation are named landmarks; the pager controls carry words, not just arrows.
+
+### Bugs caught during M2.3, and fixed
+
+1. **The prose stylesheet was never applied.** `MdxContent` did not import its own CSS module;
+   it rendered whatever `className` the caller passed, and the caller passed a layout-only
+   `.prose`. The renderer test passed anyway because the harness passed the literal string
+   `'prose'`. The renderer now owns its class; the test asserts a hashed class with no caller
+   input.
+2. **A prerequisite could render as a dead link.** The page iterated the RAW prerequisite list
+   for the reason while looking up the resolved link separately, so an unresolvable
+   prerequisite fell back to the raw id and still produced a link. Prerequisites are now paired
+   with their resolved lesson in the seam, and an unresolvable one is dropped with its reason.
+3. **The M1 router test forbade `/lessons`.** Correct at M1, stale at M2.3; updated to allow the
+   lesson route while still forbidding genuinely unbuilt routes.
+4. **Invariant 3b matched a test's own content literal.** Test files are now excluded from the
+   "no curriculum literals in the UI directories" walk, consistent with every other walk in the
+   file — the rule is about code that ships.
+5. **M2.2 tests compiled `# Heading` bodies** and would have broken under the new `h1` refusal;
+   updated to `##`, which is the correct body-heading level.
+
+### Not done, deliberately
+
+- **No "mark complete" action.** Progress is M3; a button now would write to nowhere.
+- No exercises, search, quizzes, tool directory, labs or career preparation.
+- No custom MDX components registered. The allowlist is still empty.
+- Tables and reference-style links are unsupported (recorded in `BACKLOG.md`).
+
+### Not verified — read this before continuing
+
+- **There is still no live URL.** The repository has no git remote, so `deploy.yml` has never
+  run and M1's deployment exit condition remains unmet.
+- **No browser was driven at 375 / 768 / 1440.** Responsive behaviour is verified by
+  construction.
+- **A lesson in more than one roadmap shows one.** The page uses the primary roadmap for the
+  breadcrumb, position and neighbours. All four current lessons sit in both roadmaps, so
+  `beginner-va` always wins. Stated in `CURRENT_STATE.md`.
+- **M2 is not finished.** Exercises remain.
+
+### Files that must be understood before changing anything
+
+New at M2.3, in addition to the M2.2 table below:
+
+| File                                         | Why it matters                                                       |
+| -------------------------------------------- | -------------------------------------------------------------------- |
+| `src/app/content.ts`                         | Now also `lessonContext`: the one read the lesson page performs      |
+| `src/features/lessons/LessonPage.tsx`        | The lesson page. Owns the single `h1`                                |
+| `src/features/lessons/LessonPage.module.css` | The reading column: header, sections, pager, responsive stack        |
+| `src/components/mdx/render.tsx`              | The renderer, moved here at M2.3. Applies its own `.prose` class     |
+| `src/components/mdx/registry.ts`             | The component allowlist, moved here at M2.3                          |
+| `src/app/mdx.ts`                             | The compiled-body seam: format types + `isSafeUrl`, for the renderer |
+| `src/content/selectors.ts`                   | `primaryModuleOfLesson`, `primaryRoadmapOfLesson`, `lessonsByIds`, … |
+
+### Do not change without a decision
+
+Everything in the M0/M1/M2.1/M2.2 lists below, plus M2.3's: the renderer's home in
+`src/components/` with the `src/app/mdx.ts` seam (D23), the lesson route keyed on the lesson
+id, the `h1` refusal in the compiler, the primary-roadmap rule for navigation and
+breadcrumbs, and the `all-content-access-through-src/app` boundary.
+
+### Recommended next task
+
+**Exercises as a content entity**, then wire lesson → exercise references so at least one
+lesson reaches practice. That is the last named M2 item and the thing the four
+`quality/no-practice` warnings are counting.
+
+---
+
+## Earlier checkpoint: M2.2 MDX compilation + rendering foundation
 
 **Date:** 2026-10-01
 **Milestone:** M2 — Content Engine (second slice)

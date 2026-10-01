@@ -1,10 +1,11 @@
 import { Link, useParams } from 'react-router'
 import { ArrowLeft, ArrowRight, BookOpen, Layers } from 'lucide-react'
-import { findRoadmap, lessonsInModule, stagesOfRoadmap } from '@/app/content.ts'
+import { findRoadmap, lessonsInModule, lessonsInRoadmap, stagesOfRoadmap } from '@/app/content.ts'
 import { Breadcrumbs } from '@/components/ui/Breadcrumbs.tsx'
 import { Badge } from '@/components/ui/Badge.tsx'
 import { Callout } from '@/components/ui/Callout.tsx'
 import { Card, CardBody, CardHeader } from '@/components/ui/Card.tsx'
+import { LinkButton } from '@/components/ui/Button.tsx'
 import { EmptyState } from '@/components/ui/EmptyState.tsx'
 import { Icon } from '@/components/icons/Icon.tsx'
 import { formatDuration } from '@/lib/cn.ts'
@@ -28,10 +29,9 @@ import styles from './RoadmapDetailPage.module.css'
  *
  * WHAT THIS PAGE DELIBERATELY DOES NOT DO
  *
- * It does not render lesson bodies, track progress, gate content, or offer a
- * "start" action. Those are M2 (MDX rendering) and M3 (progress). The module
- * and lesson titles here are read-only listings so the shell can be seen
- * navigating real curriculum structure — not a partial lesson page.
+ * It does not render lesson bodies itself, track progress, or gate content. Each
+ * lesson title links to its own page (`/lessons/:lessonId`), which renders the
+ * compiled body — see `LessonPage`. This page stays a structural index.
  *
  * Because there is no progress yet, every stage is `available`: none is locked,
  * none is recommended, and no progress bar is shown. `DESIGN_SYSTEM.md` §2.1
@@ -66,6 +66,10 @@ export const RoadmapDetailPage = () => {
   if (!roadmap) return <NotFoundPage />
 
   const stages = stagesOfRoadmap(roadmap.id)
+  // The roadmap's first lesson in curriculum order, for the "start" action. The
+  // sequence is the same one the lesson page uses for previous/next navigation,
+  // so "start" and "next" cannot disagree about what the first lesson is.
+  const firstLesson = lessonsInRoadmap(roadmap.id)[0]
 
   return (
     <div className={styles.page}>
@@ -168,7 +172,16 @@ export const RoadmapDetailPage = () => {
                                   <span className={styles.lessonIndex} aria-hidden="true">
                                     {lessonIndex + 1}
                                   </span>
-                                  <span className={styles.lessonTitle}>{lesson.title}</span>
+                                  {/*
+                                    The lesson title is a real link to the lesson
+                                    page (M2.3). Before this slice there was
+                                    nowhere to go and the title was plain text —
+                                    a link to a non-existent page would have been
+                                    worse than none.
+                                  */}
+                                  <Link to={`/lessons/${lesson.id}`} className={styles.lessonTitle}>
+                                    {lesson.title}
+                                  </Link>
                                   <span className={styles.lessonMeta}>
                                     <Icon size="xs">
                                       <BookOpen />
@@ -195,26 +208,46 @@ export const RoadmapDetailPage = () => {
       </section>
 
       {/*
-        A clear next action. The only one that is honest at M1: opening the first
-        roadmap's first stage. There is no "Start learning" button, because
-        pressing it would have to go somewhere, and there is nowhere to go until
-        M2 renders lesson pages.
+        A clear next action. The honest one now that lesson pages exist (M2.3):
+        start at the first lesson of this roadmap. When a roadmap has no lessons
+        yet, there is nothing to open and the card explains that rather than
+        offering a dead link.
       */}
       <div className={styles.nextAction}>
         <Card tone="raised" padding="lg">
-          <CardHeader
-            title="Next step"
-            description="Lesson pages arrive in the next milestone. Until then this roadmap shows its full structure so you can see what is planned."
-            headingLevel={2}
-          />
-          <CardBody>
-            <Link to="/roadmaps" className={styles.nextLink}>
-              <Icon size="xs">
-                <ArrowRight />
-              </Icon>
-              Compare roadmaps
-            </Link>
-          </CardBody>
+          {firstLesson ? (
+            <>
+              <CardHeader
+                title="Start this roadmap"
+                description="Begin with the first lesson. Lessons are read in order, and each one links to the next."
+                headingLevel={2}
+              />
+              <CardBody>
+                <LinkButton to={`/lessons/${firstLesson.id}`} variant="primary">
+                  <Icon size="sm">
+                    <BookOpen />
+                  </Icon>
+                  Open {firstLesson.title}
+                </LinkButton>
+              </CardBody>
+            </>
+          ) : (
+            <>
+              <CardHeader
+                title="No lessons yet"
+                description="This roadmap's structure is defined but no lessons have been written for it yet."
+                headingLevel={2}
+              />
+              <CardBody>
+                <Link to="/roadmaps" className={styles.nextLink}>
+                  <Icon size="xs">
+                    <ArrowRight />
+                  </Icon>
+                  Compare roadmaps
+                </Link>
+              </CardBody>
+            </>
+          )}
         </Card>
       </div>
     </div>

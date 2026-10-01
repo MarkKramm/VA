@@ -1,9 +1,9 @@
 import { render, screen } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { describe, expect, it } from 'vitest'
-import { MdxContent, UnknownMdxComponentError } from '../render.ts'
+import { MdxContent, UnknownMdxComponentError } from '../render.tsx'
 import { isKnownComponent } from '../registry.ts'
-import type { CompiledBody, CompiledNode } from '../tree.ts'
+import type { CompiledBody, CompiledNode } from '@/app/mdx.ts'
 
 /**
  * THE COMPILED-BODY RENDERER (M2.2).
@@ -23,8 +23,7 @@ import type { CompiledBody, CompiledNode } from '../tree.ts'
 
 const tree = (nodes: CompiledNode[]): CompiledBody => nodes
 
-const renderBody = (nodes: CompiledNode[]) =>
-  render(<MdxContent nodes={tree(nodes)} className="prose" />)
+const renderBody = (nodes: CompiledNode[]) => render(<MdxContent nodes={tree(nodes)} />)
 
 describe('the MDX renderer — semantic output', () => {
   it('renders headings as real heading elements at the right level', () => {
@@ -111,9 +110,28 @@ describe('the MDX renderer — semantic output', () => {
     expect(block.closest('pre')).not.toBeNull()
   })
 
-  it('applies the prose class to the wrapper, not to a child', () => {
-    const { container } = renderBody([{ kind: 'text', value: 'x' }])
-    expect(container.firstElementChild).toHaveClass('prose')
+  it('applies its OWN prose class, even when the caller passes none', () => {
+    // The regression this guards against: the renderer relied on the caller to
+    // pass a `prose` class, and the caller's `.prose` was a layout rule, not the
+    // typography sheet. The entire prose stylesheet was therefore never applied,
+    // and the wrapper test passed anyway because the harness happened to pass the
+    // literal string 'prose'. The class must come from the renderer's own CSS
+    // module, so it is hashed and cannot be passed in by accident.
+    const { container } = render(<MdxContent nodes={[{ kind: 'text', value: 'x' }]} />)
+    const wrapper = container.firstElementChild
+    expect(wrapper).not.toBeNull()
+    // A CSS-module class is hashed, so it is not the bare word 'prose'.
+    expect(wrapper?.className).not.toBe('prose')
+    expect(wrapper?.className).toMatch(/prose/i)
+  })
+
+  it('combines the caller’s className with the prose class rather than replacing it', () => {
+    const { container } = render(
+      <MdxContent nodes={[{ kind: 'text', value: 'x' }]} className="my-layout" />,
+    )
+    const wrapper = container.firstElementChild
+    expect(wrapper).toHaveClass('my-layout')
+    expect(wrapper?.className).toMatch(/prose/i)
   })
 
   it('escapes text rather than interpreting it as markup', () => {

@@ -92,7 +92,7 @@ tags:
   - one
   - two
 ---
-# Heading
+## Heading
 
 Body text.
 `
@@ -106,7 +106,7 @@ Body text.
     // Nested YAML must parse to a real array, not a string.
     expect(parsed.data.tags).toEqual(['one', 'two'])
     // The body keeps the markdown, and does NOT contain the frontmatter.
-    expect(parsed.body).toContain('# Heading')
+    expect(parsed.body).toContain('## Heading')
     expect(parsed.body).not.toContain('id: example-lesson')
     expect(parsed.body).not.toContain('---')
   })

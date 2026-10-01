@@ -223,19 +223,37 @@ boundary pattern also matches the alias, so the restriction is broader than the 
 plain data to the presentation layer:
 
 ```
-src/features/dashboard/DashboardPage.tsx
+src/features/lessons/LessonPage.tsx
    ↓ calls functions from
-src/app/content.ts          ← the only file that touches @/content/ from the UI side
+src/app/content.ts          ← the only file that reads CURRICULUM through @/content/
    ↓ uses
 src/content/selectors.ts    ← every read goes through a selector
    ↓ reads
 src/content/registry.ts
 ```
 
+Since M2.3 there is a second, much narrower seam. The compiled-body **format** (a plain,
+serializable tree, not curriculum data) and its URL policy live at `content/mdx/tree.ts`, and
+the MDX renderer is a presentation component in `src/components/mdx/`. The renderer needs those
+types and `isSafeUrl` at render time, so `src/app/mdx.ts` re-exports them:
+
+```
+src/components/mdx/render.tsx
+   ↓ imports the format contract from
+src/app/mdx.ts              ← types + isSafeUrl only; no curriculum, no compiler
+   ↓ re-exports
+content/mdx/tree.ts         ← the closed node vocabulary and the URL policy
+```
+
+`src/app/mdx.ts` is the only other UI-side consumer of `@content/`, and it carries no data.
+Invariant 3 explicitly permits it, alongside type-only imports. The MDX **compiler**
+(`content/mdx/compile.ts`) is build-only and is never reachable from `src/`; invariant 6 and
+the built-output guard in `check-paths` enforce that. See `DECISIONS.md` D16, D22 and D23.
+
 The point is that a query which does not exist cannot be improvised in a component. Adding
 one means adding a selector, which is reviewable, rather than reaching past the registry
 where the derived-index rule stops being true. Verified by probe: a file importing
-`@/content/registry.ts` from `src/features/` fails lint. See `DECISIONS.md` D16.
+`@/content/registry.ts` from `src/features/` fails lint.
 
 ## Build configuration that matters
 

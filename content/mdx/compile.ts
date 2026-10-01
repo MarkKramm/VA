@@ -90,9 +90,15 @@ const NODE_TAGS: Readonly<Record<string, AllowedElement>> = {
   break: 'br',
 }
 
-/** Elements whose tag depends on other properties rather than being fixed. */
+/**
+ * Elements whose tag depends on other properties rather than being fixed.
+ *
+ * Headings are clamped to `h2`–`h6`: an `h1` in a lesson body is refused in the
+ * `heading` case below, because the lesson page owns the page heading. The clamp
+ * is a belt-and-braces floor; the refusal is what actually prevents an `h1`.
+ */
 const headingTag = (depth: number | undefined): AllowedElement => {
-  const level = Math.min(Math.max(depth ?? 1, 1), 6)
+  const level = Math.min(Math.max(depth ?? 2, 2), 6)
   return `h${level}` as AllowedElement
 }
 
@@ -142,15 +148,38 @@ const compileNode = (node: MdastNode, path: string, line: number | undefined): C
         },
       ]
 
-    case 'heading':
+    case 'heading': {
+      /*
+       * A lesson body may not contain an `h1`.
+       *
+       * The lesson PAGE owns the single `<h1>` — it is the lesson title, and the
+       * outline a screen-reader user navigates by must have exactly one top-level
+       * entry. A body that began with `# Heading` (or contained one anywhere)
+       * would add a second, producing a page whose structure says two different
+       * things are the title.
+       *
+       * This is a refusal rather than a silent demotion for the same reason as
+       * every other refusal here: silently rewriting an author's `#` into an
+       * `##` would hide a real authoring mistake, and the author would not learn
+       * that headings in a lesson body start at `##`.
+       */
+      const depth = node.depth ?? 1
+      if (depth <= 1) {
+        throw new MdxCompileError(
+          path,
+          'lesson bodies must not contain an h1; the lesson title is the page heading, so body headings start at h2',
+          at,
+        )
+      }
       return [
         {
           kind: 'element',
-          tag: headingTag(node.depth),
+          tag: headingTag(depth),
           props: {},
           children: compileChildren(node.children ?? [], path, at),
         },
       ]
+    }
 
     case 'list': {
       // `ordered` is an mdast property, not a child; infer from it the same way

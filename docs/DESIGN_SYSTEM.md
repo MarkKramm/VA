@@ -320,8 +320,10 @@ Honest list, so nothing here is mistaken for settled:
 - **Iconography is lucide-react, unmodified.** Every icon is `aria-hidden` unless it is
   the only content of a control. A bespoke icon set is a later decision, and it should
   be one.
-- **The type scale is unvalidated with real lesson prose.** It is tuned against UI text
-  and card copy. M2 brings the long-form content that will prove or break it.
+- **The type scale is now exercised by real lesson prose (M2.3).** The lesson page renders
+  compiled bodies through `MdxContent` with `prose.module.css`, so the scale is tuned against
+  actual long-form text rather than card copy. It is still tuned from construction and token
+  reasoning, not from a browser review.
 - **Contrast is verified from token values, not from rendered pixels.** The check
   resolves `oklch()` and computes WCAG ratios mathematically, which catches a bad
   token but not a bug in a component's CSS that puts a good token on an unintended

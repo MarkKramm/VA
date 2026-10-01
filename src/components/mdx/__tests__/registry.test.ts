@@ -9,8 +9,8 @@ import { curriculumComponents, isKnownComponent } from '../registry.ts'
  *
  *   - `ALLOWED_ELEMENTS` in `content/mdx/tree.ts` — the HTML tags the compiler
  *     may emit.
- *   - `curriculumComponents` in `registry.ts` — the custom components the
- *     renderer may resolve.
+ *   - `curriculumComponents` in `src/components/mdx/registry.ts` — the custom
+ *     components the renderer may resolve.
  *
  * These tests pin the properties that make the trust boundary real, and they are
  * deliberately about behaviour rather than about the constants matching

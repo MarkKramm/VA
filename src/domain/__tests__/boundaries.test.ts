@@ -56,16 +56,24 @@ beforeEach(() => resetEventCounter())
 describe('invariant 3 — single content entry point', () => {
   /**
    * The invariant is about READING THE CURRICULUM — reaching content data at
-   * runtime. A `import type { … } from '@content/…'` is erased by the compiler and
-   * cannot read anything, so it is not a consumer; it is a shared TYPE.
+   * runtime. Two things are not that:
    *
-   * This distinction was added at M2.2, when the compiled-body format moved to
-   * `content/mdx/tree.ts` and its types had to be referenceable from `src/`. The
-   * check still has all its teeth for real imports; it simply no longer flags a
-   * type-only import that reaches no data.
+   *  - A `import type { … } from '@content/…'` is erased by the compiler and
+   *    cannot read anything, so it is not a consumer; it is a shared TYPE.
+   *  - `@content/mdx/tree.ts` is the compiled-body FORMAT and its URL policy — a
+   *    contract the build produces and the renderer consumes, not curriculum
+   *    data. It is a handful of pure functions and type declarations with no
+   *    content in it. The renderer needs `isSafeUrl` at render time (D22's
+   *    defence in depth) and lives in `src/components/mdx/`, which may not import
+   *    `content/` directly, so `src/app/mdx.ts` re-exports it.
+   *
+   * Both exemptions were added at M2.2/M2.3 and are narrow and NAMED. Every real
+   * curriculum read still fails this check; what no longer fails is a type-only
+   * import, and an import of the format contract that holds no data.
    */
   /**
-   * True when `source` contains a RUNTIME import from `@content/`.
+   * True when `source` contains a RUNTIME import from `@content/` that reads
+   * CURRICULUM DATA.
    *
    * Line-based, not statement-based: this codebase uses no semicolons, so
    * splitting on `;` silently merges unrelated imports into one "statement" and
@@ -87,6 +95,8 @@ describe('invariant 3 — single content entry point', () => {
       }
       i = cursor
       if (/^\s*import\s+type\b/.test(statement)) continue
+      // The compiled-body format is a contract, not curriculum data.
+      if (/from\s+['"]@content\/mdx\/tree\.ts['"]/.test(statement)) continue
       if (/from\s+['"]@content\//.test(statement)) return true
     }
     return false
@@ -130,7 +140,11 @@ describe('invariant 3b — no curriculum literals in the UI', () => {
     const uiFiles = [
       ...walk(join(SRC, 'components'), ['.ts', '.tsx']),
       ...walk(join(SRC, 'features'), ['.ts', '.tsx']),
-    ]
+      // Tests are excluded, exactly as every other walk in this file excludes
+      // them. A test has to name the real content it asserts against — a lesson
+      // page test asserting a module name appears is doing its job, not leaking a
+      // literal into the UI. The rule is about the code that ships.
+    ].filter((file) => !file.includes(`${sep}__tests__${sep}`))
     if (uiFiles.length === 0) {
       // Directories do not exist until M1. Nothing to check, and that is fine.
       expect(uiFiles).toEqual([])
@@ -328,8 +342,9 @@ describe('invariant 6 — the frontmatter parser stays out of the client', () =>
    * from `src/`, the next `vite build` puts an MDX parser in the learner bundle.
    *
    * The list is explicit rather than a pattern like `/mdx/`, because a pattern
-   * would also match our own `src/content/mdx/` modules, which are exactly the
-   * files that must NOT be treated as suspicious — they are the renderer.
+   * would match our own `src/components/mdx/` modules, which are the RENDERER and
+   * are exactly the files that must NOT be treated as suspicious — they import
+   * only React and the format types.
    */
   it('no MDX compiler package is imported from src/ or a runtime content file', () => {
     const COMPILER_PACKAGES = ['unified', 'remark-parse', 'remark-mdx', 'micromark']

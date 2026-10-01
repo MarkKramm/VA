@@ -12,6 +12,16 @@ All notable changes to this project. Format follows
 
 ### Added
 
+- **The lesson experience (M2.3).** The route `/lessons/:lessonId` resolves a lesson by its
+  stable id through `lessonContext` in `src/app/content.ts` and renders its title, summary,
+  difficulty, time, objectives, advisory prerequisites with reasons, skills, related lessons,
+  breadcrumbs, deterministic previous/next navigation in roadmap order, and the compiled MDX
+  body through `MdxContent`. Lessons are reachable from the roadmap page and the dashboard. An
+  unknown id renders the in-app 404 inside the shell. Includes the first real exercise of the
+  long-form prose typography.
+- **An `h1` refusal in the compiler.** A lesson body containing `#` (or a setext heading) is
+  refused at build time, naming the file, because the lesson page owns the page's single
+  heading. `DECISIONS.md` D24.
 - **Build-time MDX compilation into a renderable element tree.** Lesson `.mdx` bodies are
   parsed at build time (`unified` + `remark-parse` + `remark-mdx`) and converted into a
   closed vocabulary of `text`/`element`/`component` nodes, then rendered by
@@ -25,18 +35,25 @@ All notable changes to this project. Format follows
 - **A built-output compiler-leak guard.** `scripts/check-paths.ts` now scans the emitted JS
   for compiler markers, so a dependency that leaks only after bundling fails the build.
   Proven to bite by injecting a marker.
-- **Tests: 241 (M1) → 283 (M2.1) → 351 across 21 files (M2.2).** The M2.2 slice adds
-  compiler behaviour and refusals against the real compiler, the renderer's semantic output
-  and trust boundary, the element allowlist, and body attachment by lesson id.
+- **Tests: 241 (M1) → 283 (M2.1) → 351 across 21 files (M2.2) → 389 across 23 files (M2.3).**
+  The M2.3 slice adds lesson-context resolution and ordering, route and deep-link behaviour,
+  MDX rendering integration, navigation boundaries, missing-content states, heading-outline
+  validity, and the corrected prose-class and prerequisite-link behaviours.
 
 ### Changed
 
+- **The MDX renderer moved to the components layer.** `MdxContent`, the component allowlist and
+  the prose stylesheet moved from `src/content/mdx/` to `src/components/mdx/`, and the compiled
+  body format and URL policy are read through a new `src/app/mdx.ts` seam. This closes the
+  boundary violation the lesson page would otherwise have introduced, and mirrors the existing
+  `src/app/content.ts` seam. `DECISIONS.md` D23.
 - **Content frontmatter is parsed at build time, not in the browser.**
   `vite-plugin-content.ts` reads and parses `.mdx` frontmatter in Node and serves the result
   as the virtual module `virtual:content-data`; `content/index.ts` imports that module instead
   of globbing and parsing. `gray-matter` and `js-yaml` are no longer in the client graph.
-  **The client JS dropped from 717 kB / 202 kB gzipped to ~473 kB / 146 kB** on an audience
-  largely using metered mobile connections. `DECISIONS.md` D21.
+  **The client JS dropped from 717 kB / 202 kB gzipped to ~482 kB / 148 kB at M2.3** on an
+  audience largely using metered mobile connections — a 56 kB gzipped reduction over M1, after
+  the lesson page added back ~2 kB. `DECISIONS.md` D21.
 - **The raw body text is measured at build time and dropped from the shipped module**, so the
   compiled tree replaces it rather than duplicating it. MDX compilation therefore did not
   regress the M2.1 bundle.
@@ -44,6 +61,14 @@ All notable changes to this project. Format follows
   runtime config) is now listed in `.gitignore` and `.prettierignore`, so the `format:check`
   failure that had been carried since M1 is closed without touching the file itself
   (`DECISIONS.md` D20).
+
+### Fixed
+
+- **The prose typography stylesheet was never applied.** `MdxContent` relied on the caller to
+  pass a `prose` class, and the caller's `.prose` was a layout rule, so headings, lists and
+  code in lesson bodies were unstyled. The renderer now applies its own CSS-module class.
+- **A prerequisite could render as a dead link** when its lesson did not resolve. Resolved
+  prerequisites now carry their reason and an unresolvable one is dropped with it.
 
 ## [0.2.0] — 2026-10-01 — M1 Application Shell
 

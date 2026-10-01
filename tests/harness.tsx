@@ -5,6 +5,7 @@ import { AppShell } from '@/components/layout/AppShell.tsx'
 import { ThemeProvider } from '@/app/providers/ThemeProvider.tsx'
 import { MemoryStorageAdapter } from '@/app/storage/memory.ts'
 import { DashboardPage } from '@/features/dashboard/DashboardPage.tsx'
+import { LessonPage } from '@/features/lessons/LessonPage.tsx'
 import { NotFoundPage, RouteErrorPage } from '@/features/roadmaps/NotFoundPage.tsx'
 import { RoadmapDetailPage } from '@/features/roadmaps/RoadmapDetailPage.tsx'
 import { RoadmapsPage } from '@/features/roadmaps/RoadmapsPage.tsx'
@@ -40,6 +41,7 @@ export const testRoutes = [
       { index: true, element: <DashboardPage /> },
       { path: 'roadmaps', element: <RoadmapsPage /> },
       { path: 'roadmaps/:roadmapId', element: <RoadmapDetailPage /> },
+      { path: 'lessons/:lessonId', element: <LessonPage /> },
       { path: '*', element: <NotFoundPage /> },
     ],
   },
