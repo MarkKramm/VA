@@ -20,8 +20,12 @@ interface. That is correct for M0.
 
 ### Verified working
 
-- `npm run check` passes end to end: lint, typecheck, content validation, 163 tests,
-  architectural invariants, build, formatting.
+- `npm run check` passes: lint, typecheck, content validation, **169 tests**, architectural
+  invariants, build. Separately, `npm run format:check` passes.
+- **`npm run check` does not include `format:check`, but CI does.** A green `check` is
+  therefore not the same as a green CI, and both must pass before a commit is safe. This
+  gap is why a formatting regression went unnoticed for one full milestone; it is now
+  called out in `README.md` and `AGENTS.md` as well.
 - 2 roadmaps, 2 modules, 4 lessons, 16 career paths, 19 skills load and validate. Zero
   content errors.
 - **Cross-roadmap reuse is proven by test, not assertion.** Both M0 roadmaps reference both
@@ -48,7 +52,7 @@ Worth recording, because each would have shipped:
 1. **Reverse indexes contained duplicates.** A module referenced in two stages of one
    roadmap produced that roadmap twice, so every consumer would have had to de-duplicate.
 2. **Cycle detection missed most cycles.** The prerequisite check followed only each node's
-   *first* prerequisite, so any cycle not passing through it went undetected. Replaced with
+   _first_ prerequisite, so any cycle not passing through it went undetected. Replaced with
    a real iterative DFS.
 3. **Orphan warnings did not name the entity**, making them hard to act on.
 4. **`parseAll` validated the file wrapper instead of its contents** for `.mdx` entities,
@@ -65,14 +69,14 @@ the full list.
 
 ### Files that must be understood before changing anything
 
-| File | Why it matters |
-|---|---|
-| `src/content/registry.ts` | The only read path to content. `asEntry` and `parseAll` encode a non-obvious wrapper distinction |
-| `src/domain/progress/reducer.ts` | The single pass that derives all progress state |
-| `src/app/storage/merge.ts` | The multi-tab fix. Read the comment block before changing event handling |
-| `eslint.config.js` | Two of the five architectural invariants live here |
-| `src/domain/__tests__/boundaries.test.ts` | The other three, plus the self-exclusion rule |
-| `vite.config.ts` | `base: '/VA/'` is load-bearing for GitHub Pages |
+| File                                      | Why it matters                                                                                   |
+| ----------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| `src/content/registry.ts`                 | The only read path to content. `asEntry` and `parseAll` encode a non-obvious wrapper distinction |
+| `src/domain/progress/reducer.ts`          | The single pass that derives all progress state                                                  |
+| `src/app/storage/merge.ts`                | The multi-tab fix. Read the comment block before changing event handling                         |
+| `eslint.config.js`                        | Two of the five architectural invariants live here                                               |
+| `src/domain/__tests__/boundaries.test.ts` | The other three, plus the self-exclusion rule                                                    |
+| `vite.config.ts`                          | `base: '/VA/'` is load-bearing for GitHub Pages                                                  |
 
 ### Do not change without a decision
 

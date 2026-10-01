@@ -91,11 +91,12 @@ do.
 ## Finishing a session
 
 1. `npm run check` — green, or an honest account of why not.
-2. Update `project/CURRENT_STATE.md` — the state as it is now.
-3. Update `project/CHECKPOINT.md` — what was tested, what remains, what to do next.
-4. Update `project/NEXT_STEPS.md` — at most three concrete items.
-5. `CHANGELOG.md` if the change is meaningful.
-6. Commit. At a milestone boundary, add an annotated tag.
+2. `npm run format:check` — **`check` does not run this, but CI does.** Both must pass.
+3. Update `project/CURRENT_STATE.md` — the state as it is now.
+4. Update `project/CHECKPOINT.md` — what was tested, what remains, what to do next.
+5. Update `project/NEXT_STEPS.md` — at most three concrete items.
+6. `CHANGELOG.md` if the change is meaningful.
+7. Commit. At a milestone boundary, add an annotated tag.
 
 ## Milestones
 
@@ -134,7 +135,7 @@ PR body: what changed, why, and **what you deliberately did not change**.
    test is too weak.
 4. Does it change an architectural boundary? That needs a decision, not a commit message.
 5. Is the documentation updated? A change with no doc update is unfinished.
-6. Are the tests testing the *failure* paths, or only the happy one?
+6. Are the tests testing the _failure_ paths, or only the happy one?
 
 ## Adding a dependency
 

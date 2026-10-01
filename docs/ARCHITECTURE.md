@@ -66,7 +66,7 @@ rebuilt at any moment, and an invariant test asserts the two are always equal.
 Two consequences, and they are the reason so much can be deferred:
 
 - The reducer is trivially testable with no DOM and no framework.
-- Every future personalisation feature is a *pure function over this log*. Sync, undo,
+- Every future personalisation feature is a _pure function over this log_. Sync, undo,
   history charts, weak-area reports, spaced review, streaks, "what did I do last Tuesday"
   — all can be written at any time with no migration, because they read the log rather
   than a bespoke store.
@@ -75,7 +75,7 @@ Two consequences, and they are the reason so much can be deferred:
 
 Nothing is stored that is not already derivable. There is deliberately no
 `completedLessons` set, no "primary roadmap" field, and no `learner.goal` event — a second
-source of truth can always disagree with the log, and `roadmap.enrolled` already *is* a
+source of truth can always disagree with the log, and `roadmap.enrolled` already _is_ a
 goal declaration.
 
 ### 3. The boundaries are enforced, not documented
@@ -96,8 +96,8 @@ mechanically enforced, and splitting them by tool is deliberate:
    cache.
 5. Every content id is a well-formed slug, and referential integrity holds.
 
-Why this matters more than usual here: without it, an agent can *suggest* a restructure
-and, with enough momentum, *silently perform* one. These tests make the difference between
+Why this matters more than usual here: without it, an agent can _suggest_ a restructure
+and, with enough momentum, _silently perform_ one. These tests make the difference between
 the two visible.
 
 ## Where content is read
@@ -111,7 +111,7 @@ holding a half-valid lesson is worse than one missing it, because every consumer
 to handle the broken case. The failure is reported loudly by `content:check` instead.
 
 A subtle trap worth knowing about: `parseAll` receives bare data objects for career paths
-and skills, but *file wrappers* for modules, lessons and roadmaps. Validating the wrapper
+and skills, but _file wrappers_ for modules, lessons and roadmaps. Validating the wrapper
 instead of its contents produces "expected string, received undefined" for every `.mdx`
 file, which looks like a frontmatter bug and is not one. `asEntry` normalises this.
 
@@ -135,7 +135,7 @@ origin, but each tab holds its own in-memory copy:
 `e41` is gone. The learner loses work with no error and no reproducible cause. On a phone —
 where this platform will mostly be used — that is not a rare race.
 
-The fix is cheap *because* progress is an append-only log:
+The fix is cheap _because_ progress is an append-only log:
 
 - Every event carries a unique `id`, so two logs merge by union rather than
   last-write-wins. **This field is the enabling change** and the reason it is added now
@@ -168,7 +168,7 @@ machine-detectable problems are errors.
 
 The one deliberate exception to "every reference must resolve": collections that do not
 exist yet (`tools`, `quizzes`, `labs`, …) are skipped rather than failed, so a lesson can
-stage a `tools:` list before the tool directory exists at M5. A *known* collection is
+stage a `tools:` list before the tool directory exists at M5. A _known_ collection is
 always checked.
 
 ## Deliberate non-features
@@ -176,37 +176,37 @@ always checked.
 Each of these is absent on purpose. Adding one is a decision to be recorded in
 `DECISIONS.md`, not an obvious gap to fill.
 
-| Absent | Why |
-|---|---|
-| Backend, database, auth | Progress is local, and a port makes a future backend a swap. `PLAN.md` section 73 forbids premature backends |
-| CMS | Content is files in the repository. That *is* the feature: versioned, reviewable, diffable |
-| SSR | A static curriculum on GitHub Pages needs no server runtime |
-| i18n | One language. It would multiply the content workload and add a dependency |
-| Content API | The content is compiled into the bundle. A fetch layer would add a loading state to a platform that has none |
-| Redux / XState / TanStack Query | `Zustand` is one small dependency and removes provider boilerplate. Recorded in `DECISIONS.md` so it can be removed knowingly |
-| Component library | A design system we own, in CSS variables, is cheaper than adopting and fighting someone else's |
-| Mermaid / chart library | Diagrams are few, stable, and better hand-authored as SVG components |
-| Module prerequisite graph | Lesson prerequisites plus roadmap stage order cover every real use case. A weighted graph is the classic over-engineering move |
-| Skill *graph* | A tree is what the platform shows a learner. A graph is not more useful here, only harder to read |
-| File upload | No backend means nowhere to put a file and no reason to accept one |
-| Secure client-side assessments | Impossible without a server. Stated as a limitation rather than pretended away — see `DATA_MODEL.md` |
-| Analytics | Local-only is a privacy stance and a performance win. It also means we cannot know which content learners use, which is an accepted cost |
+| Absent                          | Why                                                                                                                                      |
+| ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| Backend, database, auth         | Progress is local, and a port makes a future backend a swap. `PLAN.md` section 73 forbids premature backends                             |
+| CMS                             | Content is files in the repository. That _is_ the feature: versioned, reviewable, diffable                                               |
+| SSR                             | A static curriculum on GitHub Pages needs no server runtime                                                                              |
+| i18n                            | One language. It would multiply the content workload and add a dependency                                                                |
+| Content API                     | The content is compiled into the bundle. A fetch layer would add a loading state to a platform that has none                             |
+| Redux / XState / TanStack Query | `Zustand` is one small dependency and removes provider boilerplate. Recorded in `DECISIONS.md` so it can be removed knowingly            |
+| Component library               | A design system we own, in CSS variables, is cheaper than adopting and fighting someone else's                                           |
+| Mermaid / chart library         | Diagrams are few, stable, and better hand-authored as SVG components                                                                     |
+| Module prerequisite graph       | Lesson prerequisites plus roadmap stage order cover every real use case. A weighted graph is the classic over-engineering move           |
+| Skill _graph_                   | A tree is what the platform shows a learner. A graph is not more useful here, only harder to read                                        |
+| File upload                     | No backend means nowhere to put a file and no reason to accept one                                                                       |
+| Secure client-side assessments  | Impossible without a server. Stated as a limitation rather than pretended away — see `DATA_MODEL.md`                                     |
+| Analytics                       | Local-only is a privacy stance and a performance win. It also means we cannot know which content learners use, which is an accepted cost |
 
 ## Where new code goes
 
-| You are adding | It belongs in |
-|---|---|
-| A lesson, module, roadmap, skill, career path | `content/`. No code |
-| A new content field | `src/content/schemas/`, with a default, then the validator |
-| A new way to query content | `src/content/selectors.ts` — never an ad-hoc lookup in a component |
-| Learning or progression logic | `src/domain/`, as a pure function over plain data |
-| A new event | `src/domain/progress/types.ts`, the union, and `reducer.ts`. Then any selectors that care |
-| An evaluation strategy for labs | `src/domain/labs/evaluators/`, one file, registered in a map |
-| A UI component used by one feature | That feature's folder |
-| A UI component used by many features | `src/components/` |
-| A route | `src/routes/`, thin: a loader or guard, and render a feature |
-| A design token | `src/styles/tokens.css` |
-| Storage behaviour | `src/app/storage/` behind the port |
+| You are adding                                | It belongs in                                                                             |
+| --------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| A lesson, module, roadmap, skill, career path | `content/`. No code                                                                       |
+| A new content field                           | `src/content/schemas/`, with a default, then the validator                                |
+| A new way to query content                    | `src/content/selectors.ts` — never an ad-hoc lookup in a component                        |
+| Learning or progression logic                 | `src/domain/`, as a pure function over plain data                                         |
+| A new event                                   | `src/domain/progress/types.ts`, the union, and `reducer.ts`. Then any selectors that care |
+| An evaluation strategy for labs               | `src/domain/labs/evaluators/`, one file, registered in a map                              |
+| A UI component used by one feature            | That feature's folder                                                                     |
+| A UI component used by many features          | `src/components/`                                                                         |
+| A route                                       | `src/routes/`, thin: a loader or guard, and render a feature                              |
+| A design token                                | `src/styles/tokens.css`                                                                   |
+| Storage behaviour                             | `src/app/storage/` behind the port                                                        |
 
 If you cannot place something in this table, that is a signal the design is missing
 something. Ask rather than invent a layer.
@@ -224,12 +224,12 @@ with a normal application build.
 
 ## Testing strategy
 
-| Suite | What it covers | Environment |
-|---|---|---|
-| `src/content/__tests__/` | Registry, selectors, validation, quality checks | jsdom (validation is pure; jsdom is for parity) |
-| `src/domain/**/__tests__/` | Reducer and selectors | jsdom, but nothing in `src/domain/` may import a DOM API — the ESLint rule enforces it |
-| `src/app/storage/__tests__/` | Adapters, merge, import validation | jsdom, because the merge logic can only be tested against a real Storage |
-| `src/domain/__tests__/boundaries.test.ts` | The architectural invariants | node + filesystem |
+| Suite                                     | What it covers                                  | Environment                                                                            |
+| ----------------------------------------- | ----------------------------------------------- | -------------------------------------------------------------------------------------- |
+| `src/content/__tests__/`                  | Registry, selectors, validation, quality checks | jsdom (validation is pure; jsdom is for parity)                                        |
+| `src/domain/**/__tests__/`                | Reducer and selectors                           | jsdom, but nothing in `src/domain/` may import a DOM API — the ESLint rule enforces it |
+| `src/app/storage/__tests__/`              | Adapters, merge, import validation              | jsdom, because the merge logic can only be tested against a real Storage               |
+| `src/domain/__tests__/boundaries.test.ts` | The architectural invariants                    | node + filesystem                                                                      |
 
 **Validation is tested against constructed fixtures, not files on disk.** That is the only
 practical way to test the cases that matter most, which are the invalid ones. A suite that

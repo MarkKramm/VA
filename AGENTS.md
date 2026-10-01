@@ -44,6 +44,10 @@ git status
 npm run check        # must be green before you change anything
 ```
 
+`check` covers lint, types, content validation, tests and build. It does **not** cover
+formatting — CI runs `npm run format:check`, and `check` deliberately does not. So a green
+`check` is not the same as a green CI. Run `npm run format` before committing.
+
 If `npm run check` is red, that is your first task, regardless of what you were asked
 to do.
 
@@ -86,7 +90,8 @@ refactoring something unrelated. If the change touches more than three files, pa
 confirm it is really the smallest change.
 
 **9. Verify before claiming completion.**
-`npm run check` must pass. "It should work" is not a result.
+`npm run check` must pass, and `npm run format:check` must pass. `check` does not include
+formatting; CI does. "It should work" is not a result.
 
 **10. Update the four documents and commit before you finish.**
 `project/CURRENT_STATE.md`, `project/NEXT_STEPS.md`, `project/CHECKPOINT.md`, and
@@ -148,7 +153,7 @@ exercise system arrives at M2. That is expected, not a bug.)
 
 5. Make the smallest correct change
 6. Add or update tests alongside it
-7. Run `npm run check`. Fix and re-run.
+7. Run `npm run check` and `npm run format:check`. Fix and re-run.
 8. If the task turns out bigger than expected: stop, note it in `BACKLOG.md`, complete a
    coherent subset, and update `NEXT_STEPS.md` accurately. **Partial completion with
    honest documentation beats silent scope creep.**
@@ -186,15 +191,15 @@ not a fix.
   a swap rather than a rewrite.
 - **Do not add a CMS.** Content is files in the repository. That is the feature.
 - **Do not convert a roadmap `lane` into a track list.** `lane: employment | freelance |
-  both` is a field, and the reason is written down in `DECISIONS.md`. Revisit only if a
-  learner needs a *different module selection* within one roadmap — not a different
+both` is a field, and the reason is written down in `DECISIONS.md`. Revisit only if a
+  learner needs a _different module selection_ within one roadmap — not a different
   emphasis, and not more or less content.
 - **Do not add XP, levels, achievements or streaks before M8.** Mastery already means
   something honest; a points system on top of it would not.
 - **Do not add a module prerequisite graph.** Lesson prerequisites and roadmap stage
   order cover every real use case. A weighted graph is the classic over-engineering move.
-- **Do not remove the Voice VA roadmap.** Voice *practice* is deferred past M9; the
-  *career path* is first-class. See `DECISIONS.md`.
+- **Do not remove the Voice VA roadmap.** Voice _practice_ is deferred past M9; the
+  _career path_ is first-class. See `DECISIONS.md`.
 - **Do not add file upload.** There is no backend, so there is nowhere to put a file and
   no reason to accept one.
 

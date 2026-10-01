@@ -17,7 +17,8 @@ today, and [project/NEXT_STEPS.md](project/NEXT_STEPS.md) for what is being buil
 ```bash
 npm install
 npm run dev        # dev server (no UI at M0)
-npm run check      # the full gate: lint, types, content, tests, build
+npm run check      # lint, types, content, tests, build
+npm run format     # Prettier — NOT part of `check`, but CI does run it
 ```
 
 **Requirements:** Node 22.12 or newer (`.node-version` pins 22 for CI consistency;
@@ -25,18 +26,23 @@ Node 24 also works — `engines` is `>=22.12` so a newer machine does not warn).
 
 ## Commands
 
-| Command | What it does |
-|---|---|
-| `npm run dev` | Vite dev server |
-| `npm run build` | Production build to `dist/` |
-| `npm run preview` | Serve the production build locally |
-| `npm run lint` | ESLint, including the layer-boundary rules |
-| `npm run typecheck` | `tsc --noEmit`, app and tooling configs separately |
-| `npm run content:check` | Validate all curriculum content |
-| `npm run test` | Full test suite |
-| `npm run test:arch` | Architectural invariant tests only |
-| `npm run format` / `format:check` | Prettier |
-| `npm run check` | Everything above, in order. This is the CI gate |
+| Command                           | What it does                                       |
+| --------------------------------- | -------------------------------------------------- |
+| `npm run dev`                     | Vite dev server                                    |
+| `npm run build`                   | Production build to `dist/`                        |
+| `npm run preview`                 | Serve the production build locally                 |
+| `npm run lint`                    | ESLint, including the layer-boundary rules         |
+| `npm run typecheck`               | `tsc --noEmit`, app and tooling configs separately |
+| `npm run content:check`           | Validate all curriculum content                    |
+| `npm run test`                    | Full test suite                                    |
+| `npm run test:arch`               | Architectural invariant tests only                 |
+| `npm run format` / `format:check` | Prettier                                           |
+| `npm run check`                   | lint, typecheck, `content:check`, tests, build     |
+
+> **`check` does not run `format:check`. CI does.** This is a known, deliberate gap:
+> `check` is fast enough to run constantly, and formatting is a separate concern. The
+> practical consequence is that `check` can be green while CI is red on formatting alone —
+> so **run `npm run format` (or `format:check`) before committing**.
 
 ## Adding content
 
@@ -97,21 +103,21 @@ never hard-code content into `src/`, keep the smallest correct change, run
 
 ## Documentation
 
-| Document | What it is |
-|---|---|
-| [PLAN.md](PLAN.md) | The long-term project constitution. Aspirational by design. |
-| [AGENTS.md](AGENTS.md) | The AI-agent entry point. Read this first. |
-| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Layers, boundaries, and where new code goes |
-| [docs/CONTENT_ARCHITECTURE.md](docs/CONTENT_ARCHITECTURE.md) | Entities, id rules, how to add each thing |
-| [docs/DATA_MODEL.md](docs/DATA_MODEL.md) | Every entity type and the progress event log |
-| [docs/CONTENT_GUIDELINES.md](docs/CONTENT_GUIDELINES.md) | How to write a lesson that is worth reading |
-| [docs/WORKFLOWS.md](docs/WORKFLOWS.md) | Repo procedures |
-| [project/CURRENT_STATE.md](project/CURRENT_STATE.md) | What exists and works right now |
-| [project/CHECKPOINT.md](project/CHECKPOINT.md) | The last verified stable state |
-| [project/NEXT_STEPS.md](project/NEXT_STEPS.md) | What is being built next |
-| [project/DECISIONS.md](project/DECISIONS.md) | Architectural decisions and their reasons |
-| [project/BACKLOG.md](project/BACKLOG.md) | Deliberately deferred work |
-| [CHANGELOG.md](CHANGELOG.md) | Meaningful changes |
+| Document                                                     | What it is                                                  |
+| ------------------------------------------------------------ | ----------------------------------------------------------- |
+| [PLAN.md](PLAN.md)                                           | The long-term project constitution. Aspirational by design. |
+| [AGENTS.md](AGENTS.md)                                       | The AI-agent entry point. Read this first.                  |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)                 | Layers, boundaries, and where new code goes                 |
+| [docs/CONTENT_ARCHITECTURE.md](docs/CONTENT_ARCHITECTURE.md) | Entities, id rules, how to add each thing                   |
+| [docs/DATA_MODEL.md](docs/DATA_MODEL.md)                     | Every entity type and the progress event log                |
+| [docs/CONTENT_GUIDELINES.md](docs/CONTENT_GUIDELINES.md)     | How to write a lesson that is worth reading                 |
+| [docs/WORKFLOWS.md](docs/WORKFLOWS.md)                       | Repo procedures                                             |
+| [project/CURRENT_STATE.md](project/CURRENT_STATE.md)         | What exists and works right now                             |
+| [project/CHECKPOINT.md](project/CHECKPOINT.md)               | The last verified stable state                              |
+| [project/NEXT_STEPS.md](project/NEXT_STEPS.md)               | What is being built next                                    |
+| [project/DECISIONS.md](project/DECISIONS.md)                 | Architectural decisions and their reasons                   |
+| [project/BACKLOG.md](project/BACKLOG.md)                     | Deliberately deferred work                                  |
+| [CHANGELOG.md](CHANGELOG.md)                                 | Meaningful changes                                          |
 
 ## Licence
 

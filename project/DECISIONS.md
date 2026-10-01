@@ -47,7 +47,7 @@ event log, with derived state computed from it.
 that fold, rebuildable at any moment, and an invariant test asserts they are equal.
 
 **Reason.** Every future feature — sync, undo, history charts, weak areas, spaced review,
-streaks — becomes a *pure function over the log* and can be written at any time with no
+streaks — becomes a _pure function over the log_ and can be written at any time with no
 migration. Explicit aggregates would need one migration per feature, and a second source of
 truth that can disagree with the first.
 
@@ -71,7 +71,7 @@ merge by union on write. (c) A backend with server-side concurrency control.
 listener so an open tab re-folds rather than overwriting.
 
 **Reason.** The failure is silent, unreproducible, and loses a learner's work. Because state
-*is* an event log, a merge is a union and is trivially correct. (c) is forbidden by the
+_is_ an event log, a merge is a union and is trivially correct. (c) is forbidden by the
 no-backend decision and would not help the offline case anyway.
 
 **Consequences.** One field per event, now, while there is no learner data to migrate. This
@@ -181,7 +181,7 @@ tracks simultaneously is served by `both` plus multi-roadmap enrolment, and a le
 wants only some freelance modules sees them once, labelled, and moves on. The cost of the
 model being wrong is one label.
 
-**Revisit as `tracks[]` if and only if** a learner needs a *different module selection*
+**Revisit as `tracks[]` if and only if** a learner needs a _different module selection_
 within a single roadmap — not a different emphasis, and not more or less content. A new
 lane such as `agency` is an enum value, not a trigger.
 
@@ -294,7 +294,7 @@ updated at the same time, including test fixtures.
 
 **Date:** 2026-10-01
 
-**Context.** The validator's important behaviour is what it does with *invalid* content.
+**Context.** The validator's important behaviour is what it does with _invalid_ content.
 
 **Options.** (a) Test only that the real content is valid. (b) Build registries from
 constructed data via `buildRegistryFromSource`.
@@ -307,3 +307,35 @@ recorded in `CHECKPOINT.md`.
 
 **Consequences.** `buildRegistryFromSource` is exported from the registry. It is the reason
 the registry is a function rather than a hard-wired module-level constant.
+
+## D15 — Duplicate-id validation reads the pre-index entity list
+
+**Date:** 2026-10-01 (corrects M0, where the check was unreachable)
+
+**Context.** The `duplicate-id` check iterated the registry's Maps. Those Maps are built by
+`indexById`, which is `new Map(items.map(i => [i.id, i]))` — and a Map keeps only the last
+entry for a repeated id. By the time the check could look, the duplicate had been erased, so
+it could never fire. An external audit confirmed it was dead code; a regression test
+reproduces the original behaviour before the fix.
+
+**Options.** (a) Check the Maps (the original, broken). (b) Validate ids while parsing,
+before indexing. (c) Expose the validated pre-index entities on the registry and validate
+there.
+
+**Choice.** (c). `ContentRegistry.parsed` holds one array of `ParsedEntity` per type —
+the validated entities _before_ `indexById`, each with its real source file path. The
+duplicate check reads `parsed`.
+
+**Reason.** (a) is structurally incapable of working, which is the worst kind of bug: a
+check that looks correct and always passes. (b) would put policy inside the loader and
+leave `validation.ts` — where every other rule lives — with a gap that is not obvious to
+the next reader. (c) keeps all validation in one place, and the extra cost is one array of
+references per type plus a path string, which is negligible next to the entity objects
+themselves.
+
+**Consequences.** The registry interface gained one field. Nothing in the application reads
+`parsed`; it exists for the validator, and the comment on the field says so. Real file
+paths are retained, so a duplicate error names both files — a synthesised
+`content/lessons/**/<id>.mdx` would have named the same path twice and told the reader
+nothing. Map lookup behaviour is unchanged: a duplicate still resolves to the last entry,
+which is pinned by a test so nobody "fixes" it into a first-wins rule by accident.

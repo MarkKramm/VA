@@ -39,10 +39,10 @@ validator skips collections that do not exist yet, so adding one later is additi
 A topic is a named, addressable concept inside a lesson. It has two forms, and the
 distinction is the whole point:
 
-| Form | When | Cost |
-|---|---|---|
-| **Inline** (default) | The concept belongs to this lesson. A frontmatter anchor plus matching MDX headings. | None |
-| **Shared** | The concept is taught in several lessons. It lives once in `content/topics/*.mdx` and each lesson *references* it | One file |
+| Form                 | When                                                                                                              | Cost     |
+| -------------------- | ----------------------------------------------------------------------------------------------------------------- | -------- |
+| **Inline** (default) | The concept belongs to this lesson. A frontmatter anchor plus matching MDX headings.                              | None     |
+| **Shared**           | The concept is taught in several lessons. It lives once in `content/topics/*.mdx` and each lesson _references_ it | One file |
 
 This is the anti-duplication mechanism for **concepts**, exactly parallel to how modules
 avoid duplicating lessons. "Professional tone" taught in email, in client updates and in
@@ -77,7 +77,7 @@ The M0 content is the worked example. `va-foundations` is referenced by both roa
 stages:
   - { kind: foundation, modules: [va-foundations] }
   - { kind: core, modules: [computer-fundamentals] }
-  - { kind: specialization, modules: [computer-fundamentals] }   # revisited on purpose
+  - { kind: specialization, modules: [computer-fundamentals] } # revisited on purpose
 ```
 
 ```yaml
@@ -111,7 +111,7 @@ Automation VA roadmap has two `kind: tool` stages, deliberately, because a rende
 assumes one stage per kind should be caught early rather than after 20 roadmaps exist.
 
 `Stage.kind` is the progression stage and belongs to the roadmap. `Module.kind` is an
-*editorial tag* (`core | tool | specialization | project`) used for filtering. A module is
+_editorial tag_ (`core | tool | specialization | project`) used for filtering. A module is
 not inherently a "foundation" — it is a foundation module in one roadmap and a tool module
 in another. Conflating the two vocabularies was a v4 error.
 
@@ -138,12 +138,12 @@ platform's single worst possible failure, and the reason `evidence` exists.
 Every content entity carries:
 
 ```yaml
-status: draft          # draft | review | published
+status: draft # draft | review | published
 updatedAt: '2026-10-01'
-changeNote: ...         # what changed, for the "what's new" surface at M5
-reviewedBy: ...         # required for published
-reviewedAt: ...         # required for published
-deprecatedIds: []       # only for genuine renames
+changeNote: ... # what changed, for the "what's new" surface at M5
+reviewedBy: ... # required for published
+reviewedAt: ... # required for published
+deprecatedIds: [] # only for genuine renames
 ```
 
 `status: published` **requires** `reviewedBy` and `reviewedAt`; validation fails the build
@@ -220,20 +220,20 @@ literal in `src/` is a review-blocking bug.
 
 ## Validation reference
 
-| Rule | Severity | What it catches |
-|---|---|---|
-| `schema` | error | Frontmatter that does not match the schema |
-| `referential-integrity` | error | An id that does not resolve |
-| `duplicate-id` | error | Two entities with the same id |
-| `cycle` | error | A dependency or taxonomy loop |
-| `provenance` | error | `published` with no reviewer |
-| `orphan` | warning | A lesson in no module, a module in no roadmap |
-| `quality/language` | warning | Guarantee language |
-| `quality/numeric-claim` | warning | An uncited rate or percentage |
-| `quality/generic-title` | warning | "Introduction", "Overview", "Lesson 4" |
-| `quality/no-practice` | warning | A lesson with no exercise, quiz or lab |
-| `quality/duplicate` | warning | Two lessons with the same title or summary |
-| `quality/near-duplicate` | warning | Two very similar lessons in one module |
+| Rule                     | Severity | What it catches                               |
+| ------------------------ | -------- | --------------------------------------------- |
+| `schema`                 | error    | Frontmatter that does not match the schema    |
+| `referential-integrity`  | error    | An id that does not resolve                   |
+| `duplicate-id`           | error    | Two entities with the same id                 |
+| `cycle`                  | error    | A dependency or taxonomy loop                 |
+| `provenance`             | error    | `published` with no reviewer                  |
+| `orphan`                 | warning  | A lesson in no module, a module in no roadmap |
+| `quality/language`       | warning  | Guarantee language                            |
+| `quality/numeric-claim`  | warning  | An uncited rate or percentage                 |
+| `quality/generic-title`  | warning  | "Introduction", "Overview", "Lesson 4"        |
+| `quality/no-practice`    | warning  | A lesson with no exercise, quiz or lab        |
+| `quality/duplicate`      | warning  | Two lessons with the same title or summary    |
+| `quality/near-duplicate` | warning  | Two very similar lessons in one module        |
 
 **Errors fail the build. Warnings do not.** Anything needing a human judgement is a warning,
 because a build that blocks on judgement teaches authors to work around the check.

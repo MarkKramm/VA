@@ -26,6 +26,29 @@ export interface ContentRegistry {
   readonly modules: ReadonlyMap<string, Module>
   readonly lessons: ReadonlyMap<string, Lesson>
   readonly roadmaps: ReadonlyMap<string, Roadmap>
+
+  /**
+   * The validated entities BEFORE id indexing, each with its source file.
+   *
+   * These are the same entity objects as the Maps above — only the array and a
+   * path string per entry are extra.
+   *
+   * They exist because `indexById` erases exactly the information duplicate-id
+   * detection needs: `new Map(items.map(i => [i.id, i]))` keeps only the last
+   * entry for a repeated id. Any check reading the Maps is therefore
+   * structurally incapable of seeing a duplicate. Validation reads this instead,
+   * and retains the real file path so the error names a file a human can open.
+   *
+   * Nothing in the application reads `parsed`; it exists for the validator.
+   */
+  readonly parsed: {
+    readonly careerPaths: readonly ParsedEntity<CareerPath>[]
+    readonly skills: readonly ParsedEntity<Skill>[]
+    readonly modules: readonly ParsedEntity<Module>[]
+    readonly lessons: readonly ParsedEntity<Lesson>[]
+    readonly roadmaps: readonly ParsedEntity<Roadmap>[]
+  }
+
   /** roadmapId -> moduleId, in stage order. The roadmap's spine, resolved. */
   readonly roadmapModuleIds: ReadonlyMap<string, readonly string[]>
   /** moduleId -> roadmapId. Derived, never authored. */
@@ -98,6 +121,13 @@ const asEntry = (input: unknown, fallbackLocation: () => string) => {
   return { location: fallbackLocation(), data: input }
 }
 
+/** A validated entity together with the file it came from. */
+export interface ParsedEntity<T> {
+  readonly value: T
+  /** The real source path, so a validation error names a file a human can open. */
+  readonly path: string
+}
+
 /**
  * Entities that fail validation are dropped rather than kept with partial data.
  * A registry holding a half-valid lesson is worse than one missing it, because
@@ -110,13 +140,13 @@ const parseAll = <T>(args: {
   entity: string
   locationOf: () => string
   issues: RegistryIssue[]
-}): T[] => {
-  const out: T[] = []
+}): ParsedEntity<T>[] => {
+  const out: ParsedEntity<T>[] = []
   args.inputs.forEach((input) => {
     const { location, data } = asEntry(input, args.locationOf)
     const result = args.schema.safeParse(data)
     if (result.success) {
-      out.push(result.data)
+      out.push({ value: result.data, path: location })
       return
     }
     for (const issue of result.error.issues) {
@@ -181,12 +211,20 @@ export function buildRegistryFromSource(source: ContentSource): ContentRegistry 
     issues,
   })
 
+  // Bare entity arrays, for the derived indexes. The `ParsedEntity` arrays
+  // (which retain each entity's source file) are kept as `parsed` below.
+  const careerPathValues = careerPaths.map((entry) => entry.value)
+  const skillValues = skills.map((entry) => entry.value)
+  const moduleValues = modules.map((entry) => entry.value)
+  const lessonValues = lessons.map((entry) => entry.value)
+  const roadmapValues = roadmaps.map((entry) => entry.value)
+
   // --- derived indexes ----------------------------------------------------
   // Every one of these is computed, never authored. This is what keeps adding a
   // lesson to a second roadmap a one-line change in one file.
 
   const roadmapModuleIds = new Map<string, string[]>(
-    roadmaps.map((roadmap) => [roadmap.id, roadmap.stages.flatMap((stage) => stage.modules)]),
+    roadmapValues.map((roadmap) => [roadmap.id, roadmap.stages.flatMap((stage) => stage.modules)]),
   )
 
   const moduleRoadmapIds = new Map<string, string[]>()
@@ -197,11 +235,11 @@ export function buildRegistryFromSource(source: ContentSource): ContentRegistry 
   const lessonModuleIds = new Map<string, string[]>()
   const skillLessonIds = new Map<string, string[]>()
   const skillModuleIds = new Map<string, string[]>()
-  for (const module of modules) {
+  for (const module of moduleValues) {
     for (const lessonId of module.lessons) push(lessonModuleIds, lessonId, module.id)
     for (const skillId of module.skills) push(skillModuleIds, skillId, module.id)
   }
-  for (const lesson of lessons) {
+  for (const lesson of lessonValues) {
     for (const skillId of lesson.skills) push(skillLessonIds, skillId, lesson.id)
     for (const topic of lesson.topics) {
       for (const skillId of topic.skills) push(skillLessonIds, skillId, lesson.id)
@@ -209,7 +247,7 @@ export function buildRegistryFromSource(source: ContentSource): ContentRegistry 
   }
 
   const moduleCareerPathIds = new Map<string, string[]>()
-  for (const roadmap of roadmaps) {
+  for (const roadmap of roadmapValues) {
     for (const moduleId of roadmapModuleIds.get(roadmap.id) ?? []) {
       push(moduleCareerPathIds, moduleId, roadmap.careerPath)
     }
@@ -224,11 +262,14 @@ export function buildRegistryFromSource(source: ContentSource): ContentRegistry 
   }
 
   return {
-    careerPaths: indexById(careerPaths),
-    skills: indexById(skills),
-    modules: indexById(modules),
-    lessons: indexById(lessons),
-    roadmaps: indexById(roadmaps),
+    careerPaths: indexById(careerPathValues),
+    skills: indexById(skillValues),
+    modules: indexById(moduleValues),
+    lessons: indexById(lessonValues),
+    roadmaps: indexById(roadmapValues),
+    // The pre-index entities, each with its source file, so duplicate-id
+    // detection still has the evidence indexById is about to discard.
+    parsed: { careerPaths, skills, modules, lessons, roadmaps },
     roadmapModuleIds,
     moduleRoadmapIds,
     lessonModuleIds,

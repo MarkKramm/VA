@@ -73,26 +73,26 @@ negotiable — not for speed, not for volume, not because a lesson "looks fine".
 ### A lesson
 
 ```yaml
-id: what-is-a-virtual-assistant      # kebab-case, never renamed once published
-title: What Is a Virtual Assistant?  # says what it teaches
-aliases: [VA, virtual assistants]    # how learners actually search
-summary: >-                          # one or two sentences, no jargon
+id: what-is-a-virtual-assistant # kebab-case, never renamed once published
+title: What Is a Virtual Assistant? # says what it teaches
+aliases: [VA, virtual assistants] # how learners actually search
+summary: >- # one or two sentences, no jargon
   A plain-language explanation of what a virtual assistant does, who they work
   for, and the kinds of tasks that make up the job.
-objectives:                          # REQUIRED, and behavioural
+objectives: # REQUIRED, and behavioural
   - Describe what a virtual assistant does in your own words
   - Name the four broad categories of work most VAs are hired for
   - Explain the difference between working for a company, an agency, and a client
 difficulty: beginner
 estimatedMinutes: 8
-prerequisites: []                    # { id, reason } — the reason makes the warning useful
+prerequisites: [] # { id, reason } — the reason makes the warning useful
 topics: []
 skills: [communication]
 status: draft
 updatedAt: '2026-10-01'
 ```
 
-**Objectives are the most important field.** Write them as things a learner *can do*, not
+**Objectives are the most important field.** Write them as things a learner _can do_, not
 things they will know. "Understand spreadsheets" is not an objective. "Clean a spreadsheet
 with duplicate and inconsistent rows" is.
 
@@ -130,7 +130,7 @@ and is not certain they will take the ones after.
 ### A roadmap
 
 Stages, in order, referencing modules that already exist. The `note` on a stage should say
-why that stage is in *this* roadmap.
+why that stage is in _this_ roadmap.
 
 ---
 
@@ -138,12 +138,12 @@ why that stage is in *this* roadmap.
 
 Plain, direct, and specific.
 
-| Do | Do not |
-|---|---|
-| "Open the file menu" | "Navigate to the file system interface" |
-| "This is wrong because the client paid twice" | "This constitutes an error requiring correction" |
-| "Most people are surprised by this" | "It is worth noting that many users are surprised" |
-| "Ask before you open it" | "It is recommended that one consider verifying first" |
+| Do                                            | Do not                                                |
+| --------------------------------------------- | ----------------------------------------------------- |
+| "Open the file menu"                          | "Navigate to the file system interface"               |
+| "This is wrong because the client paid twice" | "This constitutes an error requiring correction"      |
+| "Most people are surprised by this"           | "It is worth noting that many users are surprised"    |
+| "Ask before you open it"                      | "It is recommended that one consider verifying first" |
 
 Short sentences. Active voice. Second person for instructions. Concrete nouns.
 
@@ -217,6 +217,6 @@ Before anything moves to `published`:
 you whether a cited figure is correct**, or whether a phishing example is subtly
 unconvincing, or whether the ordering of two steps would confuse someone.
 
-Every automated check sits *below* the point where editorial judgement is required. That
+Every automated check sits _below_ the point where editorial judgement is required. That
 boundary is permanent, and it is the strongest argument for the human-editor model: no
 amount of validation converts an agent into an editor.

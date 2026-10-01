@@ -10,7 +10,36 @@ All notable changes to this project. Format follows
 
 ## [Unreleased]
 
-Nothing yet.
+### Fixed
+
+**Two validation gates that were not actually green**, both found by an independent audit of
+M0 rather than by the M0 work itself.
+
+- **The `duplicate-id` check was unreachable.** It iterated the registry's Maps, which
+  `indexById` builds with `new Map(items.map(i => [i.id, i]))` — a Map keeps only the last
+  entry for a repeated id, so the duplicate was already erased before any check could
+  observe it. A check that looks correct and always passes is the worst kind of bug.
+  Validation now reads the pre-index entity list, exposed on the registry as `parsed`, with
+  each entity's real source file retained so a duplicate error names both files. Map lookup
+  behaviour is unchanged and pinned by a test. Six regression tests, including one
+  confirming the same id in two different entity types is not a false positive.
+  `DECISIONS.md` D15.
+- **11 Markdown files failed `npm run format:check`.** Fixed by applying the repository's
+  existing Prettier rules, not by hand.
+
+### Documentation
+
+`npm run check` does **not** run `format:check`, but CI does. That gap is why the formatting
+regression went unnoticed for a full milestone, and a green `check` is therefore not the same
+as a green CI. Now stated explicitly in `README.md`, `AGENTS.md`, `docs/WORKFLOWS.md`,
+`project/CURRENT_STATE.md` and `project/CHECKPOINT.md`, and `AGENTS.md` rule 9 now requires
+both. The split itself is deliberate — `check` is meant to be fast enough to run constantly —
+so the fix is documentation, not a change to what `check` does.
+
+### Not changed
+
+No architecture, no schema semantics, no content, no dependencies, no tests removed. All M0
+content remains `status: draft`.
 
 ## [0.1.0-foundation] — 2026-10-01
 

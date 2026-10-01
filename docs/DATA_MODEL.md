@@ -12,13 +12,13 @@ For how entities relate, see [CONTENT_ARCHITECTURE.md](CONTENT_ARCHITECTURE.md).
 
 From `src/content/schemas/primitives.ts`:
 
-| Name | Type | Notes |
-|---|---|---|
-| `SlugSchema` | `^[a-z0-9]+(?:-[a-z0-9]+)*$`, 2-80 chars | The only accepted id shape. Ids are **immutable once published** |
-| `IsoDateSchema` | `YYYY-MM-DD` | Deliberately not a full timestamp; content dates are days |
-| `DifficultySchema` | `beginner \| intermediate \| advanced` | |
-| `StatusSchema` | `draft \| review \| published` | `published` requires a reviewer |
-| `provenanceShape` | `status`, `updatedAt`, `changeNote?`, `reviewedBy?`, `reviewedAt?`, `deprecatedIds` | Spread into every content entity |
+| Name               | Type                                                                                | Notes                                                            |
+| ------------------ | ----------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| `SlugSchema`       | `^[a-z0-9]+(?:-[a-z0-9]+)*$`, 2-80 chars                                            | The only accepted id shape. Ids are **immutable once published** |
+| `IsoDateSchema`    | `YYYY-MM-DD`                                                                        | Deliberately not a full timestamp; content dates are days        |
+| `DifficultySchema` | `beginner \| intermediate \| advanced`                                              |                                                                  |
+| `StatusSchema`     | `draft \| review \| published`                                                      | `published` requires a reviewer                                  |
+| `provenanceShape`  | `status`, `updatedAt`, `changeNote?`, `reviewedBy?`, `reviewedAt?`, `deprecatedIds` | Spread into every content entity                                 |
 
 Each entity type also has a dedicated slug schema (`LessonSlugSchema`,
 `ModuleSlugSchema`, …) rather than reusing one generic `IdSchema`, so a field's type says
@@ -72,13 +72,13 @@ practice. The prerequisite mechanism on lessons already covers "you need this fi
 }
 ```
 
-| Field | Required | Why |
-|---|---|---|
-| `objectives` | **yes, min 1** | A lesson without a stated objective is a page, not a lesson. This single requirement does more for content quality than any amount of prose guidance |
-| `aliases` | no | Extra search keys: "VA", "GSheets", "freelance help". Feeds the MiniSearch index at M2 |
-| `prerequisites` | no | Objects, not bare ids: `{ id, reason }`. The `reason` makes the advisory *specific*, and a specific advisory is actionable where "you have unmet prerequisites" is not |
-| `estimatedMinutes` | yes | Feeds roadmap time estimates and the "is this worth it" judgement |
-| `changeNote` | no | Gives the M5 "what's new" surface something to say beyond "updated" |
+| Field              | Required       | Why                                                                                                                                                                    |
+| ------------------ | -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `objectives`       | **yes, min 1** | A lesson without a stated objective is a page, not a lesson. This single requirement does more for content quality than any amount of prose guidance                   |
+| `aliases`          | no             | Extra search keys: "VA", "GSheets", "freelance help". Feeds the MiniSearch index at M2                                                                                 |
+| `prerequisites`    | no             | Objects, not bare ids: `{ id, reason }`. The `reason` makes the advisory _specific_, and a specific advisory is actionable where "you have unmet prerequisites" is not |
+| `estimatedMinutes` | yes            | Feeds roadmap time estimates and the "is this worth it" judgement                                                                                                      |
+| `changeNote`       | no             | Gives the M5 "what's new" surface something to say beyond "updated"                                                                                                    |
 
 `Lesson.topics` is an array of anchors. `kind: 'shared'` requires a `sharedRef` to a
 `content/topics/*.mdx` entity, enforced by the schema.
@@ -93,7 +93,7 @@ The unit of reuse. `outcome` is required and behavioural: "clean a spreadsheet w
 duplicate and inconsistent rows", not "understands spreadsheets".
 
 `kind` is an **editorial tag** (`core | tool | specialization | project`) used for
-filtering. It is deliberately *not* the progression stage — a module is not inherently a
+filtering. It is deliberately _not_ the progression stage — a module is not inherently a
 "foundation", it is a foundation module in one roadmap and a tool module in another. That
 vocabulary belongs to the roadmap. Conflating the two was a v4 error.
 
@@ -138,15 +138,15 @@ decision in the project, and it was wrong in v1-v4 when questions were inlined i
 `QuizSchema`:
 
 - No reuse. `PLAN.md` section 36 defines six assessment levels, and a module assessment and
-  a roadmap assessment covering the same module should draw on the *same* question.
+  a roadmap assessment covering the same module should draw on the _same_ question.
   Inlined questions make that copy-paste, which is exactly the duplication failure the
   id-reference architecture exists to prevent.
-- No concept-level analytics. Weak-area analysis needs to know which *concepts* a learner
+- No concept-level analytics. Weak-area analysis needs to know which _concepts_ a learner
   is weak at, which requires a global question identity.
 - Unmanageable files at scale. The platform targets thousands of questions; a 3,000-question
   bank inlined into quizzes is not a workable structure.
 
-It lands at M4, *with* the quiz engine. Retrofitting after hundreds of questions exist means
+It lands at M4, _with_ the quiz engine. Retrofitting after hundreds of questions exist means
 editing every quiz file.
 
 ```ts
@@ -177,9 +177,9 @@ From `src/domain/progress/types.ts`. **The central design decision of the applic
 
 ```ts
 type ProgressState = {
-  version: number                  // migration hook, starts at 1
+  version: number // migration hook, starts at 1
   events: readonly ProgressEvent[] // append-only
-  derived: DerivedProgress         // a CACHE of the fold, never a source of truth
+  derived: DerivedProgress // a CACHE of the fold, never a source of truth
 }
 ```
 
@@ -189,20 +189,20 @@ Every event carries:
 { id: string, at: string }          // id is load-bearing — see below
 ```
 
-| Event | Payload |
-|---|---|
-| `lesson.viewed` | `lessonId` |
-| `lesson.completed` | `lessonId, source: 'manual' \| 'activity'` |
-| `lesson.uncompleted` | `lessonId` |
-| `topic.completed` | `topicId, lessonId, completed` |
-| `exercise.attempted` | `exerciseId, lessonId, selfChecked` |
-| `quiz.attempted` | `quizId, attemptId, score, maxScore, passed, evaluatedBy` |
-| `lab.submitted` | `labId, attemptId, attemptNumber, payload, feedbackNotes, passed, evaluatedBy` |
-| `assessment.attempted` | `assessmentId, attemptId, score, maxScore, passed, evaluatedBy` |
-| `roadmap.enrolled` / `roadmap.unenrolled` | `roadmapId` |
-| `bookmark.toggled` | `refType, refId` |
-| `note.saved` | `refType, refId, body` |
-| `portfolio.artifact.added` | `artifactId, roadmapId, skills` |
+| Event                                     | Payload                                                                        |
+| ----------------------------------------- | ------------------------------------------------------------------------------ |
+| `lesson.viewed`                           | `lessonId`                                                                     |
+| `lesson.completed`                        | `lessonId, source: 'manual' \| 'activity'`                                     |
+| `lesson.uncompleted`                      | `lessonId`                                                                     |
+| `topic.completed`                         | `topicId, lessonId, completed`                                                 |
+| `exercise.attempted`                      | `exerciseId, lessonId, selfChecked`                                            |
+| `quiz.attempted`                          | `quizId, attemptId, score, maxScore, passed, evaluatedBy`                      |
+| `lab.submitted`                           | `labId, attemptId, attemptNumber, payload, feedbackNotes, passed, evaluatedBy` |
+| `assessment.attempted`                    | `assessmentId, attemptId, score, maxScore, passed, evaluatedBy`                |
+| `roadmap.enrolled` / `roadmap.unenrolled` | `roadmapId`                                                                    |
+| `bookmark.toggled`                        | `refType, refId`                                                               |
+| `note.saved`                              | `refType, refId, body`                                                         |
+| `portfolio.artifact.added`                | `artifactId, roadmapId, skills`                                                |
 
 ### `id` on every event
 
@@ -221,15 +221,15 @@ lost later in the UI.
 
 ### Three tiers, and why completion is not one of them
 
-| Tier | Meaning | Evidence |
-|---|---|---|
-| **Exposed** | Read the lesson | `lesson.viewed` — never counts as competence |
-| **Practised** | Did the exercise or lab | `exercise.attempted`, `lab.submitted` |
-| **Demonstrated** | Passed a scored check | `quiz.attempted` (passed), `assessment.attempted` (passed) |
+| Tier             | Meaning                 | Evidence                                                   |
+| ---------------- | ----------------------- | ---------------------------------------------------------- |
+| **Exposed**      | Read the lesson         | `lesson.viewed` — never counts as competence               |
+| **Practised**    | Did the exercise or lab | `exercise.attempted`, `lab.submitted`                      |
+| **Demonstrated** | Passed a scored check   | `quiz.attempted` (passed), `assessment.attempted` (passed) |
 
 `lesson.completed` still exists as a self-report, because removing the checkbox is a wall
 and this platform does not build walls. It simply does not count as competence on its own,
-and an assessment cannot be *passed* until its lessons are completed **and** practised.
+and an assessment cannot be _passed_ until its lessons are completed **and** practised.
 That is the single hard lock in the platform, and it is reserved for claiming a
 demonstrated outcome.
 
@@ -237,7 +237,7 @@ demonstrated outcome.
 
 No `completedLessons` set, no "primary roadmap" field, no `learner.goal` event. All of these
 are derivable from the log, and a second source of truth can always disagree with the first.
-`roadmap.enrolled` already *is* a goal declaration.
+`roadmap.enrolled` already _is_ a goal declaration.
 
 ### Mastery: a number internally, a level externally
 
@@ -257,14 +257,14 @@ overstating what a learner knows. The UI shows the level plus the evidence behin
 
 1. **All quiz answers ship in the client bundle.** A static site has no server, so a learner
    can read them in devtools. Not fixable without a backend, which `PLAN.md` section 73
-   rules out. Mitigated by anchoring *demonstrated competence* in labs and portfolio
+   rules out. Mitigated by anchoring _demonstrated competence_ in labs and portfolio
    evidence rather than quiz scores, and stated in `QUIZ_GUIDELINES.md` at M4.
 2. **Self-assessed labs are self-reported.** The learner is the only user, so self-assessment
    is inherently unverified. Mitigated by the `evaluatedBy` discriminator, a required
    written payload (M6), visible labelling, and a lower readiness weight. Not eliminated,
    and no schema change will eliminate it.
 3. **A learner can hand-edit their exported progress JSON.** It only affects their own local
-   view. What *is* required is robustness: import parses, schema-validates, version-checks
+   view. What _is_ required is robustness: import parses, schema-validates, version-checks
    and rejects cleanly, and a failed import never destroys existing progress.
 4. **Progress lives in one browser.** Clearing site data or switching device loses it. Export
    and import (M3) mitigate; accounts would fix it, and accounts are not planned.

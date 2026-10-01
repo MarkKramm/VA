@@ -25,17 +25,17 @@ Nothing here is scheduled. Items are listed so they are not forgotten, not as a 
 
 ## Milestone-gated
 
-| Item | Milestone | Note |
-|---|---|---|
-| `Question` entity and question bank | M4 | Must land *with* the quiz engine, never after |
-| `short-answer` scoring, `matching`, `ordering` renderers | M4 | Only if the learning value justifies the work |
-| `file-review` lab strategy | M7 | Portfolio evidence |
-| Progress export/import UI | M3 | The validator already exists at M0 |
-| Bundle size budget in CI | M5 | The payload report already exists at M0 |
-| Scheduled link check | M6 | Non-blocking first |
-| Playwright in CI | M9 | |
-| Lighthouse accessibility and performance budgets | M9 | |
-| Content freshness report for entries past `lastReviewed` | M9 | |
+| Item                                                     | Milestone | Note                                          |
+| -------------------------------------------------------- | --------- | --------------------------------------------- |
+| `Question` entity and question bank                      | M4        | Must land _with_ the quiz engine, never after |
+| `short-answer` scoring, `matching`, `ordering` renderers | M4        | Only if the learning value justifies the work |
+| `file-review` lab strategy                               | M7        | Portfolio evidence                            |
+| Progress export/import UI                                | M3        | The validator already exists at M0            |
+| Bundle size budget in CI                                 | M5        | The payload report already exists at M0       |
+| Scheduled link check                                     | M6        | Non-blocking first                            |
+| Playwright in CI                                         | M9        |                                               |
+| Lighthouse accessibility and performance budgets         | M9        |                                               |
+| Content freshness report for entries past `lastReviewed` | M9        |                                               |
 
 ## Explicitly not planned
 
@@ -53,9 +53,9 @@ Recorded so a future agent does not treat absence as an oversight.
 - **A module prerequisite graph.** Lesson prerequisites and stage order are sufficient.
 - **Learning-style adaptation or a spaced-repetition scheduler.** No evidence base for a
   specific pedagogy claim, and each is a scheduler plus a model plus a UI. Note that
-  *spaced review as a derived view* needs no schema at all and is a M8 item, not this.
+  _spaced review as a derived view_ needs no schema at all and is a M8 item, not this.
 - **Voice practice before M9.** Deferred with its own planning pass, because audio storage
-  on a static host is a real constraint. The Voice VA *roadmap* is not deferred.
+  on a static host is a real constraint. The Voice VA _roadmap_ is not deferred.
 
 ## Content, when the time comes
 

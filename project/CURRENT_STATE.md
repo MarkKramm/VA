@@ -4,7 +4,7 @@
 **Milestone:** M0 — Foundation · **complete**
 **Next:** M1 — Application Shell · **not started**
 
-This file describes the state *as it is*, rewritten each session. It is not a history. For
+This file describes the state _as it is_, rewritten each session. It is not a history. For
 the history, see `CHANGELOG.md`.
 
 ---
@@ -47,15 +47,20 @@ remaining roadmaps and skill visualisation (M8), polish (M9). Deployment arrives
 
 ## Verification state
 
-| Gate | Result |
-|---|---|
-| `npm run lint` | clean |
-| `npm run typecheck` | clean, app and tooling configs separately |
+| Gate                    | Result                                                              |
+| ----------------------- | ------------------------------------------------------------------- |
+| `npm run lint`          | clean                                                               |
+| `npm run typecheck`     | clean, app and tooling configs separately                           |
 | `npm run content:check` | 0 errors, 4 warnings (all `quality/no-practice`, expected until M2) |
-| `npm run test` | 163 passing across 8 files |
-| `npm run test:arch` | 11 passing |
-| `npm run build` | succeeds; 407 kB / 92.6 kB gzipped |
-| `npm run format:check` | clean |
+| `npm run test`          | 169 passing across 9 files                                          |
+| `npm run test:arch`     | 11 passing                                                          |
+| `npm run build`         | succeeds; 407 kB / 92.6 kB gzipped                                  |
+| `npm run format:check`  | clean                                                               |
+
+**`npm run check` does not include `format:check`, but CI does.** Both must pass before a
+commit is safe; a green `check` on its own does not mean CI will be green. This is a
+deliberate split — `check` is meant to be fast enough to run constantly — and it is
+documented in `README.md` and `AGENTS.md` so the next person does not have to rediscover it.
 
 ## Known rough edges
 

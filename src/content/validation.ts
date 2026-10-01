@@ -211,49 +211,49 @@ const checkReferentialIntegrity = (registry: ContentRegistry, issues: RegistryIs
   }
 }
 
-/** No duplicate ids. A duplicate silently makes one entity unreachable. */
+/**
+ * No duplicate ids. A duplicate silently makes one entity unreachable: the
+ * second file's content is dropped by `indexById`, and no other check notices.
+ *
+ * This reads `registry.parsed` — the validated entities BEFORE id indexing —
+ * rather than the Maps. The Maps are built with `new Map(items.map(i => [i.id, i]))`,
+ * which keeps only the last entry for a repeated id, so a check reading them
+ * is structurally incapable of observing a duplicate. That made the original
+ * version of this function unreachable, and the regression test in
+ * `duplicate-ids.test.ts` exists to keep it that way.
+ *
+ * Ids only need to be unique WITHIN an entity type: a skill and a module may
+ * legitimately share an id, so the key is scoped by entity.
+ */
 const checkDuplicateIds = (registry: ContentRegistry, issues: RegistryIssue[]): void => {
-  const seen = new Set<string>()
-  for (const file of [
-    ...[...registry.lessons.values()].map((l) => ({
-      entity: 'lesson',
-      path: pathOf.lesson(l),
-      id: l.id,
-    })),
-    ...[...registry.modules.values()].map((m) => ({
-      entity: 'module',
-      path: pathOf.module(m),
-      id: m.id,
-    })),
-    ...[...registry.roadmaps.values()].map((r) => ({
-      entity: 'roadmap',
-      path: pathOf.roadmap(r),
-      id: r.id,
-    })),
-    ...[...registry.skills.values()].map((s) => ({
-      entity: 'skill',
-      path: 'content/skills/skill-tree.ts',
-      id: s.id,
-    })),
-    ...[...registry.careerPaths.values()].map((c) => ({
-      entity: 'career-path',
-      path: 'content/career-paths.ts',
-      id: c.id,
-    })),
-  ]) {
-    const key = `${file.entity}:${file.id}`
-    if (seen.has(key)) {
-      report(
-        issues,
-        'error',
-        'duplicate-id',
-        file.entity,
-        file.path,
-        'id',
-        `duplicate id "${file.id}"`,
-      )
+  const collections = [
+    { entity: 'lesson', entries: registry.parsed.lessons },
+    { entity: 'module', entries: registry.parsed.modules },
+    { entity: 'roadmap', entries: registry.parsed.roadmaps },
+    { entity: 'skill', entries: registry.parsed.skills },
+    { entity: 'career-path', entries: registry.parsed.careerPaths },
+  ] as const
+
+  for (const { entity, entries } of collections) {
+    const firstSeenAt = new Map<string, string>()
+    for (const { value, path } of entries) {
+      const previous = firstSeenAt.get(value.id)
+      if (previous !== undefined) {
+        // Report the second occurrence: the file a human needs to open is the
+        // duplicate, not the original.
+        report(
+          issues,
+          'error',
+          'duplicate-id',
+          entity,
+          path,
+          'id',
+          `duplicate id "${value.id}" (already defined in ${previous})`,
+        )
+        continue
+      }
+      firstSeenAt.set(value.id, path)
     }
-    seen.add(key)
   }
 }
 
