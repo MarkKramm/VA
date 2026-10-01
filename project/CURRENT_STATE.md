@@ -57,10 +57,10 @@ remaining roadmaps and skill visualisation (M8), polish (M9). Deployment arrives
 | `npm run build`         | succeeds; 407 kB / 92.6 kB gzipped                                  |
 | `npm run format:check`  | clean                                                               |
 
-**`npm run check` does not include `format:check`, but CI does.** Both must pass before a
-commit is safe; a green `check` on its own does not mean CI will be green. This is a
-deliberate split — `check` is meant to be fast enough to run constantly — and it is
-documented in `README.md` and `AGENTS.md` so the next person does not have to rediscover it.
+**`npm run check` is the single gate and includes `format:check`**, so a green `check`
+means CI will be green. This was not true at M0: `check` originally skipped formatting,
+which is how a formatting regression survived a full milestone with a locally green gate.
+It is called out here so the history is not mistaken for the current design.
 
 ## Known rough edges
 

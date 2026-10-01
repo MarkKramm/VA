@@ -20,12 +20,11 @@ interface. That is correct for M0.
 
 ### Verified working
 
-- `npm run check` passes: lint, typecheck, content validation, **169 tests**, architectural
-  invariants, build. Separately, `npm run format:check` passes.
-- **`npm run check` does not include `format:check`, but CI does.** A green `check` is
-  therefore not the same as a green CI, and both must pass before a commit is safe. This
-  gap is why a formatting regression went unnoticed for one full milestone; it is now
-  called out in `README.md` and `AGENTS.md` as well.
+- `npm run check` passes: formatting, lint, typecheck, content validation, **169 tests**,
+  architectural invariants, build.
+- **`npm run check` includes `format:check`, so a green `check` means CI will be green.**
+  At M0 it did not, which is how a formatting regression survived a full milestone behind a
+  locally green gate. The gap is closed.
 - 2 roadmaps, 2 modules, 4 lessons, 16 career paths, 19 skills load and validate. Zero
   content errors.
 - **Cross-roadmap reuse is proven by test, not assertion.** Both M0 roadmaps reference both

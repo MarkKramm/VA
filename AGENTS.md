@@ -44,9 +44,8 @@ git status
 npm run check        # must be green before you change anything
 ```
 
-`check` covers lint, types, content validation, tests and build. It does **not** cover
-formatting — CI runs `npm run format:check`, and `check` deliberately does not. So a green
-`check` is not the same as a green CI. Run `npm run format` before committing.
+`check` is the single gate: formatting, lint, types, content validation, tests and build. If
+it is green, CI will be green. `npm run format` fixes formatting rather than reporting it.
 
 If `npm run check` is red, that is your first task, regardless of what you were asked
 to do.
@@ -90,8 +89,8 @@ refactoring something unrelated. If the change touches more than three files, pa
 confirm it is really the smallest change.
 
 **9. Verify before claiming completion.**
-`npm run check` must pass, and `npm run format:check` must pass. `check` does not include
-formatting; CI does. "It should work" is not a result.
+`npm run check` must pass. It includes formatting, lint, types, content validation, tests
+and build. "It should work" is not a result.
 
 **10. Update the four documents and commit before you finish.**
 `project/CURRENT_STATE.md`, `project/NEXT_STEPS.md`, `project/CHECKPOINT.md`, and
@@ -153,7 +152,7 @@ exercise system arrives at M2. That is expected, not a bug.)
 
 5. Make the smallest correct change
 6. Add or update tests alongside it
-7. Run `npm run check` and `npm run format:check`. Fix and re-run.
+7. Run `npm run check`. Fix and re-run.
 8. If the task turns out bigger than expected: stop, note it in `BACKLOG.md`, complete a
    coherent subset, and update `NEXT_STEPS.md` accurately. **Partial completion with
    honest documentation beats silent scope creep.**

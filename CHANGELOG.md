@@ -27,14 +27,20 @@ M0 rather than by the M0 work itself.
 - **11 Markdown files failed `npm run format:check`.** Fixed by applying the repository's
   existing Prettier rules, not by hand.
 
+### Changed
+
+**`format:check` is now part of `npm run check`.** It previously was not, while CI did run
+it — which is why the formatting regression above survived a full milestone behind a locally
+green gate. `check` is now the single gate: format, lint, typecheck, `content:check`, tests,
+build. A green `check` means CI will be green, so there is no longer a second command to
+remember before committing. The cost is small: `format:check` adds roughly 2 seconds of
+wall time to a gate that already runs the full test suite and a production build.
+
 ### Documentation
 
-`npm run check` does **not** run `format:check`, but CI does. That gap is why the formatting
-regression went unnoticed for a full milestone, and a green `check` is therefore not the same
-as a green CI. Now stated explicitly in `README.md`, `AGENTS.md`, `docs/WORKFLOWS.md`,
-`project/CURRENT_STATE.md` and `project/CHECKPOINT.md`, and `AGENTS.md` rule 9 now requires
-both. The split itself is deliberate — `check` is meant to be fast enough to run constantly —
-so the fix is documentation, not a change to what `check` does.
+The `check`-versus-CI distinction that this gap created is recorded in `README.md`,
+`AGENTS.md`, `docs/WORKFLOWS.md`, `project/CURRENT_STATE.md` and `project/CHECKPOINT.md` as
+history, so the next reader does not assume the old split is still the design.
 
 ### Not changed
 

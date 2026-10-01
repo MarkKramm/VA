@@ -17,8 +17,8 @@ today, and [project/NEXT_STEPS.md](project/NEXT_STEPS.md) for what is being buil
 ```bash
 npm install
 npm run dev        # dev server (no UI at M0)
-npm run check      # lint, types, content, tests, build
-npm run format     # Prettier — NOT part of `check`, but CI does run it
+npm run check      # format, lint, types, content, tests, build
+npm run format     # Prettier — fixes formatting instead of reporting it
 ```
 
 **Requirements:** Node 22.12 or newer (`.node-version` pins 22 for CI consistency;
@@ -37,12 +37,10 @@ Node 24 also works — `engines` is `>=22.12` so a newer machine does not warn).
 | `npm run test`                    | Full test suite                                    |
 | `npm run test:arch`               | Architectural invariant tests only                 |
 | `npm run format` / `format:check` | Prettier                                           |
-| `npm run check`                   | lint, typecheck, `content:check`, tests, build     |
+| `npm run check`                   | Everything above, in order. The single gate        |
 
-> **`check` does not run `format:check`. CI does.** This is a known, deliberate gap:
-> `check` is fast enough to run constantly, and formatting is a separate concern. The
-> practical consequence is that `check` can be green while CI is red on formatting alone —
-> so **run `npm run format` (or `format:check`) before committing**.
+`check` includes `format:check`, so a green `check` means CI will be green. Use
+`npm run format` to fix formatting rather than report it.
 
 ## Adding content
 

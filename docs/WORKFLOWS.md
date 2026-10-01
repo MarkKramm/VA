@@ -90,13 +90,13 @@ do.
 
 ## Finishing a session
 
-1. `npm run check` — green, or an honest account of why not.
-2. `npm run format:check` — **`check` does not run this, but CI does.** Both must pass.
-3. Update `project/CURRENT_STATE.md` — the state as it is now.
-4. Update `project/CHECKPOINT.md` — what was tested, what remains, what to do next.
-5. Update `project/NEXT_STEPS.md` — at most three concrete items.
-6. `CHANGELOG.md` if the change is meaningful.
-7. Commit. At a milestone boundary, add an annotated tag.
+1. `npm run check` — green, or an honest account of why not. This covers formatting, lint,
+   types, content validation, tests and build.
+2. Update `project/CURRENT_STATE.md` — the state as it is now.
+3. Update `project/CHECKPOINT.md` — what was tested, what remains, what to do next.
+4. Update `project/NEXT_STEPS.md` — at most three concrete items.
+5. `CHANGELOG.md` if the change is meaningful.
+6. Commit. At a milestone boundary, add an annotated tag.
 
 ## Milestones
 

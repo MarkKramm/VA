@@ -20,7 +20,7 @@
     "test:watch": "vitest",
     "test:arch": "vitest run src/domain/__tests__/boundaries.test.ts",
     "content:check": "vite-node scripts/validate-content.ts",
-    "check": "npm run lint && npm run typecheck && npm run content:check && npm run test && npm run build"
+    "check": "npm run format:check && npm run lint && npm run typecheck && npm run content:check && npm run test && npm run build"
   },
   "dependencies": {
     "zod": "^4.6.5"
