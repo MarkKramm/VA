@@ -22,6 +22,18 @@ export const completedLessonCount = (
 ): number => lessonIds.filter((id) => isLessonComplete(state, id)).length
 
 /**
+ * How many of these lessons the learner has PRACTISED (M3).
+ *
+ * Deliberately separate from `completedLessonCount`: reading a lesson and doing
+ * its practice are different evidence (D5/D6), and the dashboard shows both so a
+ * learner who has only read cannot mistake it for having done the work.
+ */
+export const practisedLessonCount = (
+  state: ProgressState,
+  lessonIds: readonly LessonId[],
+): number => lessonIds.filter((id) => isLessonPractised(state, id)).length
+
+/**
  * Module progress as a 0–1 ratio.
  *
  * `allLessonIds` is passed in rather than looked up, because the domain layer

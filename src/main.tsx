@@ -2,6 +2,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { RouterProvider } from 'react-router'
 import { router } from '@/app/router.tsx'
+import { ProgressProvider } from '@/app/progress/ProgressProvider.tsx'
 import { ThemeProvider } from '@/app/providers/ThemeProvider.tsx'
 import '@/styles/tokens.css'
 import '@/styles/global.css'
@@ -15,9 +16,10 @@ import '@/styles/global.css'
  * first paint. Importing them inside a component would mean a flash of unstyled
  * content on a slow connection.
  *
- * `ThemeProvider` wraps `RouterProvider` rather than sitting inside it, so a route
- * that throws still has a working theme toggle — an error boundary inside the
- * provider would render with no way to change theme.
+ * Both providers wrap `RouterProvider` rather than sitting inside it, so a route
+ * that throws still has a working theme toggle and a working progress store — an
+ * error boundary inside a provider would render with no way to change theme and
+ * no progress.
  */
 
 const container = document.getElementById('root')
@@ -31,7 +33,9 @@ if (!container) {
 createRoot(container).render(
   <StrictMode>
     <ThemeProvider>
-      <RouterProvider router={router} />
+      <ProgressProvider>
+        <RouterProvider router={router} />
+      </ProgressProvider>
     </ThemeProvider>
   </StrictMode>,
 )

@@ -38,6 +38,28 @@ export const newEventId = (): string => {
 }
 
 /**
+ * A timestamp strictly later than the newest event in the log.
+ *
+ * WHY THIS EXISTS (M3). The fold is "last write wins" over the log's ORDER, and
+ * the order is `at` then `id`. Two events recorded in the same millisecond —
+ * which a fast machine does easily, and which a test does every time — get the
+ * same `at`, so the only tiebreak left is a RANDOM id. That makes the outcome of
+ * "mark complete, then mark not complete" a coin flip.
+ *
+ * So the generated timestamp is nudged to be strictly greater than the last
+ * event's. The adjustment is at most a millisecond, and in exchange "the later
+ * action wins" is true rather than probabilistic. An event that supplies its own
+ * `at` (imports, fixtures) is left exactly as given.
+ */
+const nextTimestamp = (events: readonly ProgressEvent[]): string => {
+  const last = events[events.length - 1]
+  const lastMs = last ? Date.parse(last.at) : Number.NaN
+  const now = Date.now()
+  const base = Number.isFinite(lastMs) ? Math.max(now, lastMs + 1) : now
+  return new Date(base).toISOString()
+}
+
+/**
  * Union two event logs by id.
  *
  * Order is by `at` then `id`, so the result is deterministic regardless of which
@@ -89,10 +111,24 @@ export class ProgressStore {
     const full = {
       ...event,
       id: event.id ?? newEventId(),
-      at: event.at ?? new Date().toISOString(),
+      // Monotonic, so two appends in the same millisecond still order correctly.
+      at: event.at ?? nextTimestamp(current.events),
     } as ProgressEvent
-    const merged = mergeEventLogs(current.events, [full])
-    const next = foldEvents(merged)
+    return this.mergeEvents([full])
+  }
+
+  /**
+   * Merge events into the persisted log and return the new state (M3).
+   *
+   * Always re-reads first, so it can never clobber a concurrent write — the same
+   * guarantee `append` gives, which is now expressed in terms of this. It is the
+   * primitive the import path uses: an imported file is a list of events, and
+   * merging by id (rather than replacing the log) is what makes an import
+   * ADDITIVE and non-destructive to whatever the learner already has.
+   */
+  mergeEvents(events: readonly ProgressEvent[]): ProgressState {
+    const current = this.load()
+    const next = foldEvents(mergeEventLogs(current.events, events))
     this.adapter.write(PROGRESS_KEY, next)
     return next
   }

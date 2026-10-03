@@ -207,6 +207,17 @@ describe('ProgressStore', () => {
     expect(store.syncFrom(current)).toBeUndefined()
   })
 
+  it('orders two appends made in the same millisecond, so the later action wins', () => {
+    // Regression (M3): `at` has millisecond resolution, so two events appended in
+    // the same millisecond shared a timestamp and fell back to a random-id
+    // tiebreak — making "mark complete, then mark not complete" a coin flip.
+    // Generated timestamps are now strictly increasing.
+    const store = new ProgressStore(new MemoryStorageAdapter())
+    store.append({ type: 'lesson.completed', lessonId: 'a', source: 'manual' })
+    const state = store.append({ type: 'lesson.uncompleted', lessonId: 'a' })
+    expect(state.derived.completedLessons['a']).toBeUndefined()
+  })
+
   it('clears all progress', () => {
     const adapter = new MemoryStorageAdapter()
     const store = new ProgressStore(adapter)

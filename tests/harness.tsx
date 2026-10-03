@@ -2,6 +2,7 @@ import { createMemoryRouter, RouterProvider } from 'react-router'
 import { render } from '@testing-library/react'
 import type { RenderResult } from '@testing-library/react'
 import { AppShell } from '@/components/layout/AppShell.tsx'
+import { ProgressProvider } from '@/app/progress/ProgressProvider.tsx'
 import { ThemeProvider } from '@/app/providers/ThemeProvider.tsx'
 import { MemoryStorageAdapter } from '@/app/storage/memory.ts'
 import { DashboardPage } from '@/features/dashboard/DashboardPage.tsx'
@@ -67,7 +68,9 @@ export const renderApp = (
 
   const result = render(
     <ThemeProvider storage={storage}>
-      <RouterProvider router={router} />
+      <ProgressProvider storage={storage}>
+        <RouterProvider router={router} />
+      </ProgressProvider>
     </ThemeProvider>,
   )
 
@@ -79,6 +82,10 @@ export const renderWithTheme = (
   ui: React.ReactElement,
   storage: MemoryStorageAdapter = new MemoryStorageAdapter(),
 ): RenderResult & { readonly storage: MemoryStorageAdapter } => {
-  const result = render(<ThemeProvider storage={storage}>{ui}</ThemeProvider>)
+  const result = render(
+    <ThemeProvider storage={storage}>
+      <ProgressProvider storage={storage}>{ui}</ProgressProvider>
+    </ThemeProvider>,
+  )
   return Object.assign(result, { storage })
 }
