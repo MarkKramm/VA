@@ -68,36 +68,42 @@ Nothing here is scheduled. Items are listed so they are not forgotten, not as a 
 
 Findings from the post-M2 architectural health audit. **These are not M2 scope and not M3
 features** — they are a hardening pass to run **before** M3, so the feature work lands on a
-clean base. Each is small and independent. Nothing here is scheduled; it is recorded so it is
-not lost. See `CURRENT_STATE.md` → "Before M3".
+clean base. See `CURRENT_STATE.md` → "Before M3".
 
-1. **`AGENTS.md` orientation drift.** `AGENTS.md` §2 still says M2 is next and that there are no
-   lesson pages; §4 says "the exercise system arrives at M2"; §7 repeats the old
-   `gray-matter` ~55 kB bundle note. The `project/` orientation files were refreshed at the M2
-   close-out; `AGENTS.md` was deliberately left for this pass because it is the first file an
-   agent reads and the fix should be one deliberate edit.
-2. **`syncFrom` equal-length divergence.** `src/app/storage/merge.ts` returns `undefined` when
-   the two logs have the same length, so two tabs with equal event counts but divergent logs are
-   never detected. There is no regression test for the equal-length case.
-3. **Quality checks ignore compiled lesson prose.** `src/content/quality-checks.ts` builds its
-   `body` from `summary + objectives` only; the compiled lesson body (M2.2) is never inspected,
-   so a numeric claim or guarantee phrase in the prose is not caught.
+**Done in the pre-M3 hardening pass:**
+
+1. ~~**`AGENTS.md` orientation drift.**~~ **Done.** §2/§4/§7 now state M0–M2 complete, M3
+   next, build-time parsing, and exercises as render-only practice.
+2. ~~**`syncFrom` equal-length divergence.**~~ **Done.** Change detection is by event
+   identity, not count (`merge.ts`), with a regression test for the equal-length case.
+3. ~~**Quality checks ignore compiled prose.**~~ **Done.** The scanned text now includes the
+   flattened compiled body for BOTH lessons and exercises (`quality-checks.ts`), with
+   regression tests for a body-only claim.
+4. ~~**`KNOWN_EVENT_TYPES` hand-duplicated.**~~ **Done.** `PROGRESS_EVENT_TYPES` in
+   `src/domain/progress/types.ts` is tied to the union by
+   `satisfies Record<ProgressEventType, true>`, and the import validator derives its set from
+   it, so drift is a compile error.
+5. ~~**Exercise-title invariant coverage.**~~ **Done at M2.4** (invariant 3b includes exercise
+   titles).
+6. ~~**Missing export producer.**~~ **Done.** `serializeProgressExport` in
+   `export-validate.ts`, round-trip tested across every event variant.
+
+**Still open — the separate cleanup batch (not part of the hardening pass):**
+
 4. **Duplicated `roadmapProgress`.** `src/domain/progress/selectors.ts` and
    `src/domain/roadmap/progress.ts` each implement mean-over-stages independently.
-5. **`KNOWN_EVENT_TYPES` hand-duplicated.** `src/app/storage/export-validate.ts` maintains a
-   literal set "kept in sync" with the `ProgressEvent` union, with no exhaustiveness test to
-   catch drift.
-6. **Stale/no-op validation branch.** `src/content/validation.ts` has an empty `if` for a
+5. **Stale/no-op validation branch.** `src/content/validation.ts` has an empty `if` for a
    `shared` topic whose `sharedRef` does not resolve — dead code with a comment that still says
    topics arrive at M2.
-7. **Boundary-test alias gap.** `importsContentForRuntime` in
+6. **Boundary-test alias gap.** `importsContentForRuntime` in
    `src/domain/__tests__/boundaries.test.ts` matches `@content/` but not `@/content/`. The
    ESLint rule covers the alias via `**/content/**`; the test invariant does not.
-8. **Exercise-title invariant coverage.** Invariant 3b now includes exercise titles (added at
-   M2.4). Confirm the coverage is complete and keep it in step as future collections land.
-9. **Missing export producer.** `src/app/storage/export-validate.ts` has a parser
-   (`parseProgressExport`) but no serializer, so there is no way to produce an export. The UI is
-   M3; the producer itself is a small pure function.
+7. **Tautological content test.** `src/app/__tests__/content.test.ts` — "counts lessons once
+   per roadmap even when a module repeats" asserts `new Set([x]).size === 1`, which cannot
+   fail; it should assert the actual de-duplicated ids.
+8. **Dead `ProgressStore.refresh()`.** Defined in `src/app/storage/merge.ts`, never called.
+9. **Stale checkpoint wording.** `project/CHECKPOINT.md` (M2.4 section) says "No M2 close-out
+   yet (no `v0.3.0-content-engine` tag)", which the close-out checkpoint above it contradicts.
 
 ## Development environment
 

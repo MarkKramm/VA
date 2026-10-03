@@ -5,6 +5,53 @@ something that works.
 
 ---
 
+## Checkpoint: pre-M3 hardening pass
+
+**Date:** 2026-10-04
+**Milestone:** M2 (hardening) · M3 not started
+**Tag:** none — `v0.3.0-content-engine` remains the latest
+**Branch:** `main`
+
+### What this checkpoint is
+
+The five findings from the post-M2 audit that mattered before M3 are fixed, with no M3 feature
+and no architectural change. See `BACKLOG.md` → "Pre-M3 hardening (post-M2 audit)".
+
+### Verified working
+
+- `npm run content:check` — **0 errors, 3 `quality/no-practice` warnings** (unchanged: the new
+  prose checks found no claim in the current content).
+- `npm run typecheck`, `npm run lint`, `npm run check:contrast` (34 pairs) — clean.
+- `npm run test` — **452 across 25 files; 451 pass.** The single failure is the environmental
+  `content-gate.test.ts` child-process spawn (`cmd.exe` EBUSY); the test is unchanged.
+- `npm run test:arch` — 16 passing.
+- `npm run build` — 489 kB / 149 kB gzipped; SPA fallback written; `check:paths` clean; no
+  compiler in the client.
+
+### What changed
+
+- **F5** — `PROGRESS_EVENT_TYPES` in `src/domain/progress/types.ts` is tied to the
+  `ProgressEvent` union by `satisfies Record<ProgressEventType, true>`, and the import
+  validator derives its known set from it, so drift is a compile error.
+- **F2** — `ProgressStore.syncFrom` detects change by event identity, not event count.
+- **F9** — `serializeProgressExport` added; round-trips through `parseProgressExport` for every
+  event variant.
+- **F3** — quality checks flatten and scan the compiled body for lessons AND exercises.
+- **F1** — `AGENTS.md` §2/§4/§7 refreshed to the actual M2 state.
+
+### Not done, deliberately
+
+The remaining cleanup batch (`BACKLOG.md` → "Pre-M3 hardening"): duplicated `roadmapProgress`,
+the no-op shared-topic branch, the `@/content` boundary-test alias gap, the tautological
+content test, dead `ProgressStore.refresh()`, and the stale M2.4 checkpoint wording. None
+blocks M3.
+
+### Recommended next task
+
+**M3 — Progress.**
+
+---
+
 ## Checkpoint: M2 close-out — v0.3.0-content-engine
 
 **Date:** 2026-10-04

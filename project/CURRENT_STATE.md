@@ -94,7 +94,8 @@ for it does not exist yet.**
 
 **Storage, behind a port.** `StorageAdapter` with `localStorage`, memory, and cross-tab
 merge implementations. Import validation rejects malformed exports without destroying
-existing progress.
+existing progress, and `serializeProgressExport` produces an export in the same format the
+validator reads, so the round trip is complete.
 
 **A working application shell.** React 19 + React Router 7, a real Vite application build,
 five routes, a responsive sidebar/mobile-dialog layout, a dashboard, a roadmaps index and the
@@ -132,7 +133,7 @@ achievements, no backend/auth, no state-management library.
 | `npm run typecheck`      | clean, app and tooling configs separately                            |
 | `npm run content:check`  | 0 errors, 3 warnings (all `quality/no-practice`)                     |
 | `npm run check:contrast` | 34 pairs pass, computed from tokens                                  |
-| `npm run test`           | 435 across 24 files — **434 pass**, 1 sandbox-only spawn failure     |
+| `npm run test`           | 452 across 25 files — **451 pass**, 1 sandbox-only spawn failure     |
 | `npm run test:arch`      | 16 passing                                                           |
 | `npm run build`          | succeeds; 489 kB / 149 kB gzipped — no compiler in the client        |
 | `npm run check:paths`    | base `/VA/`, assets present, SPA fallback in place, no compiler leak |
@@ -172,14 +173,14 @@ format check, and it is never touched, moved or reformatted (`DECISIONS.md` D20)
   not wired; the Practice section says so. Recording practice is M3.
 - **All content is `status: draft`.** Nothing has been human-reviewed.
 
-## Before M3: the pre-M3 hardening pass
+## Before M3: the pre-M3 hardening pass · **DONE**
 
-M2 is closed, but the post-M2 architectural audit left nine findings that should be fixed
-**before** M3 feature work starts. They are recorded in `BACKLOG.md` → "Pre-M3 hardening
-(post-M2 audit)" and are deliberately **not** part of this close-out. The most visible is that
-`AGENTS.md` still describes M2 as the next milestone; the rest are small correctness and
-consistency issues in the storage merge, the quality checks, the progress selectors, the export
-validator and the boundary tests.
+M2 closed with nine findings from the post-M2 architectural audit. The five that mattered before
+M3 are fixed: `AGENTS.md` orientation (F1), `syncFrom` change detection by event identity (F2),
+compiled-prose quality checks for lessons and exercises (F3), event-type completeness derived
+from the `ProgressEvent` union (F5), and the export producer (F9). The items still listed in
+`BACKLOG.md` → "Pre-M3 hardening (post-M2 audit)" are a small, optional cleanup batch, not
+blockers.
 
 **A note on `PLAN.md` §69.** The long-term constitution lists M2 as "Lesson data / Lesson
 pages / Modules / Categories / Roadmaps" and puts _Exercises_ under M6 "Practice". The

@@ -34,14 +34,19 @@ the project is without needing any conversation history. That is the point of th
 
 ## 2. The state of the project
 
-**Milestone 0 (Foundation) and Milestone 1 (Application Shell) are complete. Milestone 2
-(Content Engine) is next.**
+**Milestones 0–2 are complete. Milestone 2 (Content Engine) is closed at
+`v0.3.0-content-engine`. Milestone 3 (Progress) is next — but run the pre-M3 hardening pass
+in `project/BACKLOG.md` first.**
 
-There is a working application shell: React, routing, layout, navigation, a dashboard, a
-design-token layer and the deployment path. **There are no lesson pages, no exercises, no
-progress tracking, no quizzes, no labs and no tool directory.** If you find yourself wanting
-to build one of those, you are working on the wrong milestone — and if you find yourself
-wanting to add a route that points at one, read rule 6 first.
+M0 built the content pipeline and the progress model; M1 the application shell; M2 the
+content engine — build-time frontmatter ingestion and MDX compilation behind an enforced
+trust boundary (M2.1/M2.2), the lesson experience with navigation and prerequisites (M2.3),
+and the first render-only practice exercises (M2.4). Content parsing and MDX compilation
+happen at BUILD time; no parser reaches the client. There is a working application shell:
+React, routing, layout, navigation, a dashboard, a design-token layer and the deployment
+path. **There is no progress tracking, no quizzes, no labs and no tool directory.** If you
+find yourself wanting to build one of those, you are working on the wrong milestone — and if
+you find yourself wanting to add a route that points at one, read rule 6 first.
 
 Verify your starting point before doing anything else:
 
@@ -143,8 +148,9 @@ easy to produce and expensive for a learner's finances. `npm run content:check` 
 these as warnings; treat every one as a task, not noise.
 
 **Every lesson must reach practice.** A lesson with no exercise, quiz or lab is a
-reading page, and `content:check` warns about it. (M0 lessons are all warnings — the
-exercise system arrives at M2. That is expected, not a bug.)
+reading page, and `content:check` warns about it. Exercises exist as of M2.4
+(`content/exercises/`, rendered ungraded and unsaved); the three M0 lessons that still warn
+are reading-only, which is the honest state, not a bug.
 
 ## 5. Session protocol
 
@@ -218,10 +224,12 @@ both` is a field, and the reason is written down in `DECISIONS.md`. Revisit only
   genuinely needs a store. `DECISIONS.md` D17.
 - **Do not add placeholder routes for future milestones.** A nav entry pointing at a
   non-functional page is worse than no nav entry: it promises a feature and then 404s.
-- **Do not hand-roll a YAML parser to shrink the bundle.** ~55 kB gzipped of `gray-matter`
-  reaches the browser because `content/index.ts` parses frontmatter at module scope. The fix
-  is the M2 MDX pipeline. A hand-rolled parser would duplicate a solved problem and could
-  disagree with `gray-matter` on an edge case. `BACKLOG.md`.
+- **Do not hand-roll a YAML parser to shrink the bundle.** This was a real M1 problem —
+  ~55 kB gzipped of `gray-matter` reached the browser because `content/index.ts` parsed
+  frontmatter at module scope — and it is **resolved at M2.1**: `vite-plugin-content.ts`
+  parses in Node and serves `virtual:content-data`, so no parser reaches the client
+  (`DECISIONS.md` D21, invariant 6). The rule stands for the future: do not hand-roll a solved
+  problem, and never re-introduce a build-time dependency into the client graph.
 - **Do not hard-code `/VA/`.** Read `import.meta.env.BASE_URL`. A test asserts the router
   does not contain the literal, and `check:paths` asserts the built output.
 - **Do not skip `prefers-reduced-motion` when adding animation.** Every duration is a

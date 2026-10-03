@@ -10,7 +10,30 @@ All notable changes to this project. Format follows
 
 ## [Unreleased]
 
-_No unreleased changes yet. M2 is released below; the next milestone is M3 — Progress._
+### Added
+
+- **A progress export producer (F9).** `serializeProgressExport(state)` produces the same
+  `{ version, events }` format `parseProgressExport` validates, so a learner's data can be
+  written as well as read. Pure and deterministic; round-trip tested across every
+  `ProgressEvent` variant.
+
+### Changed
+
+- **`AGENTS.md` orientation refreshed (F1).** It now states M0–M2 complete, M3 next,
+  build-time content parsing/MDX compilation, and exercises as render-only practice, instead
+  of describing the project as pre-M2.
+
+### Fixed
+
+- **Cross-tab progress synchronization detects change by event identity, not count (F2).**
+  `ProgressStore.syncFrom` reported "no change" whenever two logs held the same number of
+  events, so a same-length divergent log left an open tab showing stale progress.
+- **The import validator's known event types can no longer drift from the `ProgressEvent`
+  union (F5).** The set is now derived from `PROGRESS_EVENT_TYPES`, tied to the union by a
+  compile-time `satisfies` check, so adding a variant without updating it is a build error.
+- **Content quality checks inspect compiled prose (F3).** A numeric or guarantee claim in a
+  compiled lesson body — or an exercise body, summary, deliverable or self-check — is now
+  detected, not only one in a lesson's `summary`/`objectives`.
 
 ## [0.3.0-content-engine] — 2026-10-04 — M2 Content Engine
 

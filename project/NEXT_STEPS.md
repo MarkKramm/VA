@@ -29,19 +29,20 @@ See `CHECKPOINT.md` for the verified state and `CHANGELOG.md` for the release en
 
 M3 gives progress a home — lesson completion, roadmap progress and dashboard progress — on top
 of the M0 progress model (a pure fold over an append-only event log) and the `StorageAdapter`
-port. **Before M3, run the pre-M3 hardening pass** so the feature work lands on a clean base.
+port.
 
-### 1. Pre-M3 hardening pass
+### 1. Pre-M3 hardening pass · **DONE**
 
-The nine findings in `BACKLOG.md` → "Pre-M3 hardening (post-M2 audit)". Each is a small
-correctness or consistency fix rather than a feature, and they are deliberately kept out of
-this close-out.
+The five pre-M3 findings from the post-M2 audit are fixed: `AGENTS.md` orientation (F1),
+`syncFrom` change detection (F2), compiled-prose quality checks (F3), event-type completeness
+(F5), and the export producer (F9). See `BACKLOG.md` → "Pre-M3 hardening (post-M2 audit)"; the
+items still listed there are an optional cleanup batch, not blockers.
 
 ### 2. M3 — Progress
 
-Lesson completion, roadmap and dashboard progress, and the export/import UI (the validator
-already exists from M0). `exercise.attempted` may be wired here, now that progress has a home.
-See `PLAN.md` §69 and `BACKLOG.md`.
+Lesson completion, roadmap and dashboard progress, and the export/import UI — the parser and,
+as of the hardening pass, the serializer both exist. `exercise.attempted` may be wired here,
+now that progress has a home. See `PLAN.md` §69 and `BACKLOG.md`.
 
 ---
 
