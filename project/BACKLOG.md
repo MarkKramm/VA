@@ -62,7 +62,8 @@ Nothing here is scheduled. Items are listed so they are not forgotten, not as a 
   lessons referencing it. Needs the tools collection (M5); a derivation over the existing
   reverse indexes, so a few lines once the collection exists.
 - Coverage thresholds on `src/domain` (90%+) and `src/content` (80%+). No UI threshold.
-- Playwright, for the 5–10 critical journeys at M3.
+- Playwright, for the 5–10 critical journeys. M3 tested the real store, storage and routes
+  through jsdom instead; a small number of genuine browser journeys is worth adding at M9.
 
 ## Pre-M3 hardening (post-M2 audit)
 
@@ -105,6 +106,28 @@ clean base. See `CURRENT_STATE.md` → "Before M3".
 9. **Stale checkpoint wording.** `project/CHECKPOINT.md` (M2.4 section) says "No M2 close-out
    yet (no `v0.3.0-content-engine` tag)", which the close-out checkpoint above it contradicts.
 
+## M3 progress — deferred
+
+M3 built the progress foundation and nothing more. These were deliberately NOT built; each
+belongs to a later milestone, and recording them here is what kept them out of M3.
+
+- **XP, levels, streaks, achievements** — M8 at the earliest. `AGENTS.md` §7 forbids them
+  before then: mastery already means something honest, and points on top would not.
+- **Bookmarks and notes** — the events exist (`bookmark.toggled`, `note.saved`) but there is no
+  UI. A later slice; the domain is already ready.
+- **Recommendations and weak-area detection** — a recommendation engine, not a progress feature.
+  `PLAN.md` §73 and `AGENTS.md` rule 6 keep it out.
+- **Job-readiness scoring** — M7. It is evidence-weighted (D6) and the evidence (quizzes, labs)
+  does not exist yet.
+- **Portfolio evidence** — M7.
+- **Quizzes and assessments** — M4. The `Question` entity lands with the engine (D7).
+- **Search and the tool directory** — M5.
+- **Labs** — M6.
+- **Authentication, backend, cloud and multi-device sync** — not planned (D4). The
+  `StorageAdapter` port makes a backend a swap rather than a rewrite if that ever changes.
+- **Browser-automation journeys** — M3 tests the real store, storage and routes through jsdom.
+  Playwright stays a M9 item rather than a mid-milestone install.
+
 ## Development environment
 
 - ~~**Scope `format:check` so it does not fail on untracked local config.**~~ **Resolved at
@@ -117,17 +140,17 @@ clean base. See `CURRENT_STATE.md` → "Before M3".
 
 ## Milestone-gated
 
-| Item                                                     | Milestone | Note                                          |
-| -------------------------------------------------------- | --------- | --------------------------------------------- |
-| `Question` entity and question bank                      | M4        | Must land _with_ the quiz engine, never after |
-| `short-answer` scoring, `matching`, `ordering` renderers | M4        | Only if the learning value justifies the work |
-| `file-review` lab strategy                               | M7        | Portfolio evidence                            |
-| Progress export/import UI                                | M3        | The validator already exists at M0            |
-| Bundle size budget in CI                                 | M5        | The payload report already exists at M0       |
-| Scheduled link check                                     | M6        | Non-blocking first                            |
-| Playwright in CI                                         | M9        |                                               |
-| Lighthouse accessibility and performance budgets         | M9        |                                               |
-| Content freshness report for entries past `lastReviewed` | M9        |                                               |
+| Item                                                     | Milestone | Note                                                        |
+| -------------------------------------------------------- | --------- | ----------------------------------------------------------- |
+| `Question` entity and question bank                      | M4        | Must land _with_ the quiz engine, never after               |
+| `short-answer` scoring, `matching`, `ordering` renderers | M4        | Only if the learning value justifies the work               |
+| `file-review` lab strategy                               | M7        | Portfolio evidence                                          |
+| Progress export/import UI                                | M3        | **Done at M3** — application-layer export + merge-on-import |
+| Bundle size budget in CI                                 | M5        | The payload report already exists at M0                     |
+| Scheduled link check                                     | M6        | Non-blocking first                                          |
+| Playwright in CI                                         | M9        |                                                             |
+| Lighthouse accessibility and performance budgets         | M9        |                                                             |
+| Content freshness report for entries past `lastReviewed` | M9        |                                                             |
 
 ## Explicitly not planned
 

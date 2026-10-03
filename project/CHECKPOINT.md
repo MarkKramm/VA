@@ -5,6 +5,63 @@ something that works.
 
 ---
 
+## Checkpoint: M3 — Progress
+
+**Date:** 2026-10-04
+**Milestone:** M3 — Progress · **COMPLETE**
+**Tag:** none — `v0.3.0-content-engine` remains the latest
+**Branch:** `main`
+
+### What this checkpoint is
+
+Progress is real and local-first. `src/app/progress/` is the React-facing layer over the M0
+progress model and the `StorageAdapter` port: a store that persists, merges cross-tab writes and
+is read through `useSyncExternalStore`. Lesson completion, exercise attempts, a dashboard with
+real progress, per-roadmap progress, and export/import all work end to end.
+
+### Verified working
+
+- `npm run content:check` — **0 errors, 3 `quality/no-practice` warnings** (unchanged).
+- `npm run typecheck`, `npm run lint`, `npm run check:contrast` (34 pairs) — clean.
+- `npm run test` — **497 across 29 files; 496 pass.** The single failure is the environmental
+  `content-gate.test.ts` child-process spawn (`cmd.exe` EBUSY); the test is unchanged.
+- `npm run test:arch` — 16 passing.
+- `npm run build` — **504 kB / 154 kB gzipped**; SPA fallback written; `check:paths` clean; no
+  compiler in the client.
+
+### What was added
+
+- `src/app/progress/store.ts` — `LearnerProgress`: record, persist, cross-tab sync, export,
+  merge-on-import, clear. Framework-free and DOM-free, so it is unit tested directly.
+- `src/app/progress/ProgressProvider.tsx` — context plus `useSyncExternalStore` (D29).
+- `src/app/progress/composition.ts` — the content↔progress join (curriculum and per-roadmap
+  progress, continue-learning, recently-completed).
+- `src/app/progress/file-io.ts` — the browser download/read adapters, isolated so the logic is
+  testable without a browser.
+- Lesson page: view recording plus `CompletionControl` (explicit completion, with undo).
+- Practice section: an ungraded `exercise.attempted` self-report.
+- Dashboard: `ProgressPanel` (real progress) plus `DataTransfer` (export/import).
+- Roadmap page: a completed-lesson bar and per-lesson "Completed" badges.
+
+### Bugs found and fixed during M3
+
+- **Same-millisecond event ordering.** Two events appended in the same millisecond shared an
+  `at` and fell back to a random-id tiebreak, so "mark complete, then mark not complete" was a
+  coin flip. Generated timestamps are now strictly increasing (`DECISIONS.md` D28). Found by a
+  flaky test, fixed in the storage layer, and pinned by a regression test.
+
+### Not done, deliberately
+
+No quizzes, labs, assessments, search, tool directory, bookmarks, notes, achievements, XP,
+streaks, recommendations, weak-area detection, job readiness, portfolio evidence, auth or
+backend. No release tag.
+
+### Recommended next task
+
+**M4 — Quiz Engine.**
+
+---
+
 ## Checkpoint: pre-M3 hardening pass
 
 **Date:** 2026-10-04

@@ -1,23 +1,24 @@
 # Current State
 
 **As of:** 2026-10-04
-**Milestone:** M2 — Content Engine · **COMPLETE** (`v0.3.0-content-engine`)
-**Next:** M3 — Progress · **not started** (after the pre-M3 hardening pass; see `NEXT_STEPS.md`)
+**Milestone:** M3 — Progress · **COMPLETE** (not tagged)
+**Next:** M4 — Quiz Engine · **not started**; see `NEXT_STEPS.md`
 
 This file describes the state _as it is_, rewritten each session. It is not a history. For
 the history, see `CHANGELOG.md`.
 
 ## Milestone status
 
-| Milestone              | State                                                                      |
-| ---------------------- | -------------------------------------------------------------------------- |
-| M0 — Foundation        | ✅ complete (`v0.1.0-foundation`)                                          |
-| M1 — Application Shell | ✅ complete                                                                |
-| M2 — Content Engine    | ✅ complete (`v0.3.0-content-engine`) — M2.1, M2.2, M2.3 and M2.4 all done |
-| M3 — Progress          | ⏳ not started                                                             |
+| Milestone              | State                                                                     |
+| ---------------------- | ------------------------------------------------------------------------- |
+| M0 — Foundation        | ✅ complete (`v0.1.0-foundation`)                                         |
+| M1 — Application Shell | ✅ complete                                                               |
+| M2 — Content Engine    | ✅ complete (`v0.3.0-content-engine`)                                     |
+| M3 — Progress          | ✅ complete (not tagged) — local-first progress, dashboard, export/import |
+| M4 — Quiz Engine       | ⏳ not started                                                            |
 
-**Not built:** progress UI, quizzes, labs, assessments, search, the tool directory, career
-preparation. Nothing below claims otherwise.
+**Not built:** quizzes, labs, assessments, search, the tool directory, career preparation,
+bookmarks, notes, achievements, XP, streaks. Nothing below claims otherwise.
 
 ---
 
@@ -89,13 +90,21 @@ derives it.
 
 **The progress model, as a pure fold.** 13 event types, a reducer with a rebuildable
 `derived` cache, and selectors for module, roadmap and stage progress, attempt summaries,
-mastery levels, soft gating and assessment eligibility. All testable with no DOM. **The UI
-for it does not exist yet.**
+mastery levels, soft gating and assessment eligibility. All testable with no DOM.
 
 **Storage, behind a port.** `StorageAdapter` with `localStorage`, memory, and cross-tab
 merge implementations. Import validation rejects malformed exports without destroying
 existing progress, and `serializeProgressExport` produces an export in the same format the
 validator reads, so the round trip is complete.
+
+**The learner progress layer (new at M3).** `src/app/progress/` is the React-facing store:
+`LearnerProgress` owns the state, persists through `StorageAdapter`, merges cross-tab writes,
+and is read through `useSyncExternalStore` (`DECISIONS.md` D29). The lesson page records a VIEW
+on open and offers explicit completion with undo; the Practice section records an ungraded
+`exercise.attempted`; the dashboard shows lessons completed, exercises practised, overall and
+per-roadmap progress, "continue learning", and the learner's own export/import. **Opening a
+lesson never completes it.** Roadmap progress shown to a learner is a completed-lesson count;
+the domain's stage-mean stays the gating policy (`DECISIONS.md` D27).
 
 **A working application shell.** React 19 + React Router 7, a real Vite application build,
 five routes, a responsive sidebar/mobile-dialog layout, a dashboard, a roadmaps index and the
@@ -114,12 +123,11 @@ scans the emitted JS for compiler markers. Both were proven to bite.
 
 ## What does not exist yet
 
-No search, no progress UI, no quizzes, no tool directory, no labs, no career preparation.
-Lesson pages, roadmap-to-lesson navigation and practice exercises now exist.
+No search, no quizzes, no tool directory, no labs, no career preparation, no bookmarks or notes.
+Lesson pages, roadmap-to-lesson navigation, practice exercises and the progress UI now exist.
 
-Not implemented, by milestone: progress UI (M3), quizzes (M4), the tool directory and search
-(M5), labs (M6), career preparation (M7), the remaining roadmaps and skill visualisation (M8),
-polish (M9).
+Not implemented, by milestone: quizzes (M4), the tool directory and search (M5), labs (M6),
+career preparation (M7), the remaining roadmaps and skill visualisation (M8), polish (M9).
 
 Deliberately **not** built: no placeholder routes, no recommendations, no streaks or
 achievements, no backend/auth, no state-management library.
@@ -133,9 +141,9 @@ achievements, no backend/auth, no state-management library.
 | `npm run typecheck`      | clean, app and tooling configs separately                            |
 | `npm run content:check`  | 0 errors, 3 warnings (all `quality/no-practice`)                     |
 | `npm run check:contrast` | 34 pairs pass, computed from tokens                                  |
-| `npm run test`           | 452 across 25 files — **451 pass**, 1 sandbox-only spawn failure     |
+| `npm run test`           | 497 across 29 files — **496 pass**, 1 sandbox-only spawn failure     |
 | `npm run test:arch`      | 16 passing                                                           |
-| `npm run build`          | succeeds; 489 kB / 149 kB gzipped — no compiler in the client        |
+| `npm run build`          | succeeds; 504 kB / 154 kB gzipped — no compiler in the client        |
 | `npm run check:paths`    | base `/VA/`, assets present, SPA fallback in place, no compiler leak |
 
 **`npm run check` is the single gate.** Every step is green except one test:
@@ -189,7 +197,7 @@ exercise entity, because the content engine is not complete without a way for a 
 practice. `PLAN.md` is the constitution and was not edited; this note records the mapping so the
 two do not read as a contradiction.
 
-## The one thing to know before continuing M3
+## The one thing to know before continuing M4
 
 The content pipeline now has **two build-time stages**, both in `content/`:
 

@@ -12,6 +12,12 @@ All notable changes to this project. Format follows
 
 ### Added
 
+- **The learner progress foundation (M3).** Progress is real: a React-facing store
+  (`src/app/progress/`) persists the event log through the existing `StorageAdapter`, syncs
+  across tabs, and drives the UI. A lesson can be marked complete (and un-marked), an exercise
+  attempt can be recorded, and the dashboard shows lessons completed, exercises practised,
+  overall and per-roadmap progress, the lesson to resume, and the learner's own export/import.
+  No new dependency — React context plus `useSyncExternalStore` (`DECISIONS.md` D29).
 - **A progress export producer (F9).** `serializeProgressExport(state)` produces the same
   `{ version, events }` format `parseProgressExport` validates, so a learner's data can be
   written as well as read. Pure and deterministic; round-trip tested across every
@@ -19,12 +25,18 @@ All notable changes to this project. Format follows
 
 ### Changed
 
+- **An exercise attempt is now recorded (M3).** The M2.4 Practice section was render-only; it
+  now records the existing `exercise.attempted` event with `selfChecked: true`. Still no score,
+  no pass/fail, no grading and no mastery — the copy says so.
 - **`AGENTS.md` orientation refreshed (F1).** It now states M0–M2 complete, M3 next,
   build-time content parsing/MDX compilation, and exercises as render-only practice, instead
   of describing the project as pre-M2.
 
 ### Fixed
 
+- **Two events recorded in the same millisecond now order correctly (M3).** Generated
+  timestamps are strictly increasing, so "last write wins" is true rather than a random-id coin
+  flip (`DECISIONS.md` D28).
 - **Cross-tab progress synchronization detects change by event identity, not count (F2).**
   `ProgressStore.syncFrom` reported "no change" whenever two logs held the same number of
   events, so a same-length divergent log left an open tab showing stale progress.

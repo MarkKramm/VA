@@ -847,3 +847,88 @@ lesson's Practice section, under the exercise's `<h3>` title, so its own heading
 - The compiler tests assert both halves: the exercise floor refuses `h1`–`h3` and accepts
   `h4`+, AND the trust boundary is unchanged (expressions, unsafe URLs and raw HTML are still
   refused), AND the lesson compiler's `h2`/`h1` behaviour did not move.
+
+---
+
+## D27 — Learner-facing roadmap progress is a lesson COUNT; the stage-mean stays the gating policy
+
+**Date:** 2026-10-04 (M3)
+
+**Context.** Two different questions look like one. The domain's `roadmapProgress`
+(`src/domain/roadmap/progress.ts`) is a mean over STAGES, chosen so a short introductory stage
+cannot unlock an assessment. M3 puts progress in front of a learner for the first time, and a
+learner-facing label has to be literally true.
+
+**Options.** (a) Show the stage-mean as the learner's roadmap percentage. (b) Show completed
+lessons over the roadmap's lessons, and keep the stage-mean for gating. (c) Show both.
+
+**Choice.** (b). `src/app/progress/composition.ts` exposes `roadmapLessonProgress`, which counts
+completed lessons over the lessons the roadmap actually contains. The domain's `roadmapProgress`
+is untouched and remains the gating policy.
+
+**Reason.** A learner reading "2 of 4 lessons complete" must be able to count the two. The
+stage-mean can say 33% when three of four lessons are done (because one stage is untouched), and
+a label that disagrees with what the learner can see teaches them not to trust the number.
+(c) shows two numbers for one thing, which is worse than either. The two measures are not in
+conflict — they answer different questions, and the UI uses the one whose question it is asking.
+
+**Consequences.** `DECISIONS.md` D5's gating policy is unchanged; the stage-mean is not
+dead code, it is the assessment gate's input. A future readiness UI must use the stage-mean (or
+the evidence model), NOT this count, and this entry is the reason it should not be "unified".
+
+---
+
+## D28 — Generated event timestamps are strictly increasing
+
+**Date:** 2026-10-04 (M3)
+
+**Context.** The fold is "last write wins" over the log's ORDER, and `mergeEventLogs` orders by
+`at` then `id`. `at` has millisecond resolution, so two events appended in the same millisecond
+share a timestamp and fall back to a tiebreak on a RANDOM id. Found by a flaky test: "mark
+complete, then mark not complete" resolved either way depending on which UUID sorted first.
+
+**Options.** (a) Accept it — the two events are genuinely simultaneous. (b) Add a sequence
+number to every event. (c) Generate each appended event's `at` strictly later than the newest
+event already in the log.
+
+**Choice.** (c), in `ProgressStore.append` (`nextTimestamp`).
+
+**Reason.** (a) makes a learner's explicit action probabilistic, which is unacceptable for
+"last write wins". (b) changes the event schema and the export format for a problem that only
+exists because time is coarse. (c) is a few lines, keeps the schema, and makes the ordering
+exactly reflect the order the actions happened. The adjustment is at most one millisecond, which
+is immaterial for progress and is the standard monotonic-clock technique.
+
+**Consequences.** An event that supplies its own `at` (an import, a fixture) is left exactly as
+given — only GENERATED timestamps are nudged. `mergeEventLogs`' deterministic `at`-then-`id`
+tiebreak is unchanged and still tested; it now applies to genuinely-equal imported timestamps
+rather than to a learner's own rapid clicks.
+
+---
+
+## D29 — M3 uses React context and `useSyncExternalStore`, not Zustand
+
+**Date:** 2026-10-04 (M3)
+
+**Context.** D17 deferred a state-management library to M3, when "the progress event log
+arrives and genuinely needs a store outside React's render cycle", and recorded Zustand as the
+choice over Redux, XState and TanStack Query. M3 is the milestone that decision named.
+
+**Options.** (a) Add Zustand. (b) A plain store object plus React context and
+`useSyncExternalStore`. (c) Hold the state in `useState` inside a provider.
+
+**Choice.** (b). `src/app/progress/store.ts` is a small framework-free object;
+`ProgressProvider.tsx` bridges it with `useSyncExternalStore`.
+
+**Reason.** (c) cannot express "another tab changed the value" without a hack, and re-creating
+the store per render loses subscriptions. (a) would work, but what the store actually has to do
+is: hold one value, let React read it, and let a `storage` event replace it. `useSyncExternalStore`
+exists for exactly that, and the whole store is about sixty lines. Against a runtime budget of
+twenty (rule 3), a dependency has to justify itself, and this one would buy nothing the platform
+does not already have. This is a decision, not a rejection: Zustand is still the recorded choice
+if a later milestone needs middleware, time-travel or cross-store composition.
+
+**Consequences.** The store is a plain object, so it is tested with no DOM
+(`src/app/progress/__tests__/store.test.ts`). React never owns the state, so a cross-tab write
+reaches the UI without React knowing where it came from. If a future milestone needs more,
+swapping the store for Zustand is a change to one file and its provider.

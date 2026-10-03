@@ -3,15 +3,17 @@
 A learning platform that takes a learner from complete beginner to job-ready Virtual
 Assistant, across many career paths.
 
-**Status: Milestone 2 (Content Engine) complete — lessons are readable end to end and the first
-practice exercises render; progress tracking, quizzes and labs do not exist yet.**
+**Status: Milestone 3 (Progress) complete — lessons are readable, exercises can be practised,
+and your progress is tracked locally; quizzes and labs do not exist yet.**
 
 The curriculum lives in `content/` and is validated and compiled at build time. The
 application renders it: a responsive shell, a dashboard, a roadmaps index, and **lesson pages
 with the compiled MDX body, objectives, prerequisites, previous/next navigation and a Practice
-section** that renders exercises — all reading real content through one seam. Exercises are
-**ungraded and unsaved**, so nothing here pretends to record something it cannot. **Progress
-tracking, quizzes and labs arrive in later milestones.** See
+section** that records an ungraded exercise attempt — all reading real content through one seam.
+**Progress is local-first**: marking a lesson complete, recording practice and the dashboard's
+progress all live in this browser, and you can export or import them. Exercises are
+**ungraded** — no score, no grading — so nothing here pretends to do more than it does.
+**Quizzes and labs arrive in later milestones.** See
 [project/CURRENT_STATE.md](project/CURRENT_STATE.md) for exactly what exists and works
 today, and [project/NEXT_STEPS.md](project/NEXT_STEPS.md) for what is being built next.
 

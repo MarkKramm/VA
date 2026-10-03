@@ -34,19 +34,18 @@ the project is without needing any conversation history. That is the point of th
 
 ## 2. The state of the project
 
-**Milestones 0–2 are complete. Milestone 2 (Content Engine) is closed at
-`v0.3.0-content-engine`. Milestone 3 (Progress) is next — but run the pre-M3 hardening pass
-in `project/BACKLOG.md` first.**
+**Milestones 0–3 are complete. M2 (Content Engine) is tagged `v0.3.0-content-engine`; M3
+(Progress) is complete and untagged. Milestone 4 (Quiz Engine) is next.**
 
-M0 built the content pipeline and the progress model; M1 the application shell; M2 the
-content engine — build-time frontmatter ingestion and MDX compilation behind an enforced
-trust boundary (M2.1/M2.2), the lesson experience with navigation and prerequisites (M2.3),
-and the first render-only practice exercises (M2.4). Content parsing and MDX compilation
-happen at BUILD time; no parser reaches the client. There is a working application shell:
-React, routing, layout, navigation, a dashboard, a design-token layer and the deployment
-path. **There is no progress tracking, no quizzes, no labs and no tool directory.** If you
-find yourself wanting to build one of those, you are working on the wrong milestone — and if
-you find yourself wanting to add a route that points at one, read rule 6 first.
+M0 built the content pipeline and the progress model; M1 the application shell; M2 the content
+engine — build-time frontmatter ingestion and MDX compilation behind an enforced trust
+boundary (M2.1/M2.2), the lesson experience (M2.3), and the first render-only practice
+exercises (M2.4). M3 made progress real: a local-first, event-log-backed progress layer
+(`src/app/progress/`) with lesson completion, ungraded exercise attempts, a dashboard, and
+export/import. Content parsing and MDX compilation happen at BUILD time; no parser reaches the
+client. **There is no quiz engine, no labs, no search and no tool directory.** If you find
+yourself wanting to build one of those, you are working on the wrong milestone — and if you
+find yourself wanting to add a route that points at one, read rule 6 first.
 
 Verify your starting point before doing anything else:
 
@@ -149,8 +148,8 @@ these as warnings; treat every one as a task, not noise.
 
 **Every lesson must reach practice.** A lesson with no exercise, quiz or lab is a
 reading page, and `content:check` warns about it. Exercises exist as of M2.4
-(`content/exercises/`, rendered ungraded and unsaved); the three M0 lessons that still warn
-are reading-only, which is the honest state, not a bug.
+(`content/exercises/`) and a learner can record an ungraded attempt at one (M3); the three M0
+lessons that still warn are reading-only, which is the honest state, not a bug.
 
 ## 5. Session protocol
 
@@ -219,9 +218,10 @@ both` is a field, and the reason is written down in `DECISIONS.md`. Revisit only
   `src/app/content.ts`, which is the only UI-side file allowed to touch the registry, and
   which uses `selectors.ts`. A query that does not exist means adding a selector — not
   reaching into the registry from a component. `DECISIONS.md` D16.
-- **Do not add a state-management library yet.** The theme uses React context. Zustand is
-  the recorded choice over Redux and friends, deferred until M3 when the progress log
-  genuinely needs a store. `DECISIONS.md` D17.
+- **Do not add a state-management library.** M3 built the progress store with React context and
+  `useSyncExternalStore`, and it did not need one (`DECISIONS.md` D29). Zustand remains the
+  recorded choice if a later milestone genuinely needs middleware or cross-store composition;
+  adding it now would be a dependency without a problem to solve.
 - **Do not add placeholder routes for future milestones.** A nav entry pointing at a
   non-functional page is worse than no nav entry: it promises a feature and then 404s.
 - **Do not hand-roll a YAML parser to shrink the bundle.** This was a real M1 problem —

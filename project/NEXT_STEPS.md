@@ -8,45 +8,48 @@ is too large or work is not being closed out.
 
 ---
 
-## Current milestone: M2 — Content Engine · **COMPLETE**
+## Current milestone: M3 — Progress · **COMPLETE**
 
-**Tagged `v0.3.0-content-engine`.** All four M2 slices are done and verified:
+Progress is real and local-first. A React-facing store (`src/app/progress/`) persists the event
+log through the existing `StorageAdapter`, synchronizes across tabs, and drives the UI:
 
-- **M2.1** build-time frontmatter ingestion — the browser no longer ships a YAML parser
-  (717 kB / 202 kB → 468 kB / 146 kB gzipped). `DECISIONS.md` D21.
-- **M2.2** build-time MDX compilation into a serializable element tree, with an enforced trust
-  boundary and no compiler in the client. `DECISIONS.md` D22.
-- **M2.3** the lesson experience: `/lessons/:lessonId`, the lesson page, roadmap → module →
-  lesson navigation, advisory prerequisites with reasons, related lessons, deterministic
-  previous/next. `DECISIONS.md` D23/D24.
-- **M2.4** the `Exercise` entity, a dedicated exercise compiler entry point with an `h4`
-  heading floor, and the Practice section; `files-and-folders` reaches practice, so the
-  `quality/no-practice` warnings fell from **4 to 3 by fact**. `DECISIONS.md` D25/D26.
+- **Lesson completion** — explicit, with undo, using `lesson.completed` / `lesson.uncompleted`
+  (`source: 'manual'`). Opening a lesson records a VIEW, never a completion.
+- **Exercise attempts** — the Practice section records `exercise.attempted` (`selfChecked:
+true`). Still ungraded: no score, no pass/fail, no grading, no mastery.
+- **Dashboard** — lessons completed, exercises practised, overall and per-roadmap progress, the
+  lesson to resume, and the learner's own export/import. An honest empty state for a new
+  learner.
+- **Roadmap page** — a completed-lesson bar and a "Completed" badge per finished lesson.
 
-See `CHECKPOINT.md` for the verified state and `CHANGELOG.md` for the release entry.
+No new dependency: React context plus `useSyncExternalStore` (`DECISIONS.md` D29). See
+`CHECKPOINT.md` and `DECISIONS.md` D27–D29.
 
-## Next milestone: M3 — Progress · **not started**
+**Not tagged.** An M3 release tag is a deliberate, separate step; `v0.3.0-content-engine`
+remains the latest tag.
 
-M3 gives progress a home — lesson completion, roadmap progress and dashboard progress — on top
-of the M0 progress model (a pure fold over an append-only event log) and the `StorageAdapter`
-port.
+## Next milestone: M4 — Quiz Engine · **not started**
 
-### 1. Pre-M3 hardening pass · **DONE**
+### 1. M4 — Quiz Engine
 
-The five pre-M3 findings from the post-M2 audit are fixed: `AGENTS.md` orientation (F1),
-`syncFrom` change detection (F2), compiled-prose quality checks (F3), event-type completeness
-(F5), and the export producer (F9). See `BACKLOG.md` → "Pre-M3 hardening (post-M2 audit)"; the
-items still listed there are an optional cleanup batch, not blockers.
-
-### 2. M3 — Progress
-
-Lesson completion, roadmap and dashboard progress, and the export/import UI — the parser and,
-as of the hardening pass, the serializer both exist. `exercise.attempted` may be wired here,
-now that progress has a home. See `PLAN.md` §69 and `BACKLOG.md`.
+Quiz content, question rendering, scoring and results. The `Question` entity lands WITH the
+engine, never after it (`DECISIONS.md` D7), because retrofitting a shared question identity is
+editing every quiz file. See `PLAN.md` §69 and `BACKLOG.md`.
 
 ---
 
-## Carry-over, not M2
+## Earlier milestones
+
+- **M2 — Content Engine** · complete, tagged `v0.3.0-content-engine`. M2.1 build-time frontmatter
+  ingestion, M2.2 build-time MDX compilation behind an enforced trust boundary, M2.3 the lesson
+  experience, M2.4 the first render-only practice exercises.
+- **Pre-M3 hardening** · done — the five post-M2 audit findings (F1, F2, F3, F5, F9).
+- **M1 — Application Shell** · complete.
+- **M0 — Foundation** · complete, tagged `v0.1.0-foundation`.
+
+---
+
+## Carry-over
 
 ~~**Deploy it.**~~ **Done.** The repository is `https://github.com/MarkKramm/VA` and the site is
 live at `https://markkramm.github.io/VA/`. The deep-link SPA fallback was verified over HTTP:
