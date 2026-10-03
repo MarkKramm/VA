@@ -10,6 +10,17 @@ All notable changes to this project. Format follows
 
 ## [Unreleased]
 
+_No unreleased changes yet. M2 is released below; the next milestone is M3 — Progress._
+
+## [0.3.0-content-engine] — 2026-10-04 — M2 Content Engine
+
+The Content Engine. M2 makes the curriculum a first-class, build-time-validated, renderable
+body of content: frontmatter is parsed in Node rather than the browser, lesson and exercise MDX
+is compiled into a serializable tree behind an enforced trust boundary, lessons render end to
+end with navigation, prerequisites and related reading, and the first **practice exercises** are
+rendered on the lesson page. **No progress tracking, quizzes, labs, search or tool directory
+yet** — and exercises are deliberately ungraded and unsaved.
+
 ### Added
 
 - **The exercise entity, and the first practice experience (M2.4).** A new `Exercise`
@@ -316,5 +327,6 @@ enforced by a rule that `published` requires a named reviewer.
 - Progress is browser-scoped. Export and import arrive at Milestone 3; accounts are not
   planned.
 
-[Unreleased]: https://github.com/MarkKramm/VA/compare/v0.1.0-foundation...HEAD
+[Unreleased]: https://github.com/MarkKramm/VA/compare/v0.3.0-content-engine...HEAD
+[0.3.0-content-engine]: https://github.com/MarkKramm/VA/releases/tag/v0.3.0-content-engine
 [0.1.0-foundation]: https://github.com/MarkKramm/VA/releases/tag/v0.1.0-foundation

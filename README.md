@@ -3,14 +3,15 @@
 A learning platform that takes a learner from complete beginner to job-ready Virtual
 Assistant, across many career paths.
 
-**Status: Milestone 2 (Content Engine) in progress — lessons are readable end to end;
-exercises, progress tracking, quizzes and labs do not exist yet.**
+**Status: Milestone 2 (Content Engine) complete — lessons are readable end to end and the first
+practice exercises render; progress tracking, quizzes and labs do not exist yet.**
 
 The curriculum lives in `content/` and is validated and compiled at build time. The
 application renders it: a responsive shell, a dashboard, a roadmaps index, and **lesson pages
-with the compiled MDX body, objectives, prerequisites and previous/next navigation**, all
-reading real content through one seam. **Exercises, progress tracking, quizzes and labs arrive
-in later milestones** — nothing here pretends to work that does not. See
+with the compiled MDX body, objectives, prerequisites, previous/next navigation and a Practice
+section** that renders exercises — all reading real content through one seam. Exercises are
+**ungraded and unsaved**, so nothing here pretends to record something it cannot. **Progress
+tracking, quizzes and labs arrive in later milestones.** See
 [project/CURRENT_STATE.md](project/CURRENT_STATE.md) for exactly what exists and works
 today, and [project/NEXT_STEPS.md](project/NEXT_STEPS.md) for what is being built next.
 
@@ -78,6 +79,9 @@ Content is data, and the only place it lives is `content/`.
 
 - **A lesson** — create `content/lessons/<domain>/<slug>.mdx`, then add its id to a
   module's `lessons` list. That is the whole procedure. No code, no route, no index.
+- **An exercise** — create `content/exercises/<slug>.mdx` (headings start at `####`) and list
+  its id in a lesson's `exercises`. The reference is lesson-owned, and an id that does not
+  resolve fails the build.
 - **A module** — create `content/modules/<slug>.mdx` listing its lessons.
 - **A roadmap** — create `content/roadmaps/<slug>.mdx` listing modules per stage.
 - **A skill or career path** — add one entry to the relevant taxonomy file.
@@ -116,7 +120,8 @@ which drives three things:
   works on the homepage and 404s on every deep link is the classic failure this catches.
 
 `.github/workflows/deploy.yml` runs `npm run check` then publishes `dist/` on every push to
-`main`. **It has not run yet:** there is no git remote configured.
+`main`. The repository is `https://github.com/MarkKramm/VA`, and CI and Deploy run green on
+push to `main`.
 
 ## For AI coding agents
 

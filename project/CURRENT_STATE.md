@@ -1,11 +1,23 @@
 # Current State
 
-**As of:** 2026-10-01
-**Milestone:** M2 — Content Engine · **lesson, roadmap and exercise content experience live**
-**Next:** M2 close-out — the milestone is **not** closed yet; see `NEXT_STEPS.md`
+**As of:** 2026-10-04
+**Milestone:** M2 — Content Engine · **COMPLETE** (`v0.3.0-content-engine`)
+**Next:** M3 — Progress · **not started** (after the pre-M3 hardening pass; see `NEXT_STEPS.md`)
 
 This file describes the state _as it is_, rewritten each session. It is not a history. For
 the history, see `CHANGELOG.md`.
+
+## Milestone status
+
+| Milestone              | State                                                                      |
+| ---------------------- | -------------------------------------------------------------------------- |
+| M0 — Foundation        | ✅ complete (`v0.1.0-foundation`)                                          |
+| M1 — Application Shell | ✅ complete                                                                |
+| M2 — Content Engine    | ✅ complete (`v0.3.0-content-engine`) — M2.1, M2.2, M2.3 and M2.4 all done |
+| M3 — Progress          | ⏳ not started                                                             |
+
+**Not built:** progress UI, quizzes, labs, assessments, search, the tool directory, career
+preparation. Nothing below claims otherwise.
 
 ---
 
@@ -104,9 +116,9 @@ scans the emitted JS for compiler markers. Both were proven to bite.
 No search, no progress UI, no quizzes, no tool directory, no labs, no career preparation.
 Lesson pages, roadmap-to-lesson navigation and practice exercises now exist.
 
-Not implemented, by milestone: search (M2, in progress), progress UI (M3), quizzes (M4),
-the tool directory (M5), labs (M6), career preparation (M7), the remaining roadmaps and skill
-visualisation (M8), polish (M9).
+Not implemented, by milestone: progress UI (M3), quizzes (M4), the tool directory and search
+(M5), labs (M6), career preparation (M7), the remaining roadmaps and skill visualisation (M8),
+polish (M9).
 
 Deliberately **not** built: no placeholder routes, no recommendations, no streaks or
 achievements, no backend/auth, no state-management library.
@@ -120,12 +132,17 @@ achievements, no backend/auth, no state-management library.
 | `npm run typecheck`      | clean, app and tooling configs separately                            |
 | `npm run content:check`  | 0 errors, 3 warnings (all `quality/no-practice`)                     |
 | `npm run check:contrast` | 34 pairs pass, computed from tokens                                  |
-| `npm run test`           | 435 passing across 24 files                                          |
+| `npm run test`           | 435 across 24 files — **434 pass**, 1 sandbox-only spawn failure     |
 | `npm run test:arch`      | 16 passing                                                           |
 | `npm run build`          | succeeds; 489 kB / 149 kB gzipped — no compiler in the client        |
 | `npm run check:paths`    | base `/VA/`, assets present, SPA fallback in place, no compiler leak |
 
-**`npm run check` is the single gate and passes end to end**, so CI will be green.
+**`npm run check` is the single gate.** Every step is green except one test:
+`src/content/__tests__/content-gate.test.ts` runs `npm run content:check` in a child process,
+and this sandbox cannot spawn `cmd.exe` (`spawnSync … EBUSY`). `content:check` itself is green
+when run directly (0 errors, 3 warnings) and the test is deliberately left unchanged — it is an
+environment limitation, not a code failure. On a normal machine `check` is green end to end, so
+CI will be green.
 
 `opencode.json` is machine-local OpenCode runtime configuration. It is listed in
 `.gitignore` and `.prettierignore`, so it can neither be committed by accident nor fail the
@@ -155,7 +172,23 @@ format check, and it is never touched, moved or reformatted (`DECISIONS.md` D20)
   not wired; the Practice section says so. Recording practice is M3.
 - **All content is `status: draft`.** Nothing has been human-reviewed.
 
-## The one thing to know before continuing M2
+## Before M3: the pre-M3 hardening pass
+
+M2 is closed, but the post-M2 architectural audit left nine findings that should be fixed
+**before** M3 feature work starts. They are recorded in `BACKLOG.md` → "Pre-M3 hardening
+(post-M2 audit)" and are deliberately **not** part of this close-out. The most visible is that
+`AGENTS.md` still describes M2 as the next milestone; the rest are small correctness and
+consistency issues in the storage merge, the quality checks, the progress selectors, the export
+validator and the boundary tests.
+
+**A note on `PLAN.md` §69.** The long-term constitution lists M2 as "Lesson data / Lesson
+pages / Modules / Categories / Roadmaps" and puts _Exercises_ under M6 "Practice". The
+repository's internal M2 slicing (M2.1–M2.4) extended M2 to include the first, **ungraded**
+exercise entity, because the content engine is not complete without a way for a lesson to reach
+practice. `PLAN.md` is the constitution and was not edited; this note records the mapping so the
+two do not read as a contradiction.
+
+## The one thing to know before continuing M3
 
 The content pipeline now has **two build-time stages**, both in `content/`:
 

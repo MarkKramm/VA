@@ -8,25 +8,40 @@ is too large or work is not being closed out.
 
 ---
 
-## Current milestone: M2 — Content Engine · **in progress**
+## Current milestone: M2 — Content Engine · **COMPLETE**
 
-Four M2 slices are done. **M2.1** moved frontmatter parsing out of the browser (bundle
-717 kB → 468 kB gzipped: −56 kB). **M2.2** compiles lesson bodies at build time into a
-renderable tree and renders them through an explicit component allowlist, with no compiler in
-the client. **M2.3** connects that tree to the application: `/lessons/:lessonId`, the lesson
-page, roadmap → module → lesson navigation, breadcrumbs, deterministic previous/next, and the
-missing-content states. **M2.4** adds the `Exercise` entity, a dedicated exercise compiler
-entry point with an `h4` heading floor, and the Practice section on the lesson page;
-`files-and-folders` now reaches practice, so the `quality/no-practice` warnings fell from **4
-to 3 by fact** (482 kB / 148 kB → 489 kB / 149 kB gzipped). See `CHECKPOINT.md` and
-`DECISIONS.md` D21–D26. **One item remains.**
+**Tagged `v0.3.0-content-engine`.** All four M2 slices are done and verified:
 
-### 1. Close out M2
+- **M2.1** build-time frontmatter ingestion — the browser no longer ships a YAML parser
+  (717 kB / 202 kB → 468 kB / 146 kB gzipped). `DECISIONS.md` D21.
+- **M2.2** build-time MDX compilation into a serializable element tree, with an enforced trust
+  boundary and no compiler in the client. `DECISIONS.md` D22.
+- **M2.3** the lesson experience: `/lessons/:lessonId`, the lesson page, roadmap → module →
+  lesson navigation, advisory prerequisites with reasons, related lessons, deterministic
+  previous/next. `DECISIONS.md` D23/D24.
+- **M2.4** the `Exercise` entity, a dedicated exercise compiler entry point with an `h4`
+  heading floor, and the Practice section; `files-and-folders` reaches practice, so the
+  `quality/no-practice` warnings fell from **4 to 3 by fact**. `DECISIONS.md` D25/D26.
 
-Re-read `PLAN.md` §60/§73/§84 against what M2 actually built. Confirm the slice boundaries are
-recorded, the `quality/no-practice` warnings have fallen by fact, and nothing in the milestone
-is half-finished. Then update the orientation files, tag `v0.3.0-content-engine`, and move to
-M3.
+See `CHECKPOINT.md` for the verified state and `CHANGELOG.md` for the release entry.
+
+## Next milestone: M3 — Progress · **not started**
+
+M3 gives progress a home — lesson completion, roadmap progress and dashboard progress — on top
+of the M0 progress model (a pure fold over an append-only event log) and the `StorageAdapter`
+port. **Before M3, run the pre-M3 hardening pass** so the feature work lands on a clean base.
+
+### 1. Pre-M3 hardening pass
+
+The nine findings in `BACKLOG.md` → "Pre-M3 hardening (post-M2 audit)". Each is a small
+correctness or consistency fix rather than a feature, and they are deliberately kept out of
+this close-out.
+
+### 2. M3 — Progress
+
+Lesson completion, roadmap and dashboard progress, and the export/import UI (the validator
+already exists from M0). `exercise.attempted` may be wired here, now that progress has a home.
+See `PLAN.md` §69 and `BACKLOG.md`.
 
 ---
 

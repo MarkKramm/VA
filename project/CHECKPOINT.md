@@ -5,6 +5,55 @@ something that works.
 
 ---
 
+## Checkpoint: M2 close-out — v0.3.0-content-engine
+
+**Date:** 2026-10-04
+**Milestone:** M2 — Content Engine · **CLOSED**
+**Tag:** `v0.3.0-content-engine` (annotated), on this close-out commit
+**Branch:** `main`
+
+### What this checkpoint is
+
+M2 is closed. M2.1–M2.4 are complete, documented and verified; the orientation files now state
+**M2 complete / M3 next**, and the release is tagged `v0.3.0-content-engine`. This is a
+documentation-and-release close-out — **no product code changed**, beyond ignoring the local
+agent workspace in `.gitignore`/`.prettierignore` so the single gate does not fail on
+machine-local files (the same reasoning as `DECISIONS.md` D20).
+
+### Verified working
+
+- `npm run content:check` — **0 errors, 3 `quality/no-practice` warnings**; 16 career paths,
+  2 roadmaps, 2 modules, 4 lessons, **1 exercise**, 19 skills; `exercises` is not pending.
+- `npm run typecheck`, `npm run lint`, `npm run check:contrast` (34 pairs) — clean.
+- `npm run test` — **435 across 24 files; 434 pass.** The single failure is environmental:
+  `content-gate.test.ts` runs `npm run content:check` in a child process and this sandbox
+  returns `spawnSync … EBUSY`. The test is deliberately unchanged; `content:check` is green run
+  directly.
+- `npm run test:arch` — **16 passing**.
+- `npm run build` — **489 kB / 149 kB gzipped**; SPA fallback written; `check:paths` clean
+  (base `/VA/`, assets present, **no compiler in the client**).
+
+### Audit result
+
+M2.1–M2.4 are all present and validated. The M2.4 detail is in the checkpoint below; the M2.3,
+M2.2 and M2.1 checkpoints follow it. One documentation discrepancy was found and **recorded
+rather than "fixed"**: `PLAN.md` §69 lists M2 as lesson data/pages/modules/categories/roadmaps
+and puts _Exercises_ under M6 "Practice", whereas the repository's internal M2.4 slice extended
+M2 to include the first **ungraded** exercise entity. See `CURRENT_STATE.md` → "A note on
+`PLAN.md` §69".
+
+### Do not change without a decision
+
+Everything in the M2.4 list below, plus the milestone boundary itself: M2 is closed at
+`v0.3.0-content-engine`.
+
+### Recommended next task
+
+**The pre-M3 hardening pass** (`NEXT_STEPS.md` item 1; the nine findings in `BACKLOG.md`), then
+**M3 — Progress**.
+
+---
+
 ## Checkpoint: M2.4 exercise entity and practice
 
 **Date:** 2026-10-01
