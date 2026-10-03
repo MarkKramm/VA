@@ -24,6 +24,8 @@ import { renderApp } from '../../../../tests/harness.tsx'
 
 const FIRST = 'what-is-a-virtual-assistant'
 const SECOND = 'who-hires-virtual-assists'
+/** The first lesson to reach practice (M2.4). */
+const PRACTICE = 'files-and-folders'
 const LAST = 'browser-basics'
 
 describe('lesson page — content resolution', () => {
@@ -221,6 +223,81 @@ describe('lesson page — accessibility', () => {
     for (const link of within(nav).getAllByRole('link')) {
       // Each control has a non-empty accessible name, not just an arrow glyph.
       expect(link).toHaveAccessibleName(/\w/)
+    }
+  })
+})
+
+describe('lesson page — practice (M2.4)', () => {
+  const practiceSection = (): HTMLElement => {
+    const heading = screen.getByRole('heading', { level: 2, name: /^practice$/i })
+    const section = heading.closest('section')
+    if (!section) throw new Error('the Practice heading is not inside a section')
+    return section
+  }
+
+  it('renders the lesson’s exercise in a Practice section', () => {
+    renderApp({ initialEntries: [`/lessons/${PRACTICE}`] })
+    expect(screen.getByRole('heading', { level: 2, name: /^practice$/i })).toBeInTheDocument()
+    expect(
+      screen.getByRole('heading', { level: 3, name: /organise folders for a new client/i }),
+    ).toBeInTheDocument()
+  })
+
+  it('renders the compiled exercise body as real HTML, not raw markdown', () => {
+    renderApp({ initialEntries: [`/lessons/${PRACTICE}`] })
+    // The body contains an `####` heading, which must render as an `<h4>` under
+    // the exercise's `<h3>` title. Raw `####` text would mean compilation or
+    // rendering silently did nothing.
+    expect(within(practiceSection()).getAllByRole('heading', { level: 4 }).length).toBeGreaterThan(
+      0,
+    )
+    expect(screen.queryByText(/^####\s/)).not.toBeInTheDocument()
+  })
+
+  it('shows the deliverable and the self-check list', () => {
+    renderApp({ initialEntries: [`/lessons/${PRACTICE}`] })
+    const section = practiceSection()
+    expect(
+      within(section).getByRole('heading', { level: 4, name: /what to hand in/i }),
+    ).toBeInTheDocument()
+    expect(
+      within(section).getByRole('heading', { level: 4, name: /check your own work/i }),
+    ).toBeInTheDocument()
+    // The self-check criteria render as a real list.
+    expect(within(section).getAllByRole('listitem').length).toBeGreaterThan(0)
+  })
+
+  it('offers no way to submit, score or tick anything — it is ungraded and unsaved', () => {
+    renderApp({ initialEntries: [`/lessons/${PRACTICE}`] })
+    const section = practiceSection()
+    expect(within(section).queryByRole('button')).not.toBeInTheDocument()
+    expect(within(section).queryByRole('checkbox')).not.toBeInTheDocument()
+    expect(within(section).queryByRole('textbox')).not.toBeInTheDocument()
+  })
+
+  it('says plainly that the work is not scored, saved or sent anywhere', () => {
+    renderApp({ initialEntries: [`/lessons/${PRACTICE}`] })
+    expect(screen.getByText(/scored, saved or sent anywhere/i)).toBeInTheDocument()
+  })
+
+  it('renders no Practice section for a lesson with no exercises', () => {
+    renderApp({ initialEntries: [`/lessons/${FIRST}`] })
+    expect(screen.queryByRole('heading', { level: 2, name: /^practice$/i })).not.toBeInTheDocument()
+  })
+
+  it('keeps a valid heading outline on the page that has practice', () => {
+    // The exercise body uses an h4 floor, and the exercise title is an h3, so the
+    // outline must step 1 -> 2 -> 3 -> 4 without skipping.
+    renderApp({ initialEntries: [`/lessons/${PRACTICE}`] })
+    const main = screen.getByRole('main')
+    const levels = within(main)
+      .getAllByRole('heading')
+      .map((heading) => Number(heading.tagName.slice(1)))
+    expect(levels[0]).toBe(1)
+    let max = 1
+    for (const level of levels) {
+      expect(level, `skipped from h${max} to h${level}`).toBeLessThanOrEqual(max + 1)
+      max = Math.max(max, level)
     }
   })
 })

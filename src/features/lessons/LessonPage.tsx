@@ -9,6 +9,7 @@ import { EmptyState } from '@/components/ui/EmptyState.tsx'
 import { Icon } from '@/components/icons/Icon.tsx'
 import { formatDuration } from '@/lib/cn.ts'
 import { NotFoundPage } from '@/features/roadmaps/NotFoundPage.tsx'
+import { PracticeSection } from './PracticeSection.tsx'
 import styles from './LessonPage.module.css'
 
 /**
@@ -25,9 +26,9 @@ import styles from './LessonPage.module.css'
  * It does not track progress, mark a lesson complete, gate anything, or record an
  * attempt. Progress is M3. There is no "Complete and continue" button, because
  * pressing it would have to write event data that has no home yet; the previous
- * and next links are the honest navigation until then. It also does not render
- * exercises, a quiz, or a lab — those entities do not exist until later
- * milestones, and the "reaches practice" gap is stated openly rather than faked.
+ * and next links are the honest navigation until then. It renders exercises
+ * (M2.4) as practice, but a quiz and a lab do not exist yet, and the exercises
+ * are ungraded and unsaved — that gap is stated openly rather than faked.
  *
  * THE HEADING LEVEL IS FIXED AT h1
  *
@@ -192,6 +193,14 @@ export const LessonPage = () => {
             </p>
           </EmptyState>
         )}
+
+        {/*
+          Practice (M2.4). Placed after the reading and before the remaining
+          metadata: a learner reads the lesson, then does something with it. The
+          section renders nothing when the lesson has no exercises, so a
+          reading-only lesson is not given an empty "Practice" heading.
+        */}
+        <PracticeSection exercises={context.exercises} />
 
         {/*
           Skills. Shown as plain labels, not links, because the skill pages do not
