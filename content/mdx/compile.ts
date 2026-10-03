@@ -91,14 +91,49 @@ const NODE_TAGS: Readonly<Record<string, AllowedElement>> = {
 }
 
 /**
+ * The heading rules for a body, and the message shown when a body breaks them.
+ *
+ * The heading FLOOR is a property of what the body is nested inside, not of the
+ * Markdown: a lesson body sits under the lesson page's `<h1>` and starts at
+ * `h2`, while an exercise body sits under the exercise's `<h3>` (inside the
+ * lesson's Practice section) and starts at `h4`. A single global floor would
+ * either let an exercise produce an `h2` that collides with a lesson section, or
+ * forbid a lesson its `h2`s.
+ *
+ * The floor is threaded explicitly rather than defaulted, and the two entry
+ * points below are the only ways to compile: a caller cannot ask for an
+ * arbitrary floor, which is what keeps "lesson bodies start at h2" and "exercise
+ * bodies start at h4" enforceable rather than advisory. See `DECISIONS.md` D24
+ * (the lesson `h1` refusal) and D26 (the exercise entry point).
+ */
+interface CompilePolicy {
+  /** The shallowest heading depth a body may use. Anything shallower is refused. */
+  readonly headingFloor: number
+  /** The author-facing refusal message when a heading is below the floor. */
+  readonly belowFloorMessage: string
+}
+
+const LESSON_POLICY: CompilePolicy = {
+  headingFloor: 2,
+  belowFloorMessage:
+    'lesson bodies must not contain an h1; the lesson title is the page heading, so body headings start at h2',
+}
+
+const EXERCISE_POLICY: CompilePolicy = {
+  headingFloor: 4,
+  belowFloorMessage:
+    'exercise bodies must not contain an h1, h2 or h3; the exercise title is the section heading, so exercise headings start at h4',
+}
+
+/**
  * Elements whose tag depends on other properties rather than being fixed.
  *
- * Headings are clamped to `h2`–`h6`: an `h1` in a lesson body is refused in the
- * `heading` case below, because the lesson page owns the page heading. The clamp
- * is a belt-and-braces floor; the refusal is what actually prevents an `h1`.
+ * Headings are clamped to the policy floor through `h6`. The clamp is a
+ * belt-and-braces floor; the refusal in the `heading` case below is what
+ * actually prevents a too-shallow heading.
  */
-const headingTag = (depth: number | undefined): AllowedElement => {
-  const level = Math.min(Math.max(depth ?? 2, 2), 6)
+const headingTag = (depth: number | undefined, floor: number): AllowedElement => {
+  const level = Math.min(Math.max(depth ?? floor, floor), 6)
   return `h${level}` as AllowedElement
 }
 
@@ -125,12 +160,17 @@ const safeUrl = (raw: string, path: string, line: number | undefined): string =>
  * Returning an array, not a single node, because `root` and a fenced `code`
  * block both fan out (a `pre` wrapping a `code`). Everything else returns one.
  */
-const compileNode = (node: MdastNode, path: string, line: number | undefined): CompiledNode[] => {
+const compileNode = (
+  node: MdastNode,
+  path: string,
+  line: number | undefined,
+  policy: CompilePolicy,
+): CompiledNode[] => {
   const at = node.position?.start.line ?? line
 
   switch (node.type) {
     case 'root':
-      return compileChildren(node.children ?? [], path, at)
+      return compileChildren(node.children ?? [], path, at, policy)
 
     case 'text':
       return [{ kind: 'text', value: node.value ?? '' }]
@@ -150,33 +190,30 @@ const compileNode = (node: MdastNode, path: string, line: number | undefined): C
 
     case 'heading': {
       /*
-       * A lesson body may not contain an `h1`.
+       * A body may not contain a heading shallower than its policy floor.
        *
-       * The lesson PAGE owns the single `<h1>` — it is the lesson title, and the
-       * outline a screen-reader user navigates by must have exactly one top-level
-       * entry. A body that began with `# Heading` (or contained one anywhere)
-       * would add a second, producing a page whose structure says two different
-       * things are the title.
+       * For a LESSON the floor is `h2`: the lesson PAGE owns the single `<h1>`
+       * — it is the lesson title, and the outline a screen-reader user navigates
+       * by must have exactly one top-level entry. For an EXERCISE the floor is
+       * `h4`: the exercise is rendered inside the lesson's Practice section, its
+       * title is an `<h3>`, so an `h2` or `h3` in the body would collide with
+       * the surrounding page structure.
        *
        * This is a refusal rather than a silent demotion for the same reason as
        * every other refusal here: silently rewriting an author's `#` into an
        * `##` would hide a real authoring mistake, and the author would not learn
-       * that headings in a lesson body start at `##`.
+       * the level their body should use.
        */
       const depth = node.depth ?? 1
-      if (depth <= 1) {
-        throw new MdxCompileError(
-          path,
-          'lesson bodies must not contain an h1; the lesson title is the page heading, so body headings start at h2',
-          at,
-        )
+      if (depth < policy.headingFloor) {
+        throw new MdxCompileError(path, policy.belowFloorMessage, at)
       }
       return [
         {
           kind: 'element',
-          tag: headingTag(depth),
+          tag: headingTag(depth, policy.headingFloor),
           props: {},
-          children: compileChildren(node.children ?? [], path, at),
+          children: compileChildren(node.children ?? [], path, at, policy),
         },
       ]
     }
@@ -190,7 +227,7 @@ const compileNode = (node: MdastNode, path: string, line: number | undefined): C
           kind: 'element',
           tag: ordered ? 'ol' : 'ul',
           props: {},
-          children: compileChildren(node.children ?? [], path, at),
+          children: compileChildren(node.children ?? [], path, at, policy),
         },
       ]
     }
@@ -224,7 +261,7 @@ const compileNode = (node: MdastNode, path: string, line: number | undefined): C
           kind: 'element',
           tag: 'a',
           props: { href: safeUrl(node.url ?? '', path, at) },
-          children: compileChildren(node.children ?? [], path, at),
+          children: compileChildren(node.children ?? [], path, at, policy),
         },
       ]
 
@@ -248,7 +285,7 @@ const compileNode = (node: MdastNode, path: string, line: number | undefined): C
 
     case 'mdxJsxFlowElement':
     case 'mdxJsxTextElement':
-      return [compileJsx(node, path, at)]
+      return [compileJsx(node, path, at, policy)]
 
     case 'definition':
       // A `[ref]: url` line. It produces no output on its own; the references that
@@ -318,7 +355,7 @@ const compileNode = (node: MdastNode, path: string, line: number | undefined): C
           kind: 'element',
           tag,
           props: {},
-          children: compileChildren(node.children ?? [], path, at),
+          children: compileChildren(node.children ?? [], path, at, policy),
         },
       ]
     }
@@ -326,7 +363,12 @@ const compileNode = (node: MdastNode, path: string, line: number | undefined): C
 }
 
 /** Compile an MDX JSX element into either an element or a component node. */
-const compileJsx = (node: MdastNode, path: string, line: number | undefined): CompiledNode => {
+const compileJsx = (
+  node: MdastNode,
+  path: string,
+  line: number | undefined,
+  policy: CompilePolicy,
+): CompiledNode => {
   const name = node.name
   if (!name) {
     // `<></>` — a fragment. Content has no use for one, since a fragment has no
@@ -335,7 +377,7 @@ const compileJsx = (node: MdastNode, path: string, line: number | undefined): Co
   }
 
   const props = compileAttributes(node.attributes ?? [], path, line)
-  const children = compileChildren(node.children ?? [], path, line)
+  const children = compileChildren(node.children ?? [], path, line, policy)
 
   // A lowercase name is an HTML element written directly in the MDX. It is
   // allowed only if it is in the element allowlist, so `<div class="...">` in
@@ -456,17 +498,20 @@ const compileChildren = (
   children: readonly MdastNode[],
   path: string,
   line: number | undefined,
-): CompiledNode[] => children.flatMap((child) => compileNode(child, path, line))
+  policy: CompilePolicy,
+): CompiledNode[] => children.flatMap((child) => compileNode(child, path, line, policy))
 
 /**
- * Parse and compile a lesson body.
+ * Parse a body with the shared processor and compile it under a policy.
  *
- * `path` is the repo-relative source path and is used only to make errors
- * actionable. Throws `MdxCompileError` for malformed MDX and for any construct
- * outside the allowed vocabulary; a caller that does not catch it fails the
- * build, which is the intended behaviour.
+ * The parser and the whole node walk are SHARED between lessons and exercises;
+ * the only thing the policy changes is the heading floor. Keeping one
+ * implementation is what guarantees an exercise body is subject to exactly the
+ * same trust boundary as a lesson body — the same URL policy, the same literal
+ * props, the same expression refusal, the same alt-text rule. A second compiler
+ * would be a second boundary, and boundaries drift.
  */
-export const compileMdx = (body: string, path: string): CompiledBody => {
+const compileWithPolicy = (body: string, path: string, policy: CompilePolicy): CompiledBody => {
   const processor = unified()
     .use(remarkParse)
     .use(remarkMdx as unknown as Plugin)
@@ -479,5 +524,27 @@ export const compileMdx = (body: string, path: string): CompiledBody => {
     const message = error instanceof Error ? error.message : String(error)
     throw new MdxCompileError(path, message)
   }
-  return compileChildren([mdast], path, undefined)
+  return compileChildren([mdast], path, undefined, policy)
 }
+
+/**
+ * Parse and compile a LESSON body. Heading floor `h2` (D24).
+ *
+ * `path` is the repo-relative source path and is used only to make errors
+ * actionable. Throws `MdxCompileError` for malformed MDX and for any construct
+ * outside the allowed vocabulary; a caller that does not catch it fails the
+ * build, which is the intended behaviour.
+ */
+export const compileMdx = (body: string, path: string): CompiledBody =>
+  compileWithPolicy(body, path, LESSON_POLICY)
+
+/**
+ * Parse and compile an EXERCISE body. Heading floor `h4` (D26).
+ *
+ * A dedicated entry point rather than a floor argument on `compileMdx`, so the
+ * floor is a property of what the body IS and cannot be chosen at the call site.
+ * The exercise renders inside the lesson's Practice section under an `<h3>`
+ * title, so its own headings start at `h4`.
+ */
+export const compileExerciseMdx = (body: string, path: string): CompiledBody =>
+  compileWithPolicy(body, path, EXERCISE_POLICY)

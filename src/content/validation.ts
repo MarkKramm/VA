@@ -1,6 +1,6 @@
 import type { ContentRegistry } from './registry.ts'
 import { runQualityChecks } from './quality-checks.ts'
-import type { Lesson, Module, Roadmap } from './schemas/index.ts'
+import type { Exercise, Lesson, Module, Roadmap } from './schemas/index.ts'
 
 /**
  * Content validation.
@@ -44,16 +44,23 @@ const pathOf = {
   lesson: (lesson: Lesson): string => `content/lessons/**/${lesson.id}.mdx`,
   module: (module: Module): string => `content/modules/${module.id}.mdx`,
   roadmap: (roadmap: Roadmap): string => `content/roadmaps/${roadmap.id}.mdx`,
+  exercise: (exercise: Exercise): string => `content/exercises/**/${exercise.id}.mdx`,
 }
 
 /**
  * Every id reference in the content must resolve.
  *
  * Collections that this milestone has not created yet (tools, resources,
- * exercises, quizzes, labs, assessments, topics, questions) are skipped rather
- * than failed. That is deliberate: a lesson may legitimately stage a `tools:`
- * list before the tool directory exists at M5, and the build should not block
- * work in progress. A *known* collection is always checked.
+ * quizzes, labs, assessments, topics, questions) are skipped rather than failed.
+ * That is deliberate: a lesson may legitimately stage a `tools:` list before the
+ * tool directory exists at M5, and the build should not block work in progress.
+ *
+ * A *known* collection is always checked, and exercises became known at M2.4. So
+ * a `lesson.exercises` reference is checked UNCONDITIONALLY: if the exercise does
+ * not exist, that is an error, whether the exercise directory is empty or
+ * missing. Fail-closed is the point — a reference that resolves to nothing would
+ * render an exercise-less Practice section and read as "the exercise was
+ * dropped" rather than "the id is wrong".
  */
 const checkReferentialIntegrity = (registry: ContentRegistry, issues: RegistryIssue[]): void => {
   const resolve = (collection: ReadonlyMap<string, unknown>, id: string): boolean =>
@@ -120,6 +127,42 @@ const checkReferentialIntegrity = (registry: ContentRegistry, issues: RegistryIs
         )
       }
     })
+    /*
+     * The lesson OWNS the exercise reference, so this is the check that makes
+     * "every lesson reaches practice" real: a lesson that names an exercise that
+     * does not exist fails the build rather than silently rendering nothing.
+     * Unconditional, because exercises are a registered collection from M2.4.
+     */
+    lesson.exercises.forEach((exerciseId, index) => {
+      if (!resolve(registry.exercises, exerciseId)) {
+        report(
+          issues,
+          'error',
+          'referential-integrity',
+          'lesson',
+          at,
+          `exercises[${index}]`,
+          `"${exerciseId}" does not exist`,
+        )
+      }
+    })
+  }
+
+  for (const exercise of registry.exercises.values()) {
+    const at = pathOf.exercise(exercise)
+    for (const skillId of exercise.skills) {
+      if (!resolve(registry.skills, skillId)) {
+        report(
+          issues,
+          'error',
+          'referential-integrity',
+          'exercise',
+          at,
+          'skills',
+          `"${skillId}" does not exist`,
+        )
+      }
+    }
   }
 
   for (const module of registry.modules.values()) {
@@ -229,6 +272,7 @@ const checkDuplicateIds = (registry: ContentRegistry, issues: RegistryIssue[]): 
   const collections = [
     { entity: 'lesson', entries: registry.parsed.lessons },
     { entity: 'module', entries: registry.parsed.modules },
+    { entity: 'exercise', entries: registry.parsed.exercises },
     { entity: 'roadmap', entries: registry.parsed.roadmaps },
     { entity: 'skill', entries: registry.parsed.skills },
     { entity: 'career-path', entries: registry.parsed.careerPaths },
@@ -456,6 +500,11 @@ const checkProvenance = (registry: ContentRegistry, issues: RegistryIssue[]): vo
       path: pathOf.module(entity),
       value: entity,
     })),
+    ...[...registry.exercises.values()].map((entity) => ({
+      entity: 'exercise',
+      path: pathOf.exercise(entity),
+      value: entity,
+    })),
     ...[...registry.roadmaps.values()].map((entity) => ({
       entity: 'roadmap',
       path: pathOf.roadmap(entity),
@@ -487,6 +536,7 @@ export interface ValidationSummary {
     readonly roadmaps: number
     readonly modules: number
     readonly lessons: number
+    readonly exercises: number
   }
   readonly payloadBytes: number
 }
@@ -511,6 +561,7 @@ export function validateRegistry(registry: ContentRegistry): ValidationSummary {
       roadmaps: registry.roadmaps.size,
       modules: registry.modules.size,
       lessons: registry.lessons.size,
+      exercises: registry.exercises.size,
     },
     payloadBytes: registry.payloadBytes,
   }

@@ -2,8 +2,8 @@
  * `npm run content:check`
  *
  * A standalone validator: no dev server, no test runner, no browser. It runs
- * through vite-node so the content plugin's virtual module â€” a Vite transform,
- * not a Node feature â€” resolves the same way it does in the app and in tests.
+ * through vite-node so the content plugin's virtual module â€? a Vite transform,
+ * not a Node feature â€? resolves the same way it does in the app and in tests.
  *
  * A reference that does not resolve fails the build here rather than producing a
  * broken page for a learner. Content errors get their own named CI step so they
@@ -26,7 +26,8 @@ process.stdout.write('==================\n\n')
 
 process.stdout.write(
   `Loaded ${summary.counts.careerPaths} career paths, ${summary.counts.roadmaps} roadmaps, ` +
-    `${summary.counts.modules} modules, ${summary.counts.lessons} lessons, ${summary.counts.skills} skills\n`,
+    `${summary.counts.modules} modules, ${summary.counts.lessons} lessons, ` +
+    `${summary.counts.exercises} exercises, ${summary.counts.skills} skills\n`,
 )
 process.stdout.write(`Content payload (bodies): ${formatKb(summary.payloadBytes)}\n`)
 process.stdout.write(`Pending collections: ${registry.pendingCollections.join(', ')}\n\n`)
@@ -44,7 +45,7 @@ if (summary.issues.length === 0) {
     const [severity = 'info', rule = 'unknown'] = key.split(':')
     process.stdout.write(
       `${COLOUR[severity as Severity] ?? ''}${ICON[severity as Severity] ?? '?'} ${severity.toUpperCase()}${RESET} ` +
-        `(${issues.length}) â€” ${rule}\n`,
+        `(${issues.length}) â€? ${rule}\n`,
     )
     for (const issue of issues) {
       process.stdout.write(`    ${issue.path}\n`)

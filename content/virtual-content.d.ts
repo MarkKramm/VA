@@ -26,8 +26,8 @@
  */
 declare module 'virtual:content-data' {
   /**
-   * A raw content file as it SHIPS: frontmatter, and (for lessons) the compiled
-   * body tree.
+   * A raw content file as it SHIPS: frontmatter, and (for lessons and
+   * exercises) the compiled body tree.
    *
    * The raw body text is deliberately absent. It is measured at build time for
    * the payload report and then dropped, because shipping it beside `rendered`
@@ -42,6 +42,8 @@ declare module 'virtual:content-data' {
   export const roadmaps: readonly RawContentFile[]
   export const modules: readonly RawContentFile[]
   export const lessons: readonly RawContentFile[]
+  /** Exercises carry a compiled body too, with an `h4` heading floor (M2.4). */
+  export const exercises: readonly RawContentFile[]
   export const careerPaths: readonly unknown[]
   export const skills: readonly unknown[]
   export const contentPayloadBytes: number

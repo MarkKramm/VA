@@ -3,6 +3,7 @@ import { buildRegistry, buildRegistryFromSource, registry } from '../registry.ts
 import { validateRegistry } from '../validation.ts'
 import {
   validCareerPath,
+  validExercise,
   validLesson,
   validModule,
   validRoadmap,
@@ -23,6 +24,7 @@ describe('the real M0 content', () => {
     expect(registry.roadmaps.size).toBe(2)
     expect(registry.modules.size).toBe(2)
     expect(registry.lessons.size).toBe(4)
+    expect(registry.exercises.size).toBeGreaterThanOrEqual(1)
     expect(registry.skills.size).toBeGreaterThan(10)
   })
 
@@ -50,17 +52,22 @@ describe('the real M0 content', () => {
     }
   })
 
-  it('lists the collections this milestone has not built yet', () => {
-    for (const pending of [
-      'tools',
-      'resources',
-      'exercises',
-      'quizzes',
-      'labs',
-      'assessments',
-      'topics',
-    ]) {
+  it('lists the collections this milestone has not built yet, and no longer lists exercises', () => {
+    for (const pending of ['tools', 'resources', 'quizzes', 'labs', 'assessments', 'topics']) {
       expect(registry.pendingCollections).toContain(pending)
+    }
+    // M2.4 activated the exercise collection, so it must no longer be pending.
+    expect(registry.pendingCollections).not.toContain('exercises')
+  })
+
+  it('attaches a compiled body to every real exercise, keyed by exercise id (M2.4)', () => {
+    // Same contract as lesson bodies: the body is reachable by the stable id,
+    // and an exercise with no body would render an empty Practice card.
+    expect(registry.exerciseBodies.size).toBe(registry.exercises.size)
+    for (const exerciseId of registry.exercises.keys()) {
+      const body = registry.exerciseBodies.get(exerciseId)
+      expect(body, `exercise ${exerciseId} has no compiled body`).toBeDefined()
+      expect(body?.length).toBeGreaterThan(0)
     }
   })
 
@@ -109,10 +116,15 @@ describe('buildRegistryFromSource', () => {
       careerPaths: [validCareerPath()],
       skills: [validSkill({ id: 'data', parent: undefined }), validSkill()],
       lessons: [{ path: 'content/fixture.mdx', data: validLesson() }],
+      exercises: [{ path: 'content/fixture-exercise.mdx', data: validExercise() }],
       modules: [{ path: 'content/fixture.mdx', data: validModule() }],
       roadmaps: [{ path: 'content/fixture.mdx', data: validRoadmap() }],
     })
     expect(built.lessons.size).toBe(1)
+    expect(built.exercises.size).toBe(1)
+    // The reverse index is derived from the lesson side, so the exercise knows
+    // which lessons use it without ever naming one itself.
+    expect(built.exerciseLessonIds.get('clean-a-sheet')).toEqual(['cleaning-a-spreadsheet'])
     expect(built.moduleRoadmapIds.get('data-cleaning')).toEqual(['data-entry-va'])
     expect(built.issues).toEqual([])
   })

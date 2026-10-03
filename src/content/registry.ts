@@ -5,6 +5,7 @@ import { CareerPathSchema, type CareerPath } from './schemas/career-path.ts'
 import { SkillSchema, type Skill } from './schemas/skill.ts'
 import { ModuleSchema, type Module } from './schemas/module.ts'
 import { LessonSchema, type Lesson } from './schemas/lesson.ts'
+import { ExerciseSchema, type Exercise } from './schemas/exercise.ts'
 import { RoadmapSchema, type Roadmap } from './schemas/roadmap.ts'
 import type { RegistryIssue } from './validation.ts'
 
@@ -26,6 +27,7 @@ export interface ContentRegistry {
   readonly skills: ReadonlyMap<string, Skill>
   readonly modules: ReadonlyMap<string, Module>
   readonly lessons: ReadonlyMap<string, Lesson>
+  readonly exercises: ReadonlyMap<string, Exercise>
   readonly roadmaps: ReadonlyMap<string, Roadmap>
 
   /**
@@ -47,6 +49,7 @@ export interface ContentRegistry {
     readonly skills: readonly ParsedEntity<Skill>[]
     readonly modules: readonly ParsedEntity<Module>[]
     readonly lessons: readonly ParsedEntity<Lesson>[]
+    readonly exercises: readonly ParsedEntity<Exercise>[]
     readonly roadmaps: readonly ParsedEntity<Roadmap>[]
   }
 
@@ -63,6 +66,15 @@ export interface ContentRegistry {
   /** lessonId -> careerPathId, via the owning modules' roadmaps. */
   readonly lessonCareerPathIds: ReadonlyMap<string, readonly string[]>
   /**
+   * exerciseId -> lessonId, DERIVED from `lesson.exercises` (M2.4).
+   *
+   * An exercise does not carry a `lessonId`. The lesson owns the reference, so
+   * this reverse index is computed by scanning lessons — exactly as
+   * `moduleRoadmapIds` is computed by scanning roadmaps. An exercise reused by
+   * two lessons yields both, and no exercise file ever states its lessons.
+   */
+  readonly exerciseLessonIds: ReadonlyMap<string, readonly string[]>
+  /**
    * lessonId -> its compiled body tree (M2.2).
    *
    * Keyed by ID, not path, because the id is the stable identity a route uses.
@@ -71,6 +83,8 @@ export interface ContentRegistry {
    * and a body can never be attributed to the wrong lesson.
    */
   readonly lessonBodies: ReadonlyMap<string, CompiledBody>
+  /** exerciseId -> its compiled body tree, with the `h4` heading floor (M2.4). */
+  readonly exerciseBodies: ReadonlyMap<string, CompiledBody>
   /** Entity types this milestone has not created a collection for yet. */
   readonly pendingCollections: readonly string[]
   readonly issues: readonly RegistryIssue[]
@@ -92,10 +106,18 @@ export interface ContentSource {
   readonly roadmaps: readonly ContentFile[]
   readonly modules: readonly ContentFile[]
   readonly lessons: readonly ContentFile[]
+  /**
+   * Exercise files (M2.4). Optional at this seam so a fixture that is only
+   * about, say, roadmap validation does not have to fabricate exercises. A
+   * lesson that references an exercise when this is absent or empty still fails
+   * referential integrity — omitting the collection is not a way to skip the
+   * reference.
+   */
+  readonly exercises?: readonly ContentFile[]
   readonly careerPaths: readonly unknown[]
   readonly skills: readonly unknown[]
   /**
-   * Compiled lesson bodies, keyed by source path (M2.2).
+   * Compiled bodies, keyed by source path (M2.2; exercises added at M2.4).
    *
    * Optional because fixtures should not have to fabricate a body: a test that
    * cares about validation has no reason to produce a compiled tree, and forcing
@@ -222,6 +244,13 @@ export function buildRegistryFromSource(source: ContentSource): ContentRegistry 
     locationOf: () => 'content/lessons/',
     issues,
   })
+  const exercises = parseAll<Exercise>({
+    schema: ExerciseSchema,
+    inputs: source.exercises ?? [],
+    entity: 'exercise',
+    locationOf: () => 'content/exercises/',
+    issues,
+  })
   const roadmaps = parseAll<Roadmap>({
     schema: RoadmapSchema,
     inputs: source.roadmaps,
@@ -236,6 +265,7 @@ export function buildRegistryFromSource(source: ContentSource): ContentRegistry 
   const skillValues = skills.map((entry) => entry.value)
   const moduleValues = modules.map((entry) => entry.value)
   const lessonValues = lessons.map((entry) => entry.value)
+  const exerciseValues = exercises.map((entry) => entry.value)
   const roadmapValues = roadmaps.map((entry) => entry.value)
 
   // --- derived indexes ----------------------------------------------------
@@ -280,6 +310,14 @@ export function buildRegistryFromSource(source: ContentSource): ContentRegistry 
     }
   }
 
+  // exerciseId -> lessonId. Derived from the lesson side, never authored in an
+  // exercise file. A set, not a tally: an exercise referenced twice by one lesson
+  // yields that lesson once, exactly as the other reverse indexes behave.
+  const exerciseLessonIds = new Map<string, string[]>()
+  for (const lesson of lessonValues) {
+    for (const exerciseId of lesson.exercises) push(exerciseLessonIds, exerciseId, lesson.id)
+  }
+
   // lessonId -> compiled body. The join is on the lesson's SOURCE PATH, because
   // that is what the build compiler keyed its output by. Keying the result by id
   // is what lets a route ask for a lesson body without knowing where the file
@@ -292,26 +330,38 @@ export function buildRegistryFromSource(source: ContentSource): ContentRegistry 
     }
   }
 
+  // exerciseId -> compiled body. Same join as lessons, against the exercise
+  // collection, so a page can ask for an exercise body by id.
+  const exerciseBodies = new Map<string, CompiledBody>()
+  if (source.bodies) {
+    for (const { value, path } of exercises) {
+      const body = source.bodies.get(path)
+      if (body) exerciseBodies.set(value.id, body)
+    }
+  }
+
   return {
     careerPaths: indexById(careerPathValues),
     skills: indexById(skillValues),
     modules: indexById(moduleValues),
     lessons: indexById(lessonValues),
+    exercises: indexById(exerciseValues),
     roadmaps: indexById(roadmapValues),
     // The pre-index entities, each with its source file, so duplicate-id
     // detection still has the evidence indexById is about to discard.
-    parsed: { careerPaths, skills, modules, lessons, roadmaps },
+    parsed: { careerPaths, skills, modules, lessons, exercises, roadmaps },
     roadmapModuleIds,
     moduleRoadmapIds,
     lessonModuleIds,
     skillLessonIds,
     skillModuleIds,
     lessonCareerPathIds,
+    exerciseLessonIds,
     lessonBodies,
+    exerciseBodies,
     pendingCollections: [
       'tools',
       'resources',
-      'exercises',
       'quizzes',
       'questions',
       'assessments',
@@ -331,4 +381,4 @@ export const buildRegistry = (): ContentRegistry => {
 /** The runtime registry. Content is compiled into the bundle, so this is a singleton. */
 export const registry: ContentRegistry = buildRegistry()
 
-export type { CareerPath, Skill, Module, Lesson, Roadmap }
+export type { CareerPath, Skill, Module, Lesson, Exercise, Roadmap }

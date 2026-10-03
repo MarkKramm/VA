@@ -1,8 +1,8 @@
-import { readFileSync, readdirSync, statSync } from 'node:fs'
+import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
 import { join, relative, sep } from 'node:path'
 import matter from 'gray-matter'
 import type { Plugin, ResolvedConfig } from 'vite'
-import { compileMdx } from './content/mdx/compile.ts'
+import { compileExerciseMdx, compileMdx } from './content/mdx/compile.ts'
 import type { CompiledBody } from './content/mdx/tree.ts'
 
 /**
@@ -80,6 +80,13 @@ export const CONTENT_DIR = 'content'
 /** Every `.mdx` file under `dir`, recursively, as repo-relative paths. */
 export const findMdxFiles = (root: string, dir: string): string[] => {
   const absolute = join(root, dir)
+  // A collection directory that does not exist yet yields no files rather than
+  // throwing. This keeps discovery honest for a milestone that has not created a
+  // collection (e.g. `content/topics/`), instead of forcing an empty directory
+  // to exist purely to satisfy the walk. The registry still validates a lesson
+  // that references an entity from an absent collection, so "no directory" means
+  // "no entities", not "skip the reference".
+  if (!existsSync(absolute)) return []
   const out: string[] = []
   const walk = (current: string): void => {
     for (const entry of readdirSync(current)) {
@@ -120,16 +127,26 @@ export const parseContentSource = (path: string, source: string): RawContentFile
 const parseSourceIntoFile = (path: string, source: string): RawContentFile => {
   const { data, content } = matter(source)
   const base = { path, data: data as Record<string, unknown>, body: content }
-  // Compilation is attempted for anything under `content/lessons/`. The
-  // alternative -- compiling every `.mdx` -- would give roadmap and module files
-  // a `rendered: []` that means nothing, and would make a broken construct in a
+  // Compilation is attempted for the two prose collections only: lessons and
+  // exercises. Compiling every `.mdx` would give roadmap and module files a
+  // `rendered: []` that means nothing, and would make a broken construct in a
   // roadmap fail a build for a field no one reads.
+  //
+  // The two use DIFFERENT compiler entry points: a lesson body starts at `h2`
+  // and an exercise body starts at `h4` (D24/D26). Choosing the entry point by
+  // path — rather than by a floor argument a caller could get wrong — is what
+  // keeps each collection's heading rule structural.
   if (isLessonPath(path)) return { ...base, rendered: compileMdx(content, path) }
+  if (isExercisePath(path)) return { ...base, rendered: compileExerciseMdx(content, path) }
   return base
 }
 
 /** True for a repo-relative path under `content/lessons/`. */
 export const isLessonPath = (path: string): boolean => path.startsWith(`${CONTENT_DIR}/lessons/`)
+
+/** True for a repo-relative path under `content/exercises/`. */
+export const isExercisePath = (path: string): boolean =>
+  path.startsWith(`${CONTENT_DIR}/exercises/`)
 
 /** UTF-8 byte length, matching `contentPayloadBytes`'s definition in M1. */
 export const utf8Length = (value: string): number => new TextEncoder().encode(value).length
@@ -155,6 +172,7 @@ const buildModuleSource = (root: string): string => {
   const roadmapPaths = findMdxFiles(root, join(CONTENT_DIR, 'roadmaps'))
   const modulePaths = findMdxFiles(root, join(CONTENT_DIR, 'modules'))
   const lessonPaths = findMdxFiles(root, join(CONTENT_DIR, 'lessons'))
+  const exercisePaths = findMdxFiles(root, join(CONTENT_DIR, 'exercises'))
 
   const toFiles = (paths: readonly string[]): RawContentFile[] =>
     paths.map((path) => parseContentFile(root, path))
@@ -162,7 +180,8 @@ const buildModuleSource = (root: string): string => {
   const roadmaps = toFiles(roadmapPaths)
   const modules = toFiles(modulePaths)
   const lessons = toFiles(lessonPaths)
-  const payloadBytes = [...roadmaps, ...modules, ...lessons].reduce(
+  const exercises = toFiles(exercisePaths)
+  const payloadBytes = [...roadmaps, ...modules, ...lessons, ...exercises].reduce(
     (total, file) => total + utf8Length(file.body),
     0,
   )
@@ -197,6 +216,7 @@ ${imports}
 export const roadmaps = ${JSON.stringify(shipped(roadmaps))}
 export const modules = ${JSON.stringify(shipped(modules))}
 export const lessons = ${JSON.stringify(shipped(lessons))}
+export const exercises = ${JSON.stringify(shipped(exercises))}
 ${exports}
 export const contentPayloadBytes = ${JSON.stringify(payloadBytes)}
 `

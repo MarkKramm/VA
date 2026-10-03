@@ -6,6 +6,7 @@ import {
   leafSkill,
   rootSkill,
   validCareerPath,
+  validExercise,
   validLesson,
   validModule,
   validRoadmap,
@@ -61,6 +62,7 @@ describe('the validation summary a gate branches on', () => {
       careerPaths: [validCareerPath()],
       skills: [rootSkill(), leafSkill()],
       lessons: [{ path: 'content/lessons/x/cleaning-a-spreadsheet.mdx', data: validLesson() }],
+      exercises: [{ path: 'content/exercises/x/clean-a-sheet.mdx', data: validExercise() }],
       modules: [{ path: 'content/modules/data-cleaning.mdx', data: validModule() }],
       roadmaps: [{ path: 'content/roadmaps/data-entry-va.mdx', data: validRoadmap() }],
     })

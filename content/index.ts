@@ -33,6 +33,7 @@
 import {
   careerPaths as rawCareerPaths,
   contentPayloadBytes,
+  exercises as rawExercises,
   lessons as rawLessons,
   modules as rawModules,
   roadmaps as rawRoadmaps,
@@ -60,7 +61,8 @@ export interface RawContentFile {
   /** Parsed YAML frontmatter. Unvalidated. */
   readonly data: Record<string, unknown>
   /**
-   * The compiled body tree (M2.2), present only on lesson files.
+   * The compiled body tree (M2.2, extended to exercises at M2.4), present only
+   * on lesson and exercise files.
    *
    * The compiler that produces this lives at the build edge
    * (`content/mdx/compile.ts`), so this field arrives already-built and the
@@ -73,18 +75,19 @@ export const rawContent = {
   roadmaps: rawRoadmaps as readonly RawContentFile[],
   modules: rawModules as readonly RawContentFile[],
   lessons: rawLessons as readonly RawContentFile[],
+  exercises: rawExercises as readonly RawContentFile[],
   /** Plain data arrays. The registry validates these against their schemas. */
   careerPaths: rawCareerPaths as readonly unknown[],
   skills: rawSkills as readonly unknown[],
   /**
-   * Compiled lesson bodies, keyed by source path (M2.2).
+   * Compiled bodies, keyed by source path (M2.2; exercises added at M2.4).
    *
-   * The registry joins these to validated lessons by path and re-keys the result
-   * by lesson id. Building the map here rather than in the registry keeps the
-   * "only this file reads the virtual module" rule intact.
+   * The registry joins these to validated lessons and exercises by path and
+   * re-keys each result by the entity's id. Building the map here rather than in
+   * the registry keeps the "only this file reads the virtual module" rule intact.
    */
   bodies: new Map(
-    (rawLessons as readonly RawContentFile[])
+    ([...rawLessons, ...rawExercises] as readonly RawContentFile[])
       .filter(
         (file): file is RawContentFile & { rendered: CompiledBody } => file.rendered !== undefined,
       )

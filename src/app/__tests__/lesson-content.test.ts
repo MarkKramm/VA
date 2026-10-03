@@ -128,3 +128,32 @@ describe('findLesson — the M2.2 seam still behaves', () => {
     expect(findLesson('nope')).toBeUndefined()
   })
 })
+
+describe('lessonContext — exercises (M2.4)', () => {
+  it('resolves the lesson’s exercises with their compiled bodies', () => {
+    // `files-and-folders` is the first lesson to reach practice.
+    const context = lessonContext(THIRD)
+    expect(context?.exercises.map((exercise) => exercise.id)).toEqual([
+      'organise-a-client-folder-structure',
+    ])
+    const exercise = context?.exercises[0]
+    expect(exercise?.title.length).toBeGreaterThan(0)
+    expect(exercise?.deliverable.length).toBeGreaterThan(0)
+    expect(exercise?.selfCheck.length).toBeGreaterThan(0)
+    // The body is the compiled tree, not raw text — same contract as a lesson.
+    expect(exercise?.body?.length).toBeGreaterThan(0)
+  })
+
+  it('returns an empty list rather than undefined for a reading-only lesson', () => {
+    // The Practice section maps over this unconditionally, so the empty case
+    // must be a list.
+    expect(lessonContext(FIRST)?.exercises).toEqual([])
+  })
+
+  it('gives the exercise view no attempt or score field, because none is recorded', () => {
+    const exercise = lessonContext(THIRD)?.exercises[0]
+    expect(exercise).not.toHaveProperty('attempts')
+    expect(exercise).not.toHaveProperty('score')
+    expect(exercise).not.toHaveProperty('completed')
+  })
+})

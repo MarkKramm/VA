@@ -5,6 +5,7 @@ import {
   leafSkill,
   rootSkill,
   validCareerPath,
+  validExercise,
   validLesson,
   validModule,
   validRoadmap,
@@ -24,6 +25,7 @@ const withContent = (args: {
   careerPaths?: unknown[]
   skills?: unknown[]
   lessons?: unknown[]
+  exercises?: unknown[]
   modules?: unknown[]
   roadmaps?: unknown[]
 }): ContentRegistry =>
@@ -31,6 +33,7 @@ const withContent = (args: {
     careerPaths: args.careerPaths ?? [],
     skills: args.skills ?? [],
     lessons: (args.lessons ?? []).map((data) => file(data)),
+    exercises: (args.exercises ?? []).map((data) => file(data)),
     modules: (args.modules ?? []).map((data) => file(data)),
     roadmaps: (args.roadmaps ?? []).map((data) => file(data)),
   })
@@ -40,6 +43,7 @@ const validSet = () => ({
   careerPaths: [validCareerPath()],
   skills: [rootSkill(), leafSkill()],
   lessons: [validLesson()],
+  exercises: [validExercise()],
   modules: [validModule()],
   roadmaps: [validRoadmap()],
 })
@@ -123,6 +127,45 @@ describe('referential integrity', () => {
       lessons: [validLesson({ tools: ['canva'], lab: 'phishing-spotting' })],
     })
     expect(errorsFor(registry, 'referential-integrity')).toEqual([])
+  })
+
+  it('rejects a lesson referencing an exercise that does not exist (M2.4)', () => {
+    // The lesson owns the reference, so this is what makes "every lesson reaches
+    // practice" real: a name that resolves to nothing fails the build.
+    const registry = withContent({
+      ...validSet(),
+      lessons: [validLesson({ exercises: ['ghost-exercise'] })],
+    })
+    const issues = errorsFor(registry, 'referential-integrity')
+    expect(issues[0]?.field).toBe('exercises[0]')
+    expect(issues[0]?.message).toContain('ghost-exercise')
+  })
+
+  it('rejects an exercise referencing a skill that does not exist (M2.4)', () => {
+    const registry = withContent({
+      ...validSet(),
+      exercises: [validExercise({ skills: ['nope'] })],
+    })
+    const issue = errorsFor(registry, 'referential-integrity').find((i) => i.entity === 'exercise')
+    expect(issue?.field).toBe('skills')
+    expect(issue?.message).toContain('nope')
+  })
+
+  it('fails CLOSED when a lesson references an exercise but no exercise collection exists', () => {
+    // The exercise collection is optional at the fixture seam, but omitting it is
+    // NOT a way to skip the reference: `validLesson` names `clean-a-sheet` by
+    // default, and with no exercises provided that is an error. Fail-open here
+    // would let a lesson claim practice it cannot deliver.
+    const registry = buildRegistryFromSource({
+      careerPaths: [validCareerPath()],
+      skills: [rootSkill(), leafSkill()],
+      lessons: [{ path: 'content/lessons/x/cleaning-a-spreadsheet.mdx', data: validLesson() }],
+      modules: [],
+      roadmaps: [],
+    })
+    expect(
+      errorsFor(registry, 'referential-integrity').some((i) => i.field === 'exercises[0]'),
+    ).toBe(true)
   })
 })
 

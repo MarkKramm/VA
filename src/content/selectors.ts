@@ -1,6 +1,6 @@
 import type { ContentRegistry } from './registry.ts'
 import type { CompiledBody } from '@content/mdx/tree.ts'
-import type { CareerPath, Lesson, Module, Roadmap, Skill } from './schemas/index.ts'
+import type { CareerPath, Exercise, Lesson, Module, Roadmap, Skill } from './schemas/index.ts'
 
 /**
  * Read-only queries over the registry.
@@ -25,6 +25,20 @@ export const getLesson = (registry: ContentRegistry, lessonId: string): Lesson |
  */
 export const lessonBody = (registry: ContentRegistry, lessonId: string): CompiledBody | undefined =>
   registry.lessonBodies.get(lessonId)
+
+export const getExercise = (registry: ContentRegistry, exerciseId: string): Exercise | undefined =>
+  registry.exercises.get(exerciseId)
+
+/**
+ * An exercise's compiled body, or `undefined` when it has none (M2.4).
+ *
+ * Same contract as `lessonBody`: `undefined` is "no body", not an error, and the
+ * UI renders an honest empty state rather than a broken section.
+ */
+export const exerciseBody = (
+  registry: ContentRegistry,
+  exerciseId: string,
+): CompiledBody | undefined => registry.exerciseBodies.get(exerciseId)
 
 export const getModule = (registry: ContentRegistry, moduleId: string): Module | undefined =>
   registry.modules.get(moduleId)
@@ -109,6 +123,42 @@ export const lessonsByIds = (registry: ContentRegistry, lessonIds: readonly stri
   }
   return out
 }
+
+/**
+ * The exercises a lesson references, in the lesson's declared order (M2.4).
+ *
+ * The relationship is lesson-owned (`lesson.exercises`), so this resolves the
+ * lesson's own list rather than reading a reverse index. Duplicates are dropped
+ * and unknown ids are skipped here; an unknown id is already a referential
+ * integrity ERROR at validation time, so this only has to avoid throwing.
+ */
+export const exercisesOfLesson = (registry: ContentRegistry, lessonId: string): Exercise[] => {
+  const lesson = registry.lessons.get(lessonId)
+  if (!lesson) return []
+  const seen = new Set<string>()
+  const out: Exercise[] = []
+  for (const exerciseId of lesson.exercises) {
+    if (seen.has(exerciseId)) continue
+    const exercise = registry.exercises.get(exerciseId)
+    if (!exercise) continue
+    seen.add(exerciseId)
+    out.push(exercise)
+  }
+  return out
+}
+
+/**
+ * The lessons that reference an exercise, via the derived `exerciseLessonIds`.
+ *
+ * An exercise carries no `lessonId`; this is the reverse of the lesson-owned
+ * reference, computed by the registry, exactly as `roadmapsUsingModule` reverses
+ * the roadmap-owned module reference.
+ */
+export const lessonsUsingExercise = (registry: ContentRegistry, exerciseId: string): Lesson[] =>
+  (registry.exerciseLessonIds.get(exerciseId) ?? []).flatMap((id) => {
+    const lesson = registry.lessons.get(id)
+    return lesson ? [lesson] : []
+  })
 
 /** Resolve a list of skill ids to skill records, in the order given, dropping unknown ids. */
 export const skillsByIds = (registry: ContentRegistry, skillIds: readonly string[]): Skill[] =>

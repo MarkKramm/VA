@@ -5,6 +5,7 @@ import {
   leafSkill,
   rootSkill,
   validCareerPath,
+  validExercise,
   validLesson,
   validModule,
 } from '@fixtures/content.ts'
@@ -110,6 +111,24 @@ describe('duplicate ids are detectable at all', () => {
     expect(
       validateRegistry(registry).issues.filter((issue) => issue.rule === 'duplicate-id'),
     ).toEqual([])
+  })
+
+  it('reports a duplicate exercise id (M2.4)', () => {
+    const registry = buildRegistryFromSource({
+      careerPaths: [validCareerPath()],
+      skills: [rootSkill(), leafSkill()],
+      lessons: [],
+      exercises: [
+        { path: 'content/exercises/a/dup.mdx', data: validExercise() },
+        { path: 'content/exercises/b/dup.mdx', data: validExercise() },
+      ],
+      modules: [],
+      roadmaps: [],
+    })
+    const duplicates = validateRegistry(registry).issues.filter(
+      (issue) => issue.rule === 'duplicate-id' && issue.entity === 'exercise',
+    )
+    expect(duplicates).toHaveLength(1)
   })
 
   it('produces no duplicate-id error for the real content', () => {

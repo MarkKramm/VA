@@ -5,6 +5,7 @@ import { resolve } from 'node:path'
 import {
   CONTENT_DIR,
   findMdxFiles,
+  isExercisePath,
   parseContentSource,
   utf8Length,
 } from '../../../vite-plugin-content.ts'
@@ -248,5 +249,53 @@ body
     // make "no old ids" indistinguishable from "author wrote nothing".
     const parsed = parseContentSource('x.mdx', '---\nid: x\ntitle: X\n---\nbody\n')
     expect(parsed.data).not.toHaveProperty('deprecatedIds')
+  })
+})
+
+describe('content ingestion — exercises (M2.4)', () => {
+  it('finds the exercise files on disk', () => {
+    const exercises = findMdxFiles(ROOT, `${CONTENT_DIR}/exercises`)
+    expect(exercises.length).toBeGreaterThanOrEqual(1)
+    expect(exercises.every((path) => path.endsWith('.mdx'))).toBe(true)
+    expect(exercises.every((path) => path.startsWith(`${CONTENT_DIR}/exercises/`))).toBe(true)
+  })
+
+  it('returns no files for a collection directory that does not exist', () => {
+    // Discovery must not throw on an absent collection (e.g. `content/topics/`),
+    // so a milestone does not have to create an empty directory to satisfy the
+    // walk. "No directory" means "no entities", not "skip the reference".
+    expect(findMdxFiles(ROOT, `${CONTENT_DIR}/does-not-exist`)).toEqual([])
+  })
+
+  it('distinguishes an exercise path from a lesson path', () => {
+    expect(isExercisePath('content/exercises/x/example.mdx')).toBe(true)
+    expect(isExercisePath('content/lessons/x/example.mdx')).toBe(false)
+  })
+
+  it('compiles an exercise body under the h4 floor', () => {
+    const source = '---\nid: example-exercise\ntitle: An Example\n---\n#### A heading\n\nBody.\n'
+    const parsed = parseContentSource('content/exercises/x/example.mdx', source)
+    expect(parsed.rendered).toBeDefined()
+    const tags = (parsed.rendered ?? []).map((node) =>
+      node.kind === 'element' ? node.tag : node.kind,
+    )
+    expect(tags).toContain('h4')
+  })
+
+  it('fails ingestion for an exercise body with a heading below h4', () => {
+    // The heading floor is enforced at BUILD time, exactly like malformed YAML:
+    // an exercise body that used `##` would collide with the lesson's sections.
+    const shallow = '---\nid: example-exercise\ntitle: An Example\n---\n## Too shallow\n'
+    expect(() => parseContentSource('content/exercises/x/example.mdx', shallow)).toThrow()
+  })
+
+  it('still compiles a lesson body under the h2 floor, unchanged', () => {
+    // The exercise entry point must not have altered lesson compilation.
+    const source = '---\nid: example-lesson\ntitle: An Example\n---\n## A lesson heading\n'
+    const parsed = parseContentSource('content/lessons/x/example.mdx', source)
+    const tags = (parsed.rendered ?? []).map((node) =>
+      node.kind === 'element' ? node.tag : node.kind,
+    )
+    expect(tags).toContain('h2')
   })
 })

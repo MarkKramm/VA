@@ -54,6 +54,28 @@ export const validLesson = (overrides: Record<string, unknown> = {}) => ({
   ...overrides,
 })
 
+/**
+ * The exercise the fixture lesson references by default (`clean-a-sheet`).
+ *
+ * A valid content set must include it: `lesson.exercises` is checked
+ * unconditionally against the exercise collection, so a lesson that references
+ * an exercise the set does not contain is now a referential-integrity error —
+ * which is the point of the fail-closed rule, not an accident of the fixture.
+ */
+export const validExercise = (overrides: Record<string, unknown> = {}) => ({
+  id: 'clean-a-sheet',
+  title: 'Clean a Messy Sheet',
+  summary: 'Remove duplicate rows and standardise date formats in a small dataset.',
+  difficulty: 'beginner' as const,
+  estimatedMinutes: 15,
+  deliverable: 'A cleaned spreadsheet with no duplicate rows and a single date format.',
+  selfCheck: ['No duplicate rows remain', 'Every date uses the same format'],
+  skills: ['data-cleaning'],
+  status: 'draft' as const,
+  updatedAt: '2026-10-01',
+  ...overrides,
+})
+
 export const validModule = (overrides: Record<string, unknown> = {}) => ({
   id: 'data-cleaning',
   title: 'Data Cleaning',

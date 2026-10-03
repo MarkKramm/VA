@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { compileMdx, MdxCompileError } from '../../../../content/mdx/compile.ts'
+import { compileExerciseMdx, compileMdx, MdxCompileError } from '../../../../content/mdx/compile.ts'
 import { isSafeUrl } from '../../../../content/mdx/tree.ts'
 
 /**
@@ -282,5 +282,62 @@ describe('the MDX compiler — the tree is a closed vocabulary', () => {
       (n) => n.kind === 'component',
     )
     expect(component?.name).toBe('Callout')
+  })
+})
+
+describe('the MDX compiler — the exercise entry point (M2.4)', () => {
+  /**
+   * An exercise body renders INSIDE the lesson's Practice section, under the
+   * exercise's `<h3>` title, so its own headings must start at `h4`. The floor is
+   * a property of the entry point (`compileExerciseMdx`), not an argument a
+   * caller could get wrong — which is what makes it structural (D26).
+   *
+   * Everything else is SHARED with the lesson compiler: the same parser, the same
+   * trust boundary. The tests below assert both halves: the floor differs, and
+   * nothing else does.
+   */
+  const EXERCISE_PATH = 'content/exercises/example/example.mdx'
+
+  const compileExercise = (body: string) => compileExerciseMdx(body, EXERCISE_PATH)
+
+  const failureMessage = (body: string): string => {
+    try {
+      compileExerciseMdx(body, EXERCISE_PATH)
+    } catch (error) {
+      if (error instanceof MdxCompileError) return error.message
+      throw error
+    }
+    throw new Error('expected compileExerciseMdx to throw, but it returned a tree')
+  }
+
+  it('accepts headings at h4 and deeper', () => {
+    const tree = compileExercise('#### Four\n\n##### Five\n\n###### Six')
+    const tags = (tree as unknown as AnyNode[]).map((n) => n.tag)
+    expect(tags).toEqual(['h4', 'h5', 'h6'])
+  })
+
+  it('refuses an h3 in an exercise body, naming the file and the h4 floor', () => {
+    const message = failureMessage('### Too shallow')
+    expect(message).toContain(EXERCISE_PATH)
+    expect(message).toMatch(/h4/)
+  })
+
+  it.each(['# One', '## Two', '### Three'])('refuses %j as below the floor', (heading) => {
+    expect(() => compileExercise(heading)).toThrow(MdxCompileError)
+  })
+
+  it('shares the trust boundary — expressions, unsafe URLs and raw HTML are still refused', () => {
+    // The exercise compiler is the SAME compiler, so a second boundary cannot
+    // drift from the first. These would all be bugs if they passed.
+    expect(() => compileExercise('Before {danger} after')).toThrow(MdxCompileError)
+    expect(() => compileExercise('[x](javascript:alert(1))')).toThrow(MdxCompileError)
+    expect(() => compileExercise('<div>raw</div>')).toThrow(MdxCompileError)
+    expect(() => compileExercise('![](https://example.com/x.png)')).toThrow(MdxCompileError)
+  })
+
+  it('leaves the lesson compiler unchanged — h1 refused, h2 accepted', () => {
+    // The M2.3 contract must not have moved when the floor was made a policy.
+    expect(() => compileMdx('## Fine', 'content/lessons/x/l.mdx')).not.toThrow()
+    expect(() => compileMdx('# Nope', 'content/lessons/x/l.mdx')).toThrow(MdxCompileError)
   })
 })

@@ -1,5 +1,7 @@
 import { registry } from '@/content/registry.ts'
 import {
+  exerciseBody,
+  exercisesOfLesson,
   getModule,
   getRoadmap,
   lessonBody,
@@ -12,7 +14,16 @@ import {
   roadmapsByCareerPath,
   skillsByIds,
 } from '@/content/selectors.ts'
-import type { CareerPath, Lesson, Module, Roadmap, Skill, Stage } from '@/content/schemas/index.ts'
+import type {
+  CareerPath,
+  Difficulty,
+  Exercise,
+  Lesson,
+  Module,
+  Roadmap,
+  Skill,
+  Stage,
+} from '@/content/schemas/index.ts'
 import type { CompiledBody } from '@content/mdx/tree.ts'
 
 /**
@@ -264,6 +275,41 @@ export interface PrerequisiteLink extends LessonLink {
   readonly reason: string
 }
 
+/**
+ * An exercise with its compiled body, ready to render in the Practice section
+ * (M2.4).
+ *
+ * Resolved here rather than in the component so the feature never touches the
+ * registry, exactly as `LessonLink` and `PrerequisiteLink` are. `body` is
+ * `undefined` when the exercise has no compiled body, which the UI renders as an
+ * honest empty state rather than a broken section.
+ *
+ * There is deliberately no `attempts`, `score` or `completed` field: an exercise
+ * is ungraded and unsaved at M2.4, and giving the view a field for something the
+ * platform cannot yet record would invite a component to display a lie.
+ */
+export interface ExerciseView {
+  readonly id: string
+  readonly title: string
+  readonly summary: string
+  readonly difficulty: Difficulty
+  readonly estimatedMinutes: number
+  readonly deliverable: string
+  readonly selfCheck: readonly string[]
+  readonly body: CompiledBody | undefined
+}
+
+const toExerciseView = (exercise: Exercise): ExerciseView => ({
+  id: exercise.id,
+  title: exercise.title,
+  summary: exercise.summary,
+  difficulty: exercise.difficulty,
+  estimatedMinutes: exercise.estimatedMinutes,
+  deliverable: exercise.deliverable,
+  selfCheck: exercise.selfCheck,
+  body: exerciseBody(registry, exercise.id),
+})
+
 export interface LessonContext {
   readonly lesson: Lesson
   readonly body: CompiledBody | undefined
@@ -278,6 +324,8 @@ export interface LessonContext {
   readonly prerequisites: readonly PrerequisiteLink[]
   readonly related: readonly LessonLink[]
   readonly skills: readonly Skill[]
+  /** The lesson's practice exercises, in the lesson's declared order (M2.4). */
+  readonly exercises: readonly ExerciseView[]
 }
 
 export const lessonContext = (lessonId: string): LessonContext | undefined => {
@@ -317,5 +365,6 @@ export const lessonContext = (lessonId: string): LessonContext | undefined => {
     prerequisites,
     related: lessonsByIds(registry, lesson.related).map(toLessonLink),
     skills: skillsByIds(registry, lesson.skills),
+    exercises: exercisesOfLesson(registry, lessonId).map(toExerciseView),
   }
 }

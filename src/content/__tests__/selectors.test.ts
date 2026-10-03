@@ -2,9 +2,13 @@ import { describe, expect, it } from 'vitest'
 import {
   careerPathsOfLesson,
   childCareerPaths,
+  exerciseBody,
+  exercisesOfLesson,
+  getExercise,
   lessonsForSkill,
   lessonsOfModule,
   lessonsOfRoadmap,
+  lessonsUsingExercise,
   modulesOfLesson,
   modulesOfRoadmap,
   roadmapsByCareerPath,
@@ -160,6 +164,36 @@ describe('unknown ids return empty results rather than throwing', () => {
     expect(lessonsForSkill(registry, 'nope')).toEqual([])
     expect(modulesOfLesson(registry, 'nope')).toEqual([])
     expect(careerPathsOfLesson(registry, 'nope')).toEqual([])
+    expect(exercisesOfLesson(registry, 'nope')).toEqual([])
+    expect(lessonsUsingExercise(registry, 'nope')).toEqual([])
+    expect(getExercise(registry, 'nope')).toBeUndefined()
+    expect(exerciseBody(registry, 'nope')).toBeUndefined()
+  })
+})
+
+describe('exercises (M2.4)', () => {
+  const EXERCISE = 'organise-a-client-folder-structure'
+  const LESSON = 'files-and-folders'
+
+  it('resolves the exercise a lesson references, in declared order', () => {
+    expect(exercisesOfLesson(registry, LESSON).map((exercise) => exercise.id)).toEqual([EXERCISE])
+  })
+
+  it('returns an empty list for a lesson with no exercises', () => {
+    // browser-basics is still a reading page; the Practice section must render
+    // nothing for it rather than an empty heading.
+    expect(exercisesOfLesson(registry, 'browser-basics')).toEqual([])
+  })
+
+  it('derives the lessons using an exercise from the lesson side', () => {
+    // The exercise file never names a lesson; this is the reverse index proving
+    // the relationship is derived.
+    expect(lessonsUsingExercise(registry, EXERCISE).map((lesson) => lesson.id)).toEqual([LESSON])
+  })
+
+  it('exposes the exercise record and its compiled body', () => {
+    expect(getExercise(registry, EXERCISE)?.title.length).toBeGreaterThan(0)
+    expect(exerciseBody(registry, EXERCISE)?.length).toBeGreaterThan(0)
   })
 })
 

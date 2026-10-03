@@ -133,7 +133,7 @@ describe('invariant 3 — single content entry point', () => {
 })
 
 describe('invariant 3b — no curriculum literals in the UI', () => {
-  it('UI directories do not contain lesson or module titles', async () => {
+  it('UI directories do not contain lesson, module or exercise titles', async () => {
     // ESLint cannot express this: a lesson title is an ordinary string literal,
     // indistinguishable from any other. A test that reads the real content and
     // checks it does not appear in the UI is the only honest version.
@@ -155,6 +155,10 @@ describe('invariant 3b — no curriculum literals in the UI', () => {
     const titles = [
       ...[...registry.lessons.values()].map((l) => l.title),
       ...[...registry.modules.values()].map((m) => m.title),
+      // Exercises became real content at M2.4, so their titles are held to the
+      // same rule: the Practice section renders a title it is given, it must
+      // never contain one as a literal.
+      ...[...registry.exercises.values()].map((e) => e.title),
     ].filter((title) => title.length > 12)
 
     const offenders: string[] = []
