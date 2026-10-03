@@ -1,5 +1,5 @@
 import { Link } from 'react-router'
-import { ArrowRight, BookOpen, Compass, Route } from 'lucide-react'
+import { ArrowRight, BookOpen, Route } from 'lucide-react'
 import { allRoadmapSummaries, curriculumTotals, startingLessons } from '@/app/content.ts'
 import { Badge } from '@/components/ui/Badge.tsx'
 import { LinkButton } from '@/components/ui/Button.tsx'
@@ -8,6 +8,7 @@ import { Card, CardBody, CardHeader } from '@/components/ui/Card.tsx'
 import { EmptyState } from '@/components/ui/EmptyState.tsx'
 import { Icon } from '@/components/icons/Icon.tsx'
 import { formatDuration } from '@/lib/cn.ts'
+import { ProgressPanel } from './ProgressPanel.tsx'
 import styles from './DashboardPage.module.css'
 
 /**
@@ -216,15 +217,13 @@ export const DashboardPage = () => {
           </section>
 
           {/*
-            Progress.
+            Progress (M3).
 
-            Shown as an honest empty state rather than a 0% bar. Progress events
-            are recorded by lesson and quiz interactions, and at M1 there are no
-            lesson pages to complete, so there is nothing to record and a bar
-            reading 0% would imply a tracking system that does not yet exist.
-
-            The progress UI — and the event log behind it — is M3. This section is
-            a placeholder for the concept, not a stub for the implementation.
+            Real state from the event log: lessons completed, exercises practised,
+            overall and per-roadmap progress, the lesson to resume, and the
+            learner's own export/import. A learner with no events still gets the
+            honest empty state — `ProgressPanel` owns that distinction, driven by
+            the log rather than by the completion count.
           */}
           <section className={styles.progressSection} aria-labelledby="progress-heading">
             <div className={styles.sectionHeader}>
@@ -232,12 +231,7 @@ export const DashboardPage = () => {
                 Your progress
               </h2>
             </div>
-            <EmptyState title="No progress to show yet" icon={<Compass />} compact>
-              <p>
-                Progress tracking arrives once there are lessons to complete. It is stored in this
-                browser only and is never uploaded.
-              </p>
-            </EmptyState>
+            <ProgressPanel />
           </section>
         </div>
       </div>

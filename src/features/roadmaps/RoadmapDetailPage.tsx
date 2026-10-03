@@ -1,12 +1,15 @@
 import { Link, useParams } from 'react-router'
 import { ArrowLeft, ArrowRight, BookOpen, Layers } from 'lucide-react'
 import { findRoadmap, lessonsInModule, lessonsInRoadmap, stagesOfRoadmap } from '@/app/content.ts'
+import { lessonProgressFor, roadmapLessonProgress } from '@/app/progress/composition.ts'
+import { useProgressState } from '@/app/progress/ProgressProvider.tsx'
 import { Breadcrumbs } from '@/components/ui/Breadcrumbs.tsx'
 import { Badge } from '@/components/ui/Badge.tsx'
 import { Callout } from '@/components/ui/Callout.tsx'
 import { Card, CardBody, CardHeader } from '@/components/ui/Card.tsx'
 import { LinkButton } from '@/components/ui/Button.tsx'
 import { EmptyState } from '@/components/ui/EmptyState.tsx'
+import { ProgressBar } from '@/components/ui/ProgressBar.tsx'
 import { Icon } from '@/components/icons/Icon.tsx'
 import { formatDuration } from '@/lib/cn.ts'
 import { NotFoundPage } from './NotFoundPage.tsx'
@@ -33,10 +36,11 @@ import styles from './RoadmapDetailPage.module.css'
  * lesson title links to its own page (`/lessons/:lessonId`), which renders the
  * compiled body — see `LessonPage`. This page stays a structural index.
  *
- * Because there is no progress yet, every stage is `available`: none is locked,
- * none is recommended, and no progress bar is shown. `DESIGN_SYSTEM.md` §2.1
- * requires colour to be paired with text, so a lone coloured bar would be wrong
- * even if the data existed.
+ * At M3 it shows real progress: a completed-lesson bar for the roadmap and a
+ * "Completed" badge on lessons the learner has finished. Gating is still absent —
+ * every stage is reachable, and nothing is locked or recommended. The bar's label
+ * states the count in words, so progress is never colour alone
+ * (`DESIGN_SYSTEM.md` §2.1).
  */
 
 const STAGE_LABEL: Record<string, string> = {
@@ -59,6 +63,7 @@ const LANE_LABEL = {
 
 export const RoadmapDetailPage = () => {
   const { roadmapId } = useParams<{ roadmapId: string }>()
+  const state = useProgressState()
 
   // An unknown id is a 404, not an error state. `roadmapId` is guaranteed by the
   // route pattern to exist, but an empty string is possible from a malformed URL.
@@ -66,10 +71,12 @@ export const RoadmapDetailPage = () => {
   if (!roadmap) return <NotFoundPage />
 
   const stages = stagesOfRoadmap(roadmap.id)
-  // The roadmap's first lesson in curriculum order, for the "start" action. The
-  // sequence is the same one the lesson page uses for previous/next navigation,
-  // so "start" and "next" cannot disagree about what the first lesson is.
-  const firstLesson = lessonsInRoadmap(roadmap.id)[0]
+  // The roadmap's lessons in curriculum order. The sequence is the same one the
+  // lesson page uses for previous/next navigation, so "start", "next" and the
+  // progress count cannot disagree about which lessons the roadmap contains.
+  const roadmapLessons = lessonsInRoadmap(roadmap.id)
+  const firstLesson = roadmapLessons[0]
+  const progress = roadmapLessonProgress(state, roadmap.id)
 
   return (
     <div className={styles.page}>
@@ -100,6 +107,19 @@ export const RoadmapDetailPage = () => {
           />
         </div>
       </header>
+
+      {/*
+        Progress (M3). Shown only when the roadmap has lessons: a bar over an empty
+        roadmap would read as "you have done nothing" rather than "there is nothing
+        here". The label states the count, so the number is never colour alone.
+      */}
+      {progress && progress.total > 0 ? (
+        <ProgressBar
+          value={progress.ratio}
+          label={`${progress.completed} of ${progress.total} lessons complete`}
+          state={progress.ratio === 1 ? 'complete' : undefined}
+        />
+      ) : null}
 
       <Callout tone="info" title="Draft content">
         <p>
@@ -167,29 +187,37 @@ export const RoadmapDetailPage = () => {
                           <p className={styles.moduleOutcome}>{module.outcome}</p>
                           {lessons.length > 0 ? (
                             <ol className={styles.lessons}>
-                              {lessons.map((lesson, lessonIndex) => (
-                                <li key={lesson.id} className={styles.lesson}>
-                                  <span className={styles.lessonIndex} aria-hidden="true">
-                                    {lessonIndex + 1}
-                                  </span>
-                                  {/*
-                                    The lesson title is a real link to the lesson
-                                    page (M2.3). Before this slice there was
-                                    nowhere to go and the title was plain text —
-                                    a link to a non-existent page would have been
-                                    worse than none.
-                                  */}
-                                  <Link to={`/lessons/${lesson.id}`} className={styles.lessonTitle}>
-                                    {lesson.title}
-                                  </Link>
-                                  <span className={styles.lessonMeta}>
-                                    <Icon size="xs">
-                                      <BookOpen />
-                                    </Icon>
-                                    {formatDuration(lesson.estimatedMinutes)}
-                                  </span>
-                                </li>
-                              ))}
+                              {lessons.map((lesson, lessonIndex) => {
+                                const { complete } = lessonProgressFor(state, lesson.id)
+                                return (
+                                  <li key={lesson.id} className={styles.lesson}>
+                                    <span className={styles.lessonIndex} aria-hidden="true">
+                                      {lessonIndex + 1}
+                                    </span>
+                                    {/*
+                                      The lesson title is a real link to the lesson
+                                      page (M2.3). Before this slice there was
+                                      nowhere to go and the title was plain text —
+                                      a link to a non-existent page would have been
+                                      worse than none.
+                                    */}
+                                    <Link
+                                      to={`/lessons/${lesson.id}`}
+                                      className={styles.lessonTitle}
+                                    >
+                                      {lesson.title}
+                                    </Link>
+                                    {/* A word, not a colour: completion is stated. */}
+                                    {complete ? <Badge label="Completed" state="complete" /> : null}
+                                    <span className={styles.lessonMeta}>
+                                      <Icon size="xs">
+                                        <BookOpen />
+                                      </Icon>
+                                      {formatDuration(lesson.estimatedMinutes)}
+                                    </span>
+                                  </li>
+                                )
+                              })}
                             </ol>
                           ) : (
                             <p className={styles.noLessons}>
