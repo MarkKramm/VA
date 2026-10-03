@@ -1,6 +1,8 @@
+import { useEffect, useRef } from 'react'
 import { Link, useParams } from 'react-router'
 import { ArrowLeft, ArrowRight, BookOpen, Clock, ListChecks, Target } from 'lucide-react'
 import { lessonContext, type LessonLink } from '@/app/content.ts'
+import { useProgressActions } from '@/app/progress/ProgressProvider.tsx'
 import { MdxContent } from '@/components/mdx/render.tsx'
 import { Badge } from '@/components/ui/Badge.tsx'
 import { Breadcrumbs, type Crumb } from '@/components/ui/Breadcrumbs.tsx'
@@ -9,6 +11,7 @@ import { EmptyState } from '@/components/ui/EmptyState.tsx'
 import { Icon } from '@/components/icons/Icon.tsx'
 import { formatDuration } from '@/lib/cn.ts'
 import { NotFoundPage } from '@/features/roadmaps/NotFoundPage.tsx'
+import { CompletionControl } from './CompletionControl.tsx'
 import { PracticeSection } from './PracticeSection.tsx'
 import styles from './LessonPage.module.css'
 
@@ -23,12 +26,11 @@ import styles from './LessonPage.module.css'
  *
  * WHAT THIS PAGE DELIBERATELY DOES NOT DO
  *
- * It does not track progress, mark a lesson complete, gate anything, or record an
- * attempt. Progress is M3. There is no "Complete and continue" button, because
- * pressing it would have to write event data that has no home yet; the previous
- * and next links are the honest navigation until then. It renders exercises
- * (M2.4) as practice, but a quiz and a lab do not exist yet, and the exercises
- * are ungraded and unsaved — that gap is stated openly rather than faked.
+ * It records progress (M3): opening the lesson records a view, and the learner
+ * can explicitly mark the lesson complete (with undo) and record an exercise
+ * attempt. Completion is never inferred from a page view — the event model's
+ * `source` field keeps a view and a completion apart. It still does not gate
+ * anything, and a quiz and a lab do not exist yet.
  *
  * THE HEADING LEVEL IS FIXED AT h1
  *
@@ -65,11 +67,31 @@ const LessonLinkList = ({ lessons }: { readonly lessons: readonly LessonLink[] }
 
 export const LessonPage = () => {
   const { lessonId } = useParams<{ lessonId: string }>()
+  const actions = useProgressActions()
 
   // An unknown id is a 404, not an error. The same treatment `RoadmapDetailPage`
   // gives an unknown roadmap: a mistyped URL is the learner's doing and must not
   // read as a failure.
   const context = lessonId ? lessonContext(lessonId) : undefined
+  const isValidLesson = context !== undefined
+
+  /*
+   * Record that the learner OPENED this lesson (M3).
+   *
+   * A view, never a completion — `lesson.viewed` powers "continue learning" and
+   * nothing else. It is guarded by a ref so React's StrictMode double-invocation
+   * (and any incidental re-render) records it once per lesson visit rather than
+   * appending the same view repeatedly. The dependency is the lesson ID, NOT the
+   * `context` object: `lessonContext` returns a fresh object on every render, so
+   * depending on it would record a view on every render, forever.
+   */
+  const recordedView = useRef<string | null>(null)
+  useEffect(() => {
+    if (!lessonId || !isValidLesson || recordedView.current === lessonId) return
+    recordedView.current = lessonId
+    actions.recordLessonViewed(lessonId)
+  }, [actions, lessonId, isValidLesson])
+
   if (!context) return <NotFoundPage />
 
   const { lesson, body, module, roadmap, position, total, previous, next } = context
@@ -200,7 +222,14 @@ export const LessonPage = () => {
           section renders nothing when the lesson has no exercises, so a
           reading-only lesson is not given an empty "Practice" heading.
         */}
-        <PracticeSection exercises={context.exercises} />
+        <PracticeSection exercises={context.exercises} lessonId={lesson.id} />
+
+        {/*
+          Completion (M3). Placed after the reading and the practice, because that
+          is the point at which a learner can honestly say they are done. It is an
+          explicit act: opening the lesson does not complete it.
+        */}
+        <CompletionControl lessonId={lesson.id} />
 
         {/*
           Skills. Shown as plain labels, not links, because the skill pages do not

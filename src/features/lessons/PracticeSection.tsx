@@ -1,7 +1,10 @@
-import { ListChecks } from 'lucide-react'
+import { CheckCircle2, ListChecks } from 'lucide-react'
 import type { ExerciseView } from '@/app/content.ts'
+import { lessonProgressFor } from '@/app/progress/composition.ts'
+import { useProgressActions, useProgressState } from '@/app/progress/ProgressProvider.tsx'
 import { MdxContent } from '@/components/mdx/render.tsx'
 import { Badge } from '@/components/ui/Badge.tsx'
+import { Button } from '@/components/ui/Button.tsx'
 import { Icon } from '@/components/icons/Icon.tsx'
 import { formatDuration } from '@/lib/cn.ts'
 import styles from './PracticeSection.module.css'
@@ -13,14 +16,19 @@ import styles from './PracticeSection.module.css'
  * references — title, summary, difficulty, duration, the exercise body, the
  * deliverable and the self-check list — and nothing else.
  *
- * WHAT THIS SECTION DELIBERATELY DOES NOT DO
+ * WHAT THIS SECTION DOES AT M3
  *
- * It does not score, save, submit or record anything. There are no checkboxes,
- * no "Submit" button, no progress state and no call into the progress store. An
- * exercise is ungraded and unsaved at M2.4, and the section says so in plain
- * words rather than implying a record that does not exist. Wiring the existing
- * `exercise.attempted` event is M3 work; doing it here would write progress into
- * a UI that has no home for it.
+ * It records an ATTEMPT, and only an attempt. The learner can say "I have done
+ * this exercise", which records the existing `exercise.attempted` event with
+ * `selfChecked: true` — practice happened, nothing more. There is still no score,
+ * no pass/fail, no grading, no AI evaluation and no mastery calculation; the
+ * exercise stays ungraded (D25), and the copy says so plainly.
+ *
+ * Practice is tracked per LESSON in the domain (`practisedLessons` is keyed by
+ * lesson), so once any exercise in a lesson is marked, every card in that lesson
+ * reflects it. All current lessons have one exercise, so this is not visible
+ * today; it is stated here so the day a lesson has two, the behaviour is
+ * understood rather than discovered.
  *
  * HEADING LEVELS
  *
@@ -37,7 +45,15 @@ const DIFFICULTY_LABEL = {
   advanced: 'Advanced',
 } as const
 
-const ExerciseCard = ({ exercise }: { readonly exercise: ExerciseView }) => (
+const ExerciseCard = ({
+  exercise,
+  practised,
+  onPractise,
+}: {
+  readonly exercise: ExerciseView
+  readonly practised: boolean
+  readonly onPractise: () => void
+}) => (
   <article className={styles.exercise} aria-labelledby={`exercise-${exercise.id}`}>
     <header className={styles.header}>
       <h3 id={`exercise-${exercise.id}`} className={styles.title}>
@@ -70,10 +86,42 @@ const ExerciseCard = ({ exercise }: { readonly exercise: ExerciseView }) => (
         ))}
       </ul>
     </div>
+
+    {/*
+      The self-report action. It records that practice happened and nothing else:
+      no score, no pass/fail, no evaluator. Once recorded, the state is stated
+      rather than offered again — the event log keeps every attempt, but the
+      domain tracks practice per lesson, so re-pressing it would add noise without
+      changing what the learner sees.
+    */}
+    <div className={styles.practise}>
+      {practised ? (
+        <p className={styles.practiseDone} role="status">
+          <Icon size="sm">
+            <CheckCircle2 />
+          </Icon>
+          Practice recorded. Nothing is scored — this only marks that you did it.
+        </p>
+      ) : (
+        <Button variant="secondary" onClick={onPractise}>
+          I have done this exercise
+        </Button>
+      )}
+    </div>
   </article>
 )
 
-export const PracticeSection = ({ exercises }: { readonly exercises: readonly ExerciseView[] }) => {
+export const PracticeSection = ({
+  exercises,
+  lessonId,
+}: {
+  readonly exercises: readonly ExerciseView[]
+  readonly lessonId: string
+}) => {
+  const state = useProgressState()
+  const actions = useProgressActions()
+  const { practised } = lessonProgressFor(state, lessonId)
+
   // No exercises means no section at all — an empty "Practice" heading on a
   // reading-only lesson would promise something that is not there.
   if (exercises.length === 0) return null
@@ -87,17 +135,23 @@ export const PracticeSection = ({ exercises }: { readonly exercises: readonly Ex
         Practice
       </h2>
       {/*
-        The honesty note. It is not decoration: a learner who has just read a
-        lesson needs to know that doing the exercise produces no tick, no score
-        and no record, so they do not wait for one.
+        The honesty note. It says what is and is not recorded: practice is marked,
+        but nothing is scored, graded or sent anywhere, and the record stays in
+        this browser. A learner who just read a lesson needs to know that pressing
+        the button below produces no mark, so they do not wait for one.
       */}
       <p className={styles.intro}>
-        These exercises are for you to do, not to hand in. Nothing here is scored, saved or sent
-        anywhere — work through them in your own files and check your own work against the list.
+        These exercises are for you to do, not to hand in. Nothing is scored or graded — marking one
+        only records that you did it, in this browser.
       </p>
       <div className={styles.list}>
         {exercises.map((exercise) => (
-          <ExerciseCard key={exercise.id} exercise={exercise} />
+          <ExerciseCard
+            key={exercise.id}
+            exercise={exercise}
+            practised={practised}
+            onPractise={() => actions.markExercisePractised(exercise.id, lessonId)}
+          />
         ))}
       </div>
     </section>

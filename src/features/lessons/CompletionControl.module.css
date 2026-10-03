@@ -1,0 +1,43 @@
+/*
+ * CompletionControl styles.
+ *
+ * The completed state is carried by a tinted surface AND the sentence beside the
+ * icon — never by colour alone (`DESIGN_SYSTEM.md` §2.1). The `data-complete`
+ * attribute is what selects the surface, so the two stay in step.
+ */
+
+.control {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  max-width: var(--measure-prose);
+  padding: var(--space-4);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-md);
+  background-color: var(--color-surface-sunken);
+}
+
+.control[data-complete='true'] {
+  border-color: var(--color-border-strong);
+  background-color: var(--color-surface-inset);
+}
+
+.status {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  color: var(--color-text-secondary);
+  line-height: var(--leading-normal);
+}
+
+.icon {
+  flex-shrink: 0;
+  color: var(--color-text-muted);
+}
+
+.control[data-complete='true'] .icon {
+  color: var(--color-accent-text);
+}

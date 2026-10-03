@@ -267,17 +267,22 @@ describe('lesson page — practice (M2.4)', () => {
     expect(within(section).getAllByRole('listitem').length).toBeGreaterThan(0)
   })
 
-  it('offers no way to submit, score or tick anything — it is ungraded and unsaved', () => {
+  it('records practice but offers no way to submit, score or grade it', () => {
     renderApp({ initialEntries: [`/lessons/${PRACTICE}`] })
     const section = practiceSection()
-    expect(within(section).queryByRole('button')).not.toBeInTheDocument()
+    // M3 records an ATTEMPT (a self-report), so there is exactly one control and
+    // it says what it does. What must NOT exist is anything that grades: no
+    // checkbox to tick per criterion, no free-text answer, no score.
     expect(within(section).queryByRole('checkbox')).not.toBeInTheDocument()
     expect(within(section).queryByRole('textbox')).not.toBeInTheDocument()
+    const buttons = within(section).getAllByRole('button')
+    expect(buttons).toHaveLength(1)
+    expect(buttons[0]).toHaveAccessibleName(/i have done this exercise/i)
   })
 
-  it('says plainly that the work is not scored, saved or sent anywhere', () => {
+  it('says plainly that the work is not scored or graded', () => {
     renderApp({ initialEntries: [`/lessons/${PRACTICE}`] })
-    expect(screen.getByText(/scored, saved or sent anywhere/i)).toBeInTheDocument()
+    expect(screen.getByText(/nothing is scored or graded/i)).toBeInTheDocument()
   })
 
   it('renders no Practice section for a lesson with no exercises', () => {
