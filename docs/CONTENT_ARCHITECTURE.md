@@ -30,9 +30,10 @@ Plus two orthogonal taxonomies that anything can reference: `Skill` (a tree) and
 `Tool`/`Resource` (directories, arriving at M5).
 
 **M0 has:** `CareerPath`, `Skill`, `Module`, `Roadmap`, `Lesson`, and `Lesson.topics`.
-**Later milestones add:** `Topic` (standalone), `Exercise`, `Quiz`, `Question`,
-`Assessment`, `Lab`, `Tool`, `Resource`. The schema files live in one directory and the
-validator skips collections that do not exist yet, so adding one later is additive.
+**M2.4 adds:** `Exercise` — the first practice entity, referenced by `lesson.exercises`.
+**Later milestones add:** `Topic` (standalone), `Quiz`, `Question`, `Assessment`, `Lab`,
+`Tool`, `Resource`. The schema files live in one directory and the validator checks a
+collection as soon as it is registered, so adding one later is additive.
 
 ## Topics, and why they are a first-class entity
 
@@ -189,6 +190,46 @@ the same event as a lesson being edited.
 
 That is the whole procedure. No code, no route, no index, no component.
 
+### An exercise
+
+Create `content/exercises/<slug>.mdx` with frontmatter:
+
+```yaml
+---
+id: organise-a-client-folder-structure
+title: Organise Folders for a New Client
+summary: Set up a folder structure and a naming convention for a new client.
+difficulty: beginner
+estimatedMinutes: 25
+deliverable: A folder tree for Acme Co, plus three example filenames.
+selfCheck:
+  - The top-level folders are numbered so they sort in a useful order
+  - There is a single inbox folder for anything not yet filed
+skills: [administration-organisation]
+status: draft
+updatedAt: '2026-10-01'
+---
+```
+
+Then the body in MDX, with headings starting at `####`. An exercise renders under the
+exercise's `<h3>` inside the lesson's Practice section, so its own headings start at `h4` — a
+shallower heading is refused by the compiler (`DECISIONS.md` D26).
+
+Then reference it from a lesson:
+
+```yaml
+# content/lessons/computer-fundamentals/files-and-folders.mdx
+exercises:
+  - organise-a-client-folder-structure
+```
+
+The reference is **lesson-owned**: the exercise never names its lesson, and the registry
+derives `exerciseLessonIds` by scanning lessons. A `lesson.exercises` id that does not resolve
+is a **build error** — fail-closed, so a lesson can never claim practice it cannot deliver.
+
+An exercise is **ungraded and unsaved** at M2.4: no score, no attempt, no persistence. Scoring,
+rubrics and attempts belong to the Lab / evaluation system at a later milestone.
+
 ### A module
 
 Create `content/modules/<slug>.mdx` listing its lessons, with an `outcome` written in
@@ -238,8 +279,9 @@ literal in `src/` is a review-blocking bug.
 **Errors fail the build. Warnings do not.** Anything needing a human judgement is a warning,
 because a build that blocks on judgement teaches authors to work around the check.
 
-The M0 content currently produces four `quality/no-practice` warnings and nothing else.
-That is expected: the exercise system arrives at M2.
+The M0 content currently produces three `quality/no-practice` warnings and nothing else. That
+is expected: `files-and-folders` reaches practice through its exercise (M2.4), and the other
+three M0 lessons are still reading-only.
 
 ## Scale notes
 

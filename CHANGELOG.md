@@ -12,6 +12,24 @@ All notable changes to this project. Format follows
 
 ### Added
 
+- **The exercise entity, and the first practice experience (M2.4).** A new `Exercise`
+  content entity (id, title, summary, difficulty, estimatedMinutes, deliverable, a static
+  `selfCheck` list, skills, provenance) is loaded from `content/exercises/*.mdx`, validated,
+  and rendered on the lesson page in a new **Practice** section: title, summary, difficulty,
+  duration, compiled body, deliverable, and the self-check list. The reference is
+  **lesson-owned** (`lesson.exercises`), so the registry derives `exerciseLessonIds` and no
+  exercise file names a lesson. Exercises are **ungraded and unsaved** — no score, no attempt,
+  no persistence — and the UI says so; `exercise.attempted` is deliberately not wired (M3).
+  `DECISIONS.md` D25.
+- **A dedicated exercise compiler entry point with an `h4` heading floor (M2.4).**
+  `compileExerciseMdx` shares the whole compiler with `compileMdx` — same parser, same trust
+  boundary — and differs only in the heading floor: an exercise body starts at `h4` because it
+  renders under the exercise's `<h3>` inside the lesson's Practice section. The floor follows
+  the collection (`content/exercises/`), not a call-site argument. `DECISIONS.md` D26.
+- **The first real exercise, connected to a real lesson.** `files-and-folders` now references
+  `organise-a-client-folder-structure` (an Acme Co folder-structure task with a deliverable and
+  a self-check), so the lesson reaches practice and the `quality/no-practice` warnings fall from
+  **4 to 3 by fact** rather than by weakening the rule.
 - **The site is deployed.** `https://markkramm.github.io/VA/` is live from
   `https://github.com/MarkKramm/VA`, with CI and Deploy both green on push to `main`. The
   deep-link SPA fallback was verified over HTTP. This closes the M1 deployment exit condition.
@@ -38,12 +56,24 @@ All notable changes to this project. Format follows
 - **A built-output compiler-leak guard.** `scripts/check-paths.ts` now scans the emitted JS
   for compiler markers, so a dependency that leaks only after bundling fails the build.
   Proven to bite by injecting a marker.
-- **Tests: 241 (M1) → 283 (M2.1) → 351 across 21 files (M2.2) → 389 across 23 files (M2.3).**
-  The M2.3 slice adds lesson-context resolution and ordering, route and deep-link behaviour,
-  MDX rendering integration, navigation boundaries, missing-content states, heading-outline
-  validity, and the corrected prose-class and prerequisite-link behaviours.
+- **Tests: 241 (M1) → 283 (M2.1) → 351 across 21 files (M2.2) → 389 across 23 files (M2.3) →
+  435 across 24 files (M2.4).** The M2.3 slice adds lesson-context resolution and ordering,
+  route and deep-link behaviour, MDX rendering integration, navigation boundaries,
+  missing-content states, heading-outline validity, and the corrected prose-class and
+  prerequisite-link behaviours. The M2.4 slice adds the exercise schema, registry and derived
+  reverse index, fail-closed lesson → exercise referential integrity, the exercise compiler's
+  `h4` floor and unchanged trust boundary, the ingestion of `content/exercises/`, and the
+  Practice-section rendering and its "no submit, no score, no save" contract.
 
 ### Changed
+
+- **The MDX compiler's heading floor became a policy instead of a hard-coded `h2`.** The shared
+  node walk now takes a small `CompilePolicy` (floor + refusal message); `compileMdx` keeps
+  floor `2` and the new `compileExerciseMdx` uses floor `4`. No lesson behaviour changed — the
+  `h1` refusal and `h2`–`h6` clamping are asserted unchanged. `DECISIONS.md` D26.
+- **Content payload now includes exercise bodies** (15.7 KB measured by `content:check`), and the
+  client bundle moved from 482 kB / 148 kB to **489 kB / 149 kB gzipped** — the Practice section
+  and the first exercise now shipping. Still no compiler in the client.
 
 - **The MDX renderer moved to the components layer.** `MdxContent`, the component allowlist and
   the prose stylesheet moved from `src/content/mdx/` to `src/components/mdx/`, and the compiled

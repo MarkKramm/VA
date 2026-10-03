@@ -5,6 +5,90 @@ something that works.
 
 ---
 
+## Checkpoint: M2.4 exercise entity and practice
+
+**Date:** 2026-10-01
+**Milestone:** M2 — Content Engine (fourth slice)
+**Tag:** none — `v0.1.0-foundation` remains the only tag
+**Branch:** `main` · **HEAD:** `35dd3fa` with the M2.4 slice committed on top
+
+### What this checkpoint is
+
+The first PRACTICE entity. `content/exercises/*.mdx` load, validate against an `Exercise`
+schema, and compile at build time through a dedicated entry point (`compileExerciseMdx`,
+heading floor `h4`). The **lesson owns the reference** (`lesson.exercises`), so the registry
+derives `exerciseLessonIds`. The lesson page renders a **Practice** section, and
+`files-and-folders` is the first lesson to reach practice — the `quality/no-practice` warnings
+fall from **4 to 3 by fact**, not by weakening the rule.
+
+### Verified working
+
+- **Content validation:** 0 errors, 3 `quality/no-practice` warnings; `content:check` loads
+  16 career paths, 2 roadmaps, 2 modules, 4 lessons, **1 exercise**, 19 skills; `exercises` is
+  no longer a pending collection.
+- **Types, lint, contrast:** `typecheck` clean (app and tooling configs); `lint` clean;
+  `check:contrast` 34 pairs pass.
+- **Tests:** **435 across 24 files** — the new `exercises.test.ts` plus extended content,
+  compiler, ingestion, registry, validation, duplicate-id, selector, lesson-context and lesson
+  page suites. `test:arch` 16 passing, including invariant 3b extended to exercise titles.
+- **Build:** succeeds; **489 kB raw / 149 kB gzipped** (M2.3 was 482 / 148). The ~7 kB raw /
+  ~1 kB gzipped increase is the Practice section and the first exercise now shipping. SPA
+  fallback written, `check:paths` clean, and the built-output guard confirms **no compiler in
+  the client**.
+- **The heading floor is structural.** `compileExerciseMdx` refuses `h1`–`h3` and accepts
+  `h4`+, while `compileMdx` keeps its `h2`/`h1` behaviour. The two share one parser and one
+  trust boundary, so expressions, unsafe URLs, raw HTML and missing alt text are refused in an
+  exercise body exactly as in a lesson body.
+- **Referential integrity is fail-closed.** A `lesson.exercises` id that does not resolve is a
+  build error, and that is true even when the exercise collection is absent (pinned by a test).
+
+### Not done, deliberately
+
+- **No scoring, attempts, rubrics or persistence.** `exercise.attempted` is **not** wired; the
+  Practice section has no checkbox, no submit button and no progress state, and says so.
+- No M2 close-out yet (no `v0.3.0-content-engine` tag), no pre-M3 hardening, no M3.
+- No quizzes, labs, search, tool directory or career preparation.
+
+### Not verified — read this before continuing
+
+- **`npm run check` is not fully green in this sandbox, for one environmental reason only:**
+  `src/content/__tests__/content-gate.test.ts` runs `npm run content:check` in a CHILD process,
+  and this environment cannot spawn `cmd.exe` (`spawnSync … EBUSY`). The other 434 tests pass,
+  and `content:check` itself is green when run directly. This is a sandbox limitation, not a
+  code failure; the test was left unchanged. On a normal machine `npm run check` should be
+  green.
+- No browser was driven at 375 / 768 / 1440.
+- **M2 is not finished.** The close-out remains; see `NEXT_STEPS.md`.
+
+### Files that must be understood before changing anything
+
+New at M2.4:
+
+| File                                       | Why it matters                                                            |
+| ------------------------------------------ | ------------------------------------------------------------------------- |
+| `src/content/schemas/exercise.ts`          | The exercise schema. No `lessonId`; ungraded by construction              |
+| `content/mdx/compile.ts`                   | `CompilePolicy` + `compileExerciseMdx` (floor `h4`) over the shared walk  |
+| `vite-plugin-content.ts`                   | Picks the compiler by path; walks `content/exercises/`; missing-dir guard |
+| `src/content/registry.ts`                  | `exercises`, `exerciseLessonIds` (derived), `exerciseBodies`              |
+| `src/content/validation.ts`                | Fail-closed `lesson.exercises`; exercise skills/duplicates/provenance     |
+| `src/app/content.ts`                       | `ExerciseView`; `lessonContext.exercises`                                 |
+| `src/features/lessons/PracticeSection.tsx` | The Practice UI. No submit, no score, no save                             |
+
+### Do not change without a decision
+
+Everything in the M0/M1/M2.1/M2.2/M2.3 lists below, plus M2.4's: the lesson-owned
+`lesson.exercises` reference with a derived `exerciseLessonIds` (D25), the fail-closed exercise
+referential check, and the dedicated `compileExerciseMdx` entry point with the `h4` floor
+(D26).
+
+### Recommended next task
+
+**Close out M2** (`NEXT_STEPS.md` item 1): re-read `PLAN.md` §60/§73/§84 against what M2 built,
+confirm the slice boundaries are recorded and the warnings have fallen by fact, update the
+orientation files, and tag `v0.3.0-content-engine`.
+
+---
+
 ## Checkpoint: M2.3 lesson and roadmap content experience
 
 **Date:** 2026-10-01

@@ -1,8 +1,8 @@
 # Current State
 
 **As of:** 2026-10-01
-**Milestone:** M2 — Content Engine · **lesson and roadmap content experience live; exercises remain**
-**Next:** M2 continued — exercises, then the remaining M2 work
+**Milestone:** M2 — Content Engine · **lesson, roadmap and exercise content experience live**
+**Next:** M2 close-out — the milestone is **not** closed yet; see `NEXT_STEPS.md`
 
 This file describes the state _as it is_, rewritten each session. It is not a history. For
 the history, see `CHANGELOG.md`.
@@ -12,8 +12,8 @@ the history, see `CHANGELOG.md`.
 ## What exists and works
 
 **The content pipeline, end to end, parsed AND compiled at build time.** 2 roadmaps,
-2 modules, 4 lessons, 16 career paths and 19 skills load from `content/`, validate against
-Zod schemas, and are readable through a derived-index registry. `npm run content:check`
+2 modules, 4 lessons, 1 exercise, 16 career paths and 19 skills load from `content/`, validate
+against Zod schemas, and are readable through a derived-index registry. `npm run content:check`
 reports 0 errors.
 
 **The build-time ingestion pipeline.** `vite-plugin-content.ts` reads and parses `.mdx`
@@ -37,6 +37,19 @@ objectives, advisory prerequisites (with reasons), skills, related lessons, dete
 previous/next navigation in roadmap order, and breadcrumbs. Lessons are reachable from the
 roadmap page and the dashboard. Unknown ids render the in-app 404 inside the shell.
 
+**The exercise entity and practice (new at M2.4).** `content/exercises/*.mdx` load, validate
+against an `Exercise` schema, and compile at build time through a dedicated entry point
+(`compileExerciseMdx`) whose heading floor is `h4` — an exercise body renders under the
+exercise's `<h3>` inside the lesson's Practice section, so its headings start at `h4` (D26).
+The **lesson owns the reference** (`lesson.exercises`), so the registry derives
+`exerciseLessonIds` and no exercise file names a lesson; a reference that does not resolve is a
+**build error** (fail-closed). The lesson page renders a **Practice** section — title, summary,
+difficulty, duration, compiled body, deliverable and a static self-check list — and says
+plainly that nothing is scored or saved. Exercises are ungraded and unsaved: no attempt is
+recorded and `exercise.attempted` is deliberately **not** wired (M3). `files-and-folders` is the
+first lesson to reach practice, which is what drops the `quality/no-practice` warnings from 4
+to 3. `DECISIONS.md` D25/D26.
+
 **Long-form prose typography.** `src/components/mdx/prose.module.css` styles every construct
 the compiler can emit, from design tokens, and the renderer applies it to every body — so the
 type scale is now exercised by real lesson text, which was the open question from M1.
@@ -50,11 +63,13 @@ component allowlist is empty on purpose.
 
 **The client bundle dropped by 56 kB gzipped (28%) as a direct result of build-time
 parsing.** 717 kB raw / 202 kB gzipped (M1) → 468 kB / 146 kB (M2.1) → 473 kB / 146 kB
-(M2.2) → **482 kB raw / 148 kB gzipped (M2.3)**. The M2.3 increase (~9 kB raw / ~2 kB
-gzipped) is the lesson page and the renderer now actually shipping — the renderer was
-tree-shaken out at M2.2 because nothing rendered a body. `gray-matter`, `js-yaml`, `unified`,
-`remark-*`, `micromark` and every compiler marker remain absent from the built JS; the
-compiled content tree and the lesson page are present. Measured, not estimated (D21/D22).
+(M2.2) → **482 kB raw / 148 kB gzipped (M2.3)** → **489 kB raw / 149 kB gzipped (M2.4)**.
+The M2.3 increase (~9 kB raw / ~2 kB gzipped) is the lesson page and the renderer now actually
+shipping — the renderer was tree-shaken out at M2.2 because nothing rendered a body. The M2.4
+increase (~7 kB raw / ~1 kB gzipped) is the Practice section and the first exercise now
+shipping. `gray-matter`, `js-yaml`, `unified`, `remark-*`, `micromark` and every compiler
+marker remain absent from the built JS; the compiled content tree, the lesson page and the
+exercise body are present. Measured, not estimated (D21/D22).
 
 **Cross-roadmap reuse, demonstrated.** `va-foundations` and `computer-fundamentals` are
 each referenced by both roadmaps. Neither roadmap declares that relationship; the registry
@@ -86,12 +101,12 @@ scans the emitted JS for compiler markers. Both were proven to bite.
 
 ## What does not exist yet
 
-No search, no progress UI, no quizzes, no exercises, no tool directory, no labs, no career
-preparation. Lesson pages and roadmap-to-lesson navigation now exist.
+No search, no progress UI, no quizzes, no tool directory, no labs, no career preparation.
+Lesson pages, roadmap-to-lesson navigation and practice exercises now exist.
 
-Not implemented, by milestone: exercises and search (M2, in progress), progress UI (M3),
-quizzes (M4), the tool directory (M5), labs (M6), career preparation (M7), the remaining
-roadmaps and skill visualisation (M8), polish (M9).
+Not implemented, by milestone: search (M2, in progress), progress UI (M3), quizzes (M4),
+the tool directory (M5), labs (M6), career preparation (M7), the remaining roadmaps and skill
+visualisation (M8), polish (M9).
 
 Deliberately **not** built: no placeholder routes, no recommendations, no streaks or
 achievements, no backend/auth, no state-management library.
@@ -103,11 +118,11 @@ achievements, no backend/auth, no state-management library.
 | `npm run format:check`   | clean, including the full `prettier --check .` glob                  |
 | `npm run lint`           | clean                                                                |
 | `npm run typecheck`      | clean, app and tooling configs separately                            |
-| `npm run content:check`  | 0 errors, 4 warnings (all `quality/no-practice`, expected until M2)  |
+| `npm run content:check`  | 0 errors, 3 warnings (all `quality/no-practice`)                     |
 | `npm run check:contrast` | 34 pairs pass, computed from tokens                                  |
-| `npm run test`           | 389 passing across 23 files                                          |
+| `npm run test`           | 435 passing across 24 files                                          |
 | `npm run test:arch`      | 16 passing                                                           |
-| `npm run build`          | succeeds; 482 kB / 148 kB gzipped — no compiler in the client        |
+| `npm run build`          | succeeds; 489 kB / 149 kB gzipped — no compiler in the client        |
 | `npm run check:paths`    | base `/VA/`, assets present, SPA fallback in place, no compiler leak |
 
 **`npm run check` is the single gate and passes end to end**, so CI will be green.
@@ -134,8 +149,10 @@ format check, and it is never touched, moved or reformatted (`DECISIONS.md` D20)
   current lessons sit in both `beginner-va` and `data-entry-va`, so the page always shows
   `beginner-va`; "in both Beginner VA and Data Entry VA" would be the fuller statement and is
   a candidate for a later slice.
-- **Four content warnings.** Every M0 lesson lacks an exercise. Correct until the exercise
-  system lands.
+- **Three content warnings.** Three M0 lessons still lack an exercise; `files-and-folders` now
+  has one. The remaining three are honest — they are reading-only lessons.
+- **An exercise is ungraded and unsaved.** No attempt is recorded and `exercise.attempted` is
+  not wired; the Practice section says so. Recording practice is M3.
 - **All content is `status: draft`.** Nothing has been human-reviewed.
 
 ## The one thing to know before continuing M2
@@ -144,11 +161,12 @@ The content pipeline now has **two build-time stages**, both in `content/`:
 
 ```
 content/**/*.mdx
-  → vite-plugin-content.ts        (frontmatter via gray-matter)
-  → content/mdx/compile.ts        (body via unified + remark-parse + remark-mdx)
+  → vite-plugin-content.ts        (frontmatter via gray-matter; picks the compiler by path)
+  → content/mdx/compile.ts        (body via unified + remark-parse + remark-mdx;
+                                   compileMdx floor h2, compileExerciseMdx floor h4)
   → virtual:content-data          (frontmatter + compiled tree, as JSON)
-  → src/content/registry.ts       (Zod validation + lessonBodies keyed by id)
-  → src/app/content.ts            (the UI seam: findLesson, lessonContext)
+  → src/content/registry.ts       (Zod validation + lessonBodies/exerciseBodies keyed by id)
+  → src/app/content.ts            (the UI seam: findLesson, lessonContext incl. exercises)
   → src/components/mdx/render.tsx (MdxContent + the component allowlist)
 ```
 

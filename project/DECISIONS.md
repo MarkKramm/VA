@@ -751,3 +751,99 @@ loudly with the file and line named; an `h1` is no different.
   lesson page test asserts exactly one `h1` on a rendered page.
 - Existing M2.2 test fixtures that compiled `# Heading` bodies were corrected to `##`, which is
   the level a body should use.
+
+---
+
+## D25 — Exercise is a first-class content entity, and the reference is lesson-owned
+
+**Date:** 2026-10-01 (M2.4)
+
+**Context.** Every M0 lesson raises `quality/no-practice`, because a lesson with no exercise,
+quiz or lab is a reading page. M2.4 introduces the first PRACTICE entity so a lesson can reach
+practice without the whole assessment apparatus. Two questions decide the shape: what an
+exercise IS at this milestone, and which side of the relationship owns the reference.
+
+**Options.**
+
+- (a) An exercise as a scored mini-quiz, with attempts and persistence.
+- (b) An exercise as an ungraded, unsaved task the learner does in their own tools.
+- (c) Defer practice entirely to the Lab system at M6.
+
+**Choice.** (b). An exercise declares `id`, `title`, `summary`, `difficulty`,
+`estimatedMinutes`, `deliverable`, a static `selfCheck` list (at least one criterion),
+`skills`, and `provenanceShape`. It is **ungraded and unsaved**: no `kind`, no
+`prerequisites`, no `aliases`, no `resources`, no `hints`, no `commonMistakes`, no
+`referenceSolution`, no evaluation criteria, no score, no rubric, no attempt, no
+`evaluatedBy`, and no persistence. `lesson.exercises` owns the reference; an exercise
+**never** carries a `lessonId`.
+
+**Reason.**
+
+- (a) is the assessment system wearing a smaller hat. It would drag in attempts, scoring,
+  `evaluatedBy`, weak-area analysis and a persistence path — all of which are M3+ concerns,
+  and none of which is needed to make a lesson reach practice. It would also mean writing
+  progress events from a page that has nowhere to put them.
+- (c) delays the single structural guarantee the platform is built on ("every lesson reaches
+  practice") behind six milestones of lab work. A lesson that a learner can only read is the
+  failure this rule exists to catch.
+- (b) is the smallest thing that makes the guarantee true. The learner produces a real
+  artifact, checks it against a static list, and nothing is recorded — which is honest about
+  what the platform can currently do.
+
+**Consequences.**
+
+- The lesson owns `lesson.exercises`, exactly as a module owns `module.lessons`. The registry
+  derives `exerciseLessonIds` by scanning lessons; no exercise file states its lessons, so an
+  exercise can be reused by more than one lesson with no second source of truth.
+- **Referential integrity is fail-closed and unconditional.** `lesson.exercises` is checked
+  against the exercise collection always — if the id does not resolve, that is a build error,
+  whether the collection is empty or the directory is missing. Omitting the collection is not a
+  way to skip the reference.
+- The UI renders the exercise (title, summary, difficulty, duration, body, deliverable,
+  self-check) and says in plain words that nothing is scored or saved. It has no checkbox, no
+  submit button and no progress state.
+- The existing `exercise.attempted` progress event is deliberately NOT wired. Recording an
+  attempt is M3 work; doing it here would write progress into a UI that has no home for it.
+
+---
+
+## D26 — A dedicated exercise compiler entry point with an `h4` heading floor
+
+**Date:** 2026-10-01 (M2.4)
+
+**Context.** D24 made a lesson body refuse an `h1`, because the lesson page owns the page
+heading and body headings start at `h2`. An exercise body is different: it renders INSIDE the
+lesson's Practice section, under the exercise's `<h3>` title, so its own headings must start at
+`h4`. The floor is therefore a property of what the body IS, not a choice a caller should make.
+
+**Options.**
+
+- (a) Add a `floor` argument to `compileMdx` that a caller passes.
+- (b) A separate exercise compiler with its own copy of the node walk.
+- (c) A dedicated entry point (`compileExerciseMdx`) over the SHARED compiler, with the floor
+  selected by the entry point rather than by the call site.
+
+**Choice.** (c).
+
+**Reason.**
+
+- (a) makes the floor something a caller can get wrong, and "lesson bodies start at h2, exercise
+  bodies start at h4" stops being enforceable the moment one call site passes the wrong number.
+  The `path` already determines what the body is, so the floor should follow from it.
+- (b) creates a SECOND trust boundary. Every refusal in the compiler — expressions, JSX spreads,
+  unsafe URLs, expression props, raw HTML, alt-text — would have to be duplicated, and the two
+  copies would drift. A boundary that exists twice is a boundary that leaks once.
+- (c) keeps one parser and one node walk. The only thing the policy changes is the heading
+  floor; everything else is shared, so an exercise body is subject to exactly the same
+  refusals as a lesson body by construction.
+
+**Consequences.**
+
+- `content/mdx/compile.ts` threads a small `CompilePolicy` (a `headingFloor` and its refusal
+  message) through the shared walk. `compileMdx` uses floor `2`; `compileExerciseMdx` uses
+  floor `4`. `headingTag` clamps to the floor through `h6`.
+- The build-time ingestion chooses the entry point by path (`content/lessons/` vs
+  `content/exercises/`), so the floor follows the collection rather than a call-site argument.
+- The compiler tests assert both halves: the exercise floor refuses `h1`–`h3` and accepts
+  `h4`+, AND the trust boundary is unchanged (expressions, unsafe URLs and raw HTML are still
+  refused), AND the lesson compiler's `h2`/`h1` behaviour did not move.
