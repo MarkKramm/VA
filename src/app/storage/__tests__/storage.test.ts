@@ -1,7 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { LocalStorageAdapter, STORAGE_NAMESPACE } from '../localStorage.ts'
 import { MemoryStorageAdapter } from '../memory.ts'
-import { mergeEventLogs, newEventId, ProgressStore, subscribeToExternalWrites } from '../merge.ts'
+import {
+  mergeEventLogs,
+  newEventId,
+  PROGRESS_KEY,
+  ProgressStore,
+  subscribeToExternalWrites,
+} from '../merge.ts'
 import { parseProgressExport } from '../export-validate.ts'
 import { foldEvents } from '@domain/progress/reducer.ts'
 import { completed, enrolled, resetEventCounter, viewed } from '@fixtures/progress.ts'
@@ -165,6 +171,40 @@ describe('ProgressStore', () => {
     expect(store.syncFrom(before)).toBeUndefined()
     new ProgressStore(adapter).append({ type: 'roadmap.enrolled', roadmapId: 'r' })
     expect(store.syncFrom(before)).toBeDefined()
+  })
+
+  it('detects a change when the event COUNT is the same but the identity differs', () => {
+    // Regression (pre-M3 hardening, F2). `syncFrom` used to compare only
+    // `events.length`, so a same-length log holding a DIFFERENT event was
+    // reported as "nothing changed" and the tab kept showing stale progress
+    // until some later write happened to change the length. Change detection is
+    // now by event identity.
+    const adapter = new MemoryStorageAdapter()
+    const store = new ProgressStore(adapter)
+
+    const before: ProgressEvent[] = [
+      { id: 'e1', at: '2026-10-01T09:00:00.000Z', type: 'lesson.viewed', lessonId: 'a' },
+      { id: 'e2', at: '2026-10-01T09:01:00.000Z', type: 'lesson.viewed', lessonId: 'b' },
+    ]
+    const after: ProgressEvent[] = [
+      { id: 'e1', at: '2026-10-01T09:00:00.000Z', type: 'lesson.viewed', lessonId: 'a' },
+      { id: 'e3', at: '2026-10-01T09:02:00.000Z', type: 'lesson.viewed', lessonId: 'c' },
+    ]
+    // Same length, different identity — exactly what a count check misses.
+    expect(foldEvents(after).events).toHaveLength(foldEvents(before).events.length)
+
+    adapter.write(PROGRESS_KEY, foldEvents(after))
+    expect(store.syncFrom(foldEvents(before))).toEqual(foldEvents(after))
+  })
+
+  it('reports no change when the log is genuinely identical', () => {
+    // The other half of the contract: an unchanged log must still short-circuit,
+    // or every cross-tab notification would force a pointless re-render.
+    const adapter = new MemoryStorageAdapter()
+    const store = new ProgressStore(adapter)
+    store.append({ type: 'roadmap.enrolled', roadmapId: 'r' })
+    const current = store.load()
+    expect(store.syncFrom(current)).toBeUndefined()
   })
 
   it('clears all progress', () => {

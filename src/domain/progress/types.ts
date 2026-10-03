@@ -116,6 +116,43 @@ export type ProgressEvent =
 export type ProgressEventType = ProgressEvent['type']
 
 /**
+ * Every event type, as a RUNTIME value (pre-M3 hardening, F5).
+ *
+ * A discriminated union is a TYPE and has no runtime representation, so any code
+ * that must branch on "is this a known event type" — the import validator — needs
+ * the values too. Hand-maintaining a second list beside the union is exactly how
+ * the two drift: a variant is added, the union narrows correctly, and the
+ * validator silently drops every event of the new type on import.
+ *
+ * The `satisfies Record<ProgressEventType, true>` is the guarantee, and it is a
+ * COMPILE error rather than a runtime comparison:
+ *   - add a variant to the union without adding it here → missing key;
+ *   - add a key here that is not in the union → excess property.
+ *
+ * So this is the single canonical runtime source, tied to the union by the
+ * compiler. `KNOWN_EVENT_TYPES` in the import validator is DERIVED from it, not
+ * written out a second time.
+ */
+const EVENT_TYPE_KEYS = {
+  'lesson.viewed': true,
+  'lesson.completed': true,
+  'lesson.uncompleted': true,
+  'topic.completed': true,
+  'exercise.attempted': true,
+  'quiz.attempted': true,
+  'lab.submitted': true,
+  'assessment.attempted': true,
+  'roadmap.enrolled': true,
+  'roadmap.unenrolled': true,
+  'bookmark.toggled': true,
+  'note.saved': true,
+  'portfolio.artifact.added': true,
+} satisfies Record<ProgressEventType, true>
+
+/** The canonical runtime list of event types. Derived from `EVENT_TYPE_KEYS`. */
+export const PROGRESS_EVENT_TYPES = Object.keys(EVENT_TYPE_KEYS) as readonly ProgressEventType[]
+
+/**
  * `Omit` applied distributively across the union.
  *
  * A plain `Omit<ProgressEvent, 'id' | 'at'>` collapses to only the keys every

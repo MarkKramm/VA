@@ -1,5 +1,9 @@
 import { z } from 'zod'
-import { PROGRESS_STATE_VERSION, type ProgressEvent } from '@domain/progress/types.ts'
+import {
+  PROGRESS_EVENT_TYPES,
+  PROGRESS_STATE_VERSION,
+  type ProgressEvent,
+} from '@domain/progress/types.ts'
 import { createInitialState, foldEvents } from '@domain/progress/reducer.ts'
 import type { ProgressState } from '@domain/progress/types.ts'
 
@@ -113,21 +117,39 @@ export const parseProgressExport = (raw: string): ImportResult => {
   }
 }
 
-/** Kept in sync with the ProgressEvent union. Unknown types are skipped on import. */
-const KNOWN_EVENT_TYPES = new Set([
-  'lesson.viewed',
-  'lesson.completed',
-  'lesson.uncompleted',
-  'topic.completed',
-  'exercise.attempted',
-  'quiz.attempted',
-  'lab.submitted',
-  'assessment.attempted',
-  'roadmap.enrolled',
-  'roadmap.unenrolled',
-  'bookmark.toggled',
-  'note.saved',
-  'portfolio.artifact.added',
-])
+/**
+ * Produce an export string from a progress state (pre-M3 hardening, F9).
+ *
+ * The PRODUCER half of the round trip whose parser is `parseProgressExport`.
+ * Without it there is nothing to hand a learner who wants their data out, and the
+ * validator alone can only read a file nobody can write.
+ *
+ * ONE FORMAT, NOT TWO. The output is exactly the shape `ExportedProgressSchema`
+ * validates — `{ version, events }` — so the parser is the single definition of
+ * the format and the two cannot drift.
+ *
+ * PURE AND DETERMINISTIC. The events are already in the log's canonical order
+ * (by `at`, then `id`), so nothing is reordered and no clock or random value is
+ * read: the same state always produces a byte-identical string. `null, 2` yields
+ * a file a human can read and hand-edit, which is the premise of import
+ * validation — a learner is expected to open it.
+ */
+export const serializeProgressExport = (state: ProgressState): string =>
+  JSON.stringify({ version: state.version, events: state.events }, null, 2)
+
+/**
+ * The event types this build understands, DERIVED from the `ProgressEvent` union
+ * (pre-M3 hardening, F5).
+ *
+ * This was a hand-written list "kept in sync" with the union, which is a second
+ * source of truth that fails silently: a new variant would parse and validate,
+ * then be filtered out here as "unknown" and dropped on import. It now comes from
+ * `PROGRESS_EVENT_TYPES`, whose `satisfies Record<ProgressEventType, true>` makes
+ * the compiler reject any drift between the union and this set.
+ *
+ * `Set<string>` rather than `Set<ProgressEventType>` because the value being
+ * tested is `event.type` off a loosely-parsed file, which is a plain string.
+ */
+const KNOWN_EVENT_TYPES = new Set<string>(PROGRESS_EVENT_TYPES)
 
 export { EvaluatedBySchema, KNOWN_EVENT_TYPES, createInitialState }
