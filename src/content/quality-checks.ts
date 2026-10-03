@@ -2,6 +2,7 @@ import type { ContentRegistry } from './registry.ts'
 import type { RegistryIssue } from './validation.ts'
 import { LESSON_REACHES_PRACTICE } from './schemas/lesson.ts'
 import type { Lesson } from './schemas/index.ts'
+import type { CompiledNode } from '@content/mdx/tree.ts'
 
 /**
  * Content quality checks.
@@ -81,35 +82,64 @@ const overlap = (a: string, b: string): number => {
   return shared / Math.min(tokensA.size, tokensB.size)
 }
 
+/**
+ * Flatten a compiled body to its PROSE, for quality analysis (pre-M3 hardening, F3).
+ *
+ * M2.2 made the compiled lesson body the real content surface, and M2.4 added a
+ * second one (the compiled exercise body). Scanning only `summary`/`objectives`
+ * left the prose — where an AI-drafted lesson actually states a rate or a
+ * guarantee — completely unchecked.
+ *
+ * ONLY `text` nodes are collected. Element and component NAMES are structure, not
+ * prose; element and component PROPS are metadata and URLs, which must not be read
+ * as claims (`href="https://example.com/50-percent"` is not a percentage claim).
+ * Alt text is a prop too, so it is excluded for the same reason: these checks are
+ * about what the author asserts, and folding attribute values in would make the
+ * gate noisy without catching anything real. Recursion covers text inside inline
+ * elements (`<strong>`, `<a>`, `<code>`), which is where a claim in a sentence
+ * actually lives.
+ */
+const flattenProse = (nodes: readonly CompiledNode[]): string =>
+  nodes.map((node) => (node.kind === 'text' ? node.value : flattenProse(node.children))).join(' ')
+
 export function runQualityChecks(registry: ContentRegistry): RegistryIssue[] {
   const issues: RegistryIssue[] = []
   const lessons = [...registry.lessons.values()]
   const lessonPath = (id: string): string => `content/lessons/**/${id}.mdx`
 
   const push = (
+    entity: 'lesson' | 'exercise',
     severity: 'warning' | 'info',
     rule: string,
     path: string,
     field: string,
     message: string,
   ): void => {
-    issues.push({ severity, rule, entity: 'lesson', path, field, message })
+    issues.push({ severity, rule, entity, path, field, message })
   }
 
   for (const lesson of lessons) {
     const at = lessonPath(lesson.id)
-    const body = `${lesson.summary}\n${lesson.objectives.join(' ')}`
+    // Frontmatter prose PLUS the compiled body (pre-M3 hardening, F3). The body
+    // is where a lesson actually states a rate or a guarantee, and it was the one
+    // surface these checks could not see.
+    const body = [
+      lesson.summary,
+      lesson.objectives.join(' '),
+      flattenProse(registry.lessonBodies.get(lesson.id) ?? []),
+    ].join('\n')
 
     // 1. Forbidden guarantee language
     for (const { pattern, message } of GUARANTEE_PATTERNS) {
       if (pattern.test(body)) {
-        push('warning', 'quality/language', at, 'summary', message)
+        push('lesson', 'warning', 'quality/language', at, 'summary', message)
       }
     }
 
     // 2. Numeric claims without a citation
     if (NUMERIC_CLAIM.test(body) && !hasCitation(lesson)) {
       push(
+        'lesson',
         'warning',
         'quality/numeric-claim',
         at,
@@ -125,6 +155,7 @@ export function runQualityChecks(registry: ContentRegistry): RegistryIssue[] {
       /^(introduction|overview|getting started|lesson \d+|untitled)$/i.test(lesson.title.trim())
     ) {
       push(
+        'lesson',
         'warning',
         'quality/generic-title',
         at,
@@ -138,6 +169,7 @@ export function runQualityChecks(registry: ContentRegistry): RegistryIssue[] {
     //    articles — see ARCHITECTURE.md.
     if (!LESSON_REACHES_PRACTICE(lesson)) {
       push(
+        'lesson',
         'warning',
         'quality/no-practice',
         at,
@@ -152,6 +184,7 @@ export function runQualityChecks(registry: ContentRegistry): RegistryIssue[] {
       normalise(lesson.objectives[0] ?? '') === normalise(lesson.title)
     ) {
       push(
+        'lesson',
         'warning',
         'quality/objective-restates-title',
         at,
@@ -161,7 +194,47 @@ export function runQualityChecks(registry: ContentRegistry): RegistryIssue[] {
     }
   }
 
-  // 6. Near-duplicate lessons. AI agents generating content in parallel reliably
+  /*
+   * 6. The same language and numeric checks, applied to EXERCISES (F3).
+   *
+   * M2.4 made an exercise body a second prose surface, and an exercise's
+   * summary / deliverable / self-check are frontmatter prose on top of that.
+   * None of it was inspected before this pass, so a fabricated rate or a
+   * guarantee could sit in practice content with nothing looking at it.
+   *
+   * There is no citation mechanism for an exercise (the schema has no
+   * `resources`), so a numeric claim in one always warns. That is deliberate:
+   * the risk to a learner's finances is identical, and the honest answer is the
+   * same — state it as a range with a source, or not at all.
+   */
+  for (const exercise of registry.exercises.values()) {
+    const at = `content/exercises/**/${exercise.id}.mdx`
+    const body = [
+      exercise.summary,
+      exercise.deliverable,
+      exercise.selfCheck.join(' '),
+      flattenProse(registry.exerciseBodies.get(exercise.id) ?? []),
+    ].join('\n')
+
+    for (const { pattern, message } of GUARANTEE_PATTERNS) {
+      if (pattern.test(body)) {
+        push('exercise', 'warning', 'quality/language', at, 'summary', message)
+      }
+    }
+
+    if (NUMERIC_CLAIM.test(body)) {
+      push(
+        'exercise',
+        'warning',
+        'quality/numeric-claim',
+        at,
+        'summary',
+        'contains a currency amount or percentage with no source — verify it, or remove it',
+      )
+    }
+  }
+
+  // 7. Near-duplicate lessons. AI agents generating content in parallel reliably
   //    produce overlapping lessons; catching them here is far cheaper than
   //    unpicking them later.
   for (let i = 0; i < lessons.length; i += 1) {
@@ -171,6 +244,7 @@ export function runQualityChecks(registry: ContentRegistry): RegistryIssue[] {
       if (!a || !b) continue
       if (titleOf(a) === titleOf(b)) {
         push(
+          'lesson',
           'warning',
           'quality/duplicate',
           lessonPath(b.id),
@@ -181,6 +255,7 @@ export function runQualityChecks(registry: ContentRegistry): RegistryIssue[] {
       }
       if (normalise(a.summary) === normalise(b.summary)) {
         push(
+          'lesson',
           'warning',
           'quality/duplicate',
           lessonPath(b.id),
@@ -194,6 +269,7 @@ export function runQualityChecks(registry: ContentRegistry): RegistryIssue[] {
         ?.some((m) => registry.lessonModuleIds.get(b.id)?.includes(m))
       if (sameModule && overlap(a.title, b.title) >= 0.7) {
         push(
+          'lesson',
           'warning',
           'quality/near-duplicate',
           lessonPath(b.id),
@@ -204,7 +280,7 @@ export function runQualityChecks(registry: ContentRegistry): RegistryIssue[] {
     }
   }
 
-  // 7. The stale-tool report — a tool whose `updatedAt` is newer than the
+  // 8. The stale-tool report — a tool whose `updatedAt` is newer than the
   //    `updatedAt` of the lessons that reference it — is not implemented yet,
   //    because it needs the tools collection, which arrives at M5. It is a
   //    derivation over the existing reverse indexes, so it is a few lines once

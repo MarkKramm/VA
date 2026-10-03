@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { buildRegistryFromSource } from '../registry.ts'
 import { runQualityChecks } from '../quality-checks.ts'
-import { validLesson, validSkill } from '../../../tests/fixtures/content.ts'
+import type { CompiledBody } from '@content/mdx/tree.ts'
+import { validExercise, validLesson, validSkill } from '../../../tests/fixtures/content.ts'
 
 /**
  * Quality checks are the mechanical half of content governance. The judgement
@@ -179,5 +180,130 @@ describe('the real M0 content', () => {
       unexpected,
       unexpected.map((i) => `${i.path} ${i.field}: ${i.message}`).join('\n'),
     ).toEqual([])
+  })
+})
+
+/**
+ * COMPILED PROSE IS INSPECTED (pre-M3 hardening, F3).
+ *
+ * Before this pass the scanned text was `summary + objectives`, so a claim in the
+ * lesson or exercise BODY was invisible to the gate. These tests build a registry
+ * with a hand-made compiled tree — the same `CompiledBody` shape the build
+ * produces — and assert the previously-missed case now fails.
+ *
+ * The trees are written by hand rather than compiled so the test isolates the
+ * QUALITY CHECK, not the compiler.
+ */
+
+/** A compiled body containing one paragraph of prose. */
+const proseBody = (text: string): CompiledBody => [
+  { kind: 'element', tag: 'p', props: {}, children: [{ kind: 'text', value: text }] },
+]
+
+/** A registry built from fixture entities with compiled bodies attached by path. */
+const registryWithProse = (args: {
+  lessons?: readonly { path: string; data: unknown; body?: CompiledBody }[]
+  exercises?: readonly { path: string; data: unknown; body?: CompiledBody }[]
+}) => {
+  const bodies = new Map<string, CompiledBody>()
+  for (const entry of [...(args.lessons ?? []), ...(args.exercises ?? [])]) {
+    if (entry.body) bodies.set(entry.path, entry.body)
+  }
+  return buildRegistryFromSource({
+    careerPaths: [],
+    skills: [validSkill({ id: 'data', parent: undefined })],
+    lessons: (args.lessons ?? []).map(({ path, data }) => ({ path, data })),
+    exercises: (args.exercises ?? []).map(({ path, data }) => ({ path, data })),
+    modules: [],
+    roadmaps: [],
+    bodies,
+  })
+}
+
+describe('compiled lesson prose is inspected (F3)', () => {
+  const lessonWith = (body: CompiledBody) =>
+    registryWithProse({
+      lessons: [
+        {
+          path: 'content/lessons/x/body-claim.mdx',
+          data: validLesson({
+            summary: 'A plain summary with no figures in it.',
+            objectives: ['Do the thing'],
+          }),
+          body,
+        },
+      ],
+    })
+
+  it('flags a numeric claim that appears ONLY in the compiled body', () => {
+    // The regression: this claim is absent from summary/objectives, so the old
+    // gate never saw it.
+    const issues = runQualityChecks(lessonWith(proseBody('Most VAs charge $30 per hour for this.')))
+    expect(issues.some((i) => i.rule === 'quality/numeric-claim' && i.entity === 'lesson')).toBe(
+      true,
+    )
+  })
+
+  it('flags guarantee language that appears ONLY in the compiled body', () => {
+    const issues = runQualityChecks(lessonWith(proseBody('This is guaranteed to get you hired.')))
+    expect(issues.some((i) => i.rule === 'quality/language' && i.entity === 'lesson')).toBe(true)
+  })
+
+  it('does not treat element names or attribute values as prose', () => {
+    // A URL containing "50-percent" and a component prop that looks like a claim
+    // must NOT be scanned: only text nodes are prose. Folding props in would make
+    // the gate noisy without catching anything a learner reads.
+    const body: CompiledBody = [
+      {
+        kind: 'element',
+        tag: 'a',
+        props: { href: 'https://example.com/50-percent' },
+        children: [{ kind: 'text', value: 'a link' }],
+      },
+      { kind: 'component', name: 'Callout', props: { title: 'earn $5000' }, children: [] },
+    ]
+    const issues = runQualityChecks(lessonWith(body))
+    expect(issues.some((i) => i.rule === 'quality/numeric-claim')).toBe(false)
+    expect(issues.some((i) => i.rule === 'quality/language')).toBe(false)
+  })
+
+  it('still passes a body with no claims', () => {
+    const issues = runQualityChecks(lessonWith(proseBody('Create four folders and three files.')))
+    expect(issues.some((i) => i.rule === 'quality/numeric-claim')).toBe(false)
+    expect(issues.some((i) => i.rule === 'quality/language')).toBe(false)
+  })
+})
+
+describe('compiled exercise prose is inspected (F3)', () => {
+  const exerciseWith = (body: CompiledBody) =>
+    registryWithProse({
+      exercises: [
+        {
+          path: 'content/exercises/x/claim.mdx',
+          data: validExercise({
+            summary: 'A plain summary with no figures in it.',
+            deliverable: 'Produce the thing described above.',
+            selfCheck: ['The thing is done'],
+          }),
+          body,
+        },
+      ],
+    })
+
+  it('flags a numeric claim that appears ONLY in the compiled exercise body', () => {
+    const issues = runQualityChecks(exerciseWith(proseBody('Charge the client $25 an hour.')))
+    expect(issues.some((i) => i.rule === 'quality/numeric-claim' && i.entity === 'exercise')).toBe(
+      true,
+    )
+  })
+
+  it('flags guarantee language in the exercise prose', () => {
+    const issues = runQualityChecks(exerciseWith(proseBody('A risk-free way to win clients.')))
+    expect(issues.some((i) => i.rule === 'quality/language' && i.entity === 'exercise')).toBe(true)
+  })
+
+  it('passes a clean exercise, so the new checks are not noisy', () => {
+    const issues = runQualityChecks(exerciseWith(proseBody('Create four folders and three files.')))
+    expect(issues.filter((i) => i.entity === 'exercise')).toEqual([])
   })
 })
