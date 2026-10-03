@@ -17,3 +17,8 @@ plan.md
 # globs the working tree, so without this line the single CI gate fails on a file
 # nobody may touch. See DECISIONS.md D20.
 opencode.json
+
+# Local agent workspace (WorkBuddy AI). Not project code, must never be committed
+# (see .gitignore). `format:check` globs the working tree, so without this line the
+# single gate fails on files nobody may reformat. Same reasoning as opencode.json (D20).
+.workbuddy-ai

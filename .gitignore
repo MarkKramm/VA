@@ -50,3 +50,8 @@ pnpm-debug.log*
 # committed. Ignored here so it cannot be added by accident; ignored by Prettier
 # (.prettierignore) because `format:check` globs the working tree. See DECISIONS.md D20.
 opencode.json
+
+# Local agent workspace (WorkBuddy AI) — project-scoped agent data such as memory
+# notes and scratch files. Not project content, never committed. Ignored here so it
+# cannot be added by accident; ignored by Prettier for the same reason as opencode.json.
+.workbuddy-ai/
