@@ -247,3 +247,88 @@ describe('clear', () => {
     expect(persistedEvents(adapter)).toEqual([])
   })
 })
+
+/**
+ * MALFORMED STORED EVENTS CANNOT REACH THE FOLD OR THE MERGE (pre-M4 hardening, A1).
+ *
+ * M3 validated only during initialization. `append`, `mergeEvents` and `syncFrom`
+ * re-read storage, and they read it RAW — so a malformed event was filtered out of
+ * the in-memory state at boot and then reached the merge's sort on the next
+ * interaction, where `undefined.localeCompare` threw. The store looked fine until
+ * the learner did something.
+ */
+describe('malformed stored events (A1)', () => {
+  it('discards malformed events and still accepts the next write', () => {
+    const adapter = new MemoryStorageAdapter()
+    adapter.write(PROGRESS_KEY, {
+      version: 1,
+      events: [
+        {
+          id: 'keep-1',
+          at: '2026-10-01T09:00:00.000Z',
+          type: 'lesson.completed',
+          lessonId: LESSON,
+          source: 'manual',
+        },
+        // No `at` and no `type`: the shape the merge's sort would choke on.
+        { id: 'broken' },
+        // A type this build does not understand.
+        { id: 'future', at: '2026-10-01T09:00:01.000Z', type: 'from.the.future' },
+      ],
+    })
+
+    const store = new LearnerProgress(adapter)
+    expect(store.getState().events).toHaveLength(1)
+
+    // The regression: this re-read the raw log, sorted it, and threw.
+    expect(() => store.completeLesson(OTHER_LESSON)).not.toThrow()
+
+    const events = persistedEvents(adapter)
+    // The valid stored event survived, the new one persisted, both bad ones are gone.
+    expect(events).toHaveLength(2)
+    expect(events.some((event) => event.id === 'keep-1')).toBe(true)
+    expect(events.some((event) => event.id === 'broken')).toBe(false)
+    expect(events.some((event) => event.id === 'future')).toBe(false)
+    expect(isLessonComplete(store.getState(), LESSON)).toBe(true)
+    expect(isLessonComplete(store.getState(), OTHER_LESSON)).toBe(true)
+  })
+
+  it('drops junk entries without losing the valid events around them', () => {
+    const adapter = new MemoryStorageAdapter()
+    adapter.write(PROGRESS_KEY, {
+      version: 1,
+      events: [
+        { id: 'a', at: '2026-10-01T09:00:00.000Z', type: 'lesson.viewed', lessonId: LESSON },
+        null,
+        'not an event',
+        {
+          id: 'b',
+          at: '2026-10-01T09:00:01.000Z',
+          type: 'lesson.completed',
+          lessonId: LESSON,
+          source: 'manual',
+        },
+      ],
+    })
+
+    const store = new LearnerProgress(adapter)
+    expect(store.getState().events.map((event) => event.id)).toEqual(['a', 'b'])
+    expect(isLessonComplete(store.getState(), LESSON)).toBe(true)
+  })
+
+  it('adopts a valid state, not the raw value, when another tab writes garbage', () => {
+    const adapter = new MemoryStorageAdapter()
+    const store = new LearnerProgress(adapter)
+    store.completeLesson(LESSON)
+
+    // A bad migration or a hand-edit left a value with no `events` array at all.
+    adapter.write(PROGRESS_KEY, { version: 1 })
+
+    // The regression: `sameEventLog` compared `undefined.length` and threw.
+    expect(() => store.syncExternal()).not.toThrow()
+
+    // Whatever storage holds, what reaches React is a valid progress state.
+    expect(Array.isArray(store.getState().events)).toBe(true)
+    expect(store.getState().events.every((event) => typeof event.at === 'string')).toBe(true)
+  })
+})

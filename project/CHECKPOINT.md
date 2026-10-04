@@ -5,6 +5,49 @@ something that works.
 
 ---
 
+## Checkpoint: pre-M4 hardening pass
+
+**Date:** 2026-10-04
+**Milestone:** M3 (hardening) · M4 not started
+**Tag:** none — `v0.3.0-content-engine` remains the latest
+**Branch:** `main`
+
+### What this checkpoint is
+
+The two P2 findings from the post-M3 adversarial audit are fixed. No M3 architecture changed.
+
+- **A1 — validation now covers every read of persisted progress.** It previously ran only at
+  initialization; `append`, `mergeEvents` and `syncFrom` re-read storage RAW, so a corrupted
+  event reached the merge's sort and threw on the next interaction. The event-shape predicate
+  moved to the storage boundary (`export-validate.ts`) and `ProgressStore.load` sanitizes, so
+  initialization, write and cross-tab sync all get the same treatment.
+- **A2 — the cross-tab `storage`-event wiring is now tested.** The existing tests called
+  `syncExternal()` directly, so a listener that was never registered would still pass. A unit
+  test now dispatches a real `StorageEvent` for `va:progress`, and an integration test asserts
+  the dashboard updates through the real provider → store → React path — plus no write-back (no
+  loop) and no reaction to an unrelated key.
+
+### Verified working
+
+- `npm run content:check` — **0 errors, 3 `quality/no-practice` warnings** (unchanged).
+- `npm run typecheck`, `npm run lint`, `npm run check:contrast` (34 pairs) — clean.
+- `npm run test` — **506 across 30 files; 505 pass.** The single failure is the environmental
+  `content-gate.test.ts` child-process spawn (`cmd.exe` EBUSY); the test is unchanged.
+- `npm run test:arch` — 16 passing.
+- `npm run build` — 504 kB / 154 kB gzipped (unchanged); SPA fallback written; `check:paths`
+  clean; no compiler in the client.
+
+### Not done, deliberately
+
+The lower-priority audit findings (A3–A11) are recorded in `BACKLOG.md` → "Post-M3 audit
+(deferred)". No M4 work, and no release tag.
+
+### Recommended next task
+
+**M4 — Quiz Engine.**
+
+---
+
 ## Checkpoint: M3 — Progress
 
 **Date:** 2026-10-04

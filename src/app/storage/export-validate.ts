@@ -152,4 +152,33 @@ export const serializeProgressExport = (state: ProgressState): string =>
  */
 const KNOWN_EVENT_TYPES = new Set<string>(PROGRESS_EVENT_TYPES)
 
+/**
+ * True when a value is a progress event this build can fold (pre-M4 hardening, A1).
+ *
+ * The storage adapter guards invalid JSON but NOT invalid shape: a stored value
+ * can be valid JSON and still not be a progress event — an older format, a
+ * hand-edited value, a partially written one. Folding a malformed event produces
+ * nonsense progress at best, and at worst throws inside the merge's sort, so
+ * unusable entries are dropped rather than trusted.
+ *
+ * This is the same three-field shape `EventSchema` requires of an imported file,
+ * plus the same known-type filter applied after it, expressed for a value that is
+ * already an object rather than text. One definition of "an event we understand",
+ * shared by the import path and the storage read path.
+ */
+export const isProgressEvent = (value: unknown): value is ProgressEvent => {
+  if (typeof value !== 'object' || value === null) return false
+  const candidate = value as { id?: unknown; at?: unknown; type?: unknown }
+  return (
+    typeof candidate.id === 'string' &&
+    typeof candidate.at === 'string' &&
+    typeof candidate.type === 'string' &&
+    KNOWN_EVENT_TYPES.has(candidate.type)
+  )
+}
+
+/** Filter a raw persisted event array down to the events this build can fold. */
+export const sanitizeProgressEvents = (events: readonly unknown[]): ProgressEvent[] =>
+  events.filter(isProgressEvent)
+
 export { EvaluatedBySchema, KNOWN_EVENT_TYPES, createInitialState }

@@ -1,5 +1,6 @@
 import type { NewProgressEvent, ProgressEvent, ProgressState } from '@domain/progress/types.ts'
 import { createInitialState, foldEvents } from '@domain/progress/reducer.ts'
+import { sanitizeProgressEvents } from './export-validate.ts'
 import type { StorageAdapter } from './port.ts'
 
 /**
@@ -94,12 +95,34 @@ const sameEventLog = (a: readonly ProgressEvent[], b: readonly ProgressEvent[]):
   return true
 }
 
+/**
+ * Reduce whatever the adapter returns to a state this build can safely fold.
+ *
+ * EVERY read of persisted progress goes through this, via `load`. Validation that
+ * runs only at initialization is not validation: `append` and `syncFrom` re-read
+ * storage, and a malformed event that survived that far would reach the merge's
+ * sort and throw on `undefined.localeCompare` — breaking the next interaction
+ * with a store that looked fine at boot (pre-M4 hardening, A1).
+ *
+ * `derived` is a cache, not a source of truth (D2), so it is always rebuilt from
+ * the events rather than trusted, which also makes a stale cache self-healing.
+ */
+const sanitizeStoredState = (value: unknown): ProgressState => {
+  if (typeof value !== 'object' || value === null) return createInitialState()
+  const events = (value as { events?: unknown }).events
+  if (!Array.isArray(events)) return createInitialState()
+  return foldEvents(sanitizeProgressEvents(events))
+}
+
 export class ProgressStore {
   constructor(private readonly adapter: StorageAdapter) {}
 
-  /** Always re-reads. Never trust an in-memory copy across a tab boundary. */
+  /**
+   * Always re-reads, and always sanitizes. Never trust an in-memory copy across a
+   * tab boundary, and never trust the shape of what storage returns.
+   */
   load(): ProgressState {
-    return this.adapter.read<ProgressState>(PROGRESS_KEY, createInitialState())
+    return sanitizeStoredState(this.adapter.read<unknown>(PROGRESS_KEY, null))
   }
 
   /**
@@ -114,23 +137,30 @@ export class ProgressStore {
       // Monotonic, so two appends in the same millisecond still order correctly.
       at: event.at ?? nextTimestamp(current.events),
     } as ProgressEvent
-    return this.mergeEvents([full])
+    return this.persist(foldEvents(mergeEventLogs(current.events, [full])))
   }
 
   /**
    * Merge events into the persisted log and return the new state (M3).
    *
    * Always re-reads first, so it can never clobber a concurrent write — the same
-   * guarantee `append` gives, which is now expressed in terms of this. It is the
-   * primitive the import path uses: an imported file is a list of events, and
-   * merging by id (rather than replacing the log) is what makes an import
-   * ADDITIVE and non-destructive to whatever the learner already has.
+   * guarantee `append` gives. It is the primitive the import path uses: an
+   * imported file is a list of events, and merging by id (rather than replacing
+   * the log) is what makes an import ADDITIVE and non-destructive to whatever the
+   * learner already has.
    */
   mergeEvents(events: readonly ProgressEvent[]): ProgressState {
     const current = this.load()
-    const next = foldEvents(mergeEventLogs(current.events, events))
-    this.adapter.write(PROGRESS_KEY, next)
-    return next
+    return this.persist(foldEvents(mergeEventLogs(current.events, events)))
+  }
+
+  /**
+   * The single write path, so "re-read immediately before writing" is a property
+   * of two methods rather than a rule every caller has to remember.
+   */
+  private persist(state: ProgressState): ProgressState {
+    this.adapter.write(PROGRESS_KEY, state)
+    return state
   }
 
   /**

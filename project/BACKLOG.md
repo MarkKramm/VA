@@ -128,6 +128,34 @@ belongs to a later milestone, and recording them here is what kept them out of M
 - **Browser-automation journeys** — M3 tests the real store, storage and routes through jsdom.
   Playwright stays a M9 item rather than a mid-milestone install.
 
+## Post-M3 audit (deferred)
+
+Findings from the post-M3 adversarial audit that were consciously **not** fixed in the pre-M4
+hardening pass (A1 and A2 were). Each is small; none blocks M4.
+
+- **A3 — the dashboard's "Exercises practised" fact shows a LESSON count.**
+  `exercise.attempted` folds to `practisedLessons[lessonId]`, so the number is lessons
+  practised. Accurate today (every lesson has one exercise); relabel it, or count exercises
+  from the log, before a lesson gains a second exercise.
+- **A4 — `nextTimestamp` can future-date events.** `Math.max(now, lastMs + 1)` drifts once the
+  log holds a future timestamp (an import from a fast clock, a hand-edit). Clamp when `lastMs`
+  is implausibly far ahead.
+- **A5 — `restore` neither dedupes by id nor re-sorts.** Harmless while every write merges
+  first, but restoring through `mergeEventLogs([], events)` would make it total.
+- **A6 — the practice control loses focus.** Clicking "I have done this exercise" replaces the
+  button with a status paragraph, so focus falls to `<body>`. `CompletionControl` keeps its
+  button mounted; the two controls should agree.
+- **A7 — duplicate progressbar accessible names on the dashboard.** The overall bar and each
+  roadmap bar share the label "N of 4 lessons complete"; include the roadmap title.
+- **A8 — live regions are conditionally mounted.** `role="status"` nodes appear with their
+  content already present, which some screen readers do not announce.
+- **A9 — dead code and stale comments.** `ProgressStore.refresh()`, `LearnerProgress.clear()`
+  (documented as backing a control that does not exist), the `recentlyCompleted` export, and
+  `LocalStorageAdapter.isPersistent` (documented "Surfaced in the UI at M3" — it is not).
+- **A10 — `subscribeToExternalWrites` key matching is loose.** It matches any key ending in
+  "progress" and any `clear()`, rather than the `va:progress` key specifically.
+- **A11 — `createInitialState()` is allocated per `load()`.** Micro-optimisation only.
+
 ## Development environment
 
 - ~~**Scope `format:check` so it does not fail on untracked local config.**~~ **Resolved at

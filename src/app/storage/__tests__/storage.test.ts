@@ -13,6 +13,20 @@ import { foldEvents } from '@domain/progress/reducer.ts'
 import { completed, enrolled, resetEventCounter, viewed } from '@fixtures/progress.ts'
 import type { ProgressEvent } from '@domain/progress/types.ts'
 
+/**
+ * Dispatch a real `storage` event, the way another tab's write does.
+ *
+ * jsdom implements `StorageEvent`; the fallback keeps the helper working if an
+ * environment ever does not, since all the listener reads is `key`.
+ */
+const dispatchStorage = (key: string): void => {
+  const event =
+    typeof StorageEvent === 'function'
+      ? new StorageEvent('storage', { key })
+      : Object.assign(new Event('storage'), { key })
+  globalThis.dispatchEvent(event)
+}
+
 beforeEach(() => {
   resetEventCounter()
   globalThis.localStorage?.clear()
@@ -232,6 +246,39 @@ describe('cross-tab subscription', () => {
     const unsubscribe = subscribeToExternalWrites(() => {})
     expect(typeof unsubscribe).toBe('function')
     expect(() => unsubscribe()).not.toThrow()
+  })
+
+  // The dispatch path, not just the unsubscribe contract (pre-M4 hardening, A2).
+  // Before this, every test called `syncExternal()` directly, so a listener that
+  // was never registered — or registered for the wrong key — would still pass.
+  it('calls back on a storage event for the progress key', () => {
+    const onChange = vi.fn()
+    const unsubscribe = subscribeToExternalWrites(onChange)
+
+    dispatchStorage(`${STORAGE_NAMESPACE}${PROGRESS_KEY}`)
+
+    expect(onChange).toHaveBeenCalledTimes(1)
+    unsubscribe()
+  })
+
+  it('ignores a storage event for an unrelated key', () => {
+    const onChange = vi.fn()
+    const unsubscribe = subscribeToExternalWrites(onChange)
+
+    dispatchStorage(`${STORAGE_NAMESPACE}theme`)
+
+    expect(onChange).not.toHaveBeenCalled()
+    unsubscribe()
+  })
+
+  it('stops calling back after unsubscribe', () => {
+    const onChange = vi.fn()
+    const unsubscribe = subscribeToExternalWrites(onChange)
+    unsubscribe()
+
+    dispatchStorage(`${STORAGE_NAMESPACE}${PROGRESS_KEY}`)
+
+    expect(onChange).not.toHaveBeenCalled()
   })
 })
 

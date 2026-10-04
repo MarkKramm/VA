@@ -1,11 +1,7 @@
-import { createInitialState, foldEvents } from '@domain/progress/reducer.ts'
-import type { NewProgressEvent, ProgressEvent, ProgressState } from '@domain/progress/types.ts'
+import { createInitialState } from '@domain/progress/reducer.ts'
+import type { NewProgressEvent, ProgressState } from '@domain/progress/types.ts'
 import { ProgressStore } from '@/app/storage/merge.ts'
-import {
-  KNOWN_EVENT_TYPES,
-  parseProgressExport,
-  serializeProgressExport,
-} from '@/app/storage/export-validate.ts'
+import { parseProgressExport, serializeProgressExport } from '@/app/storage/export-validate.ts'
 import type { StorageAdapter } from '@/app/storage/port.ts'
 
 /**
@@ -46,47 +42,21 @@ export type ImportOutcome =
   | { readonly ok: false; readonly error: string }
 
 /**
- * True when a value looks like a progress event we can fold.
+ * Restore a usable state from persisted storage.
  *
- * The storage adapter guards invalid JSON but NOT invalid shape: a stored value
- * can be perfectly valid JSON and still not be a progress state — an older
- * format, a hand-edited value, a partially written one. Folding a malformed
- * event would produce nonsense progress, so unusable entries are dropped rather
- * than trusted.
- */
-const isProgressEventLike = (value: unknown): value is ProgressEvent => {
-  if (typeof value !== 'object' || value === null) return false
-  const candidate = value as { id?: unknown; at?: unknown; type?: unknown }
-  return (
-    typeof candidate.id === 'string' &&
-    typeof candidate.at === 'string' &&
-    typeof candidate.type === 'string' &&
-    KNOWN_EVENT_TYPES.has(candidate.type)
-  )
-}
-
-/**
- * Restore a usable state from whatever the adapter returns.
+ * The sanitizing lives in `ProgressStore.load` — the storage boundary — so EVERY
+ * path that reads persisted progress gets it: initialization, append, merge and
+ * cross-tab sync. Filtering here alone (as M3 originally did) left the write and
+ * sync paths reading raw storage, where a malformed event reached the merge's
+ * sort and threw (pre-M4 hardening, A1).
  *
- * `derived` is a CACHE, not a source of truth (D2), so it is always rebuilt from
- * the events rather than trusted — which is also what makes a stale or corrupt
- * cache self-healing. A value that is not a progress state at all falls back to
- * the empty state, so a learner with unreadable storage gets a working session
- * rather than a blank page.
- *
- * The `try` is deliberately narrow and covers INITIALIZATION only. The shipped
- * adapters do not throw — `LocalStorageAdapter` catches its own errors — but this
- * runs during React render, where a throw would take the whole page down, and a
- * future adapter (an HTTP one, say) could throw. Failing to an empty session is
- * strictly better than a white screen.
+ * The `try` covers INITIALIZATION specifically. The shipped adapters do not
+ * throw, but this runs during React render, where a throw would take the whole
+ * page down, and a future adapter (an HTTP one, say) could throw.
  */
 const restore = (store: ProgressStore): ProgressState => {
   try {
-    const loaded = store.load() as unknown
-    if (typeof loaded !== 'object' || loaded === null) return createInitialState()
-    const events = (loaded as { events?: unknown }).events
-    if (!Array.isArray(events)) return createInitialState()
-    return foldEvents(events.filter(isProgressEventLike))
+    return store.load()
   } catch (error) {
     console.warn('[progress] stored progress could not be read; starting empty.', error)
     return createInitialState()

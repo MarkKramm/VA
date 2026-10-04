@@ -34,6 +34,11 @@ All notable changes to this project. Format follows
 
 ### Fixed
 
+- **Malformed stored progress can no longer bypass validation (A1).** Validation ran only at
+  initialization, so a corrupted event was filtered out of the in-memory state at boot and then
+  re-read RAW by the append, merge and cross-tab-sync paths — where it reached the merge's sort
+  and threw on the next interaction. Every read of persisted progress is now sanitized at the
+  storage boundary, and the cross-tab `storage`-event wiring has direct test coverage.
 - **Two events recorded in the same millisecond now order correctly (M3).** Generated
   timestamps are strictly increasing, so "last write wins" is true rather than a random-id coin
   flip (`DECISIONS.md` D28).
