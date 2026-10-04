@@ -204,7 +204,10 @@ describe('malformed or unavailable storage', () => {
     expect(new LearnerProgress(adapter).getState().events).toEqual([])
   })
 
-  it('drops unreadable events instead of folding nonsense', () => {
+  it('drops structurally malformed events but keeps unknown event types', () => {
+    // A1-R: an event this build does not UNDERSTAND is still structurally valid.
+    // Dropping it on read would delete a newer build's data on the next write, so
+    // only the malformed entry (no `at`, no `type`) is discarded.
     const adapter = new MemoryStorageAdapter()
     adapter.write(PROGRESS_KEY, {
       version: 1,
@@ -222,7 +225,7 @@ describe('malformed or unavailable storage', () => {
     })
 
     const store = new LearnerProgress(adapter)
-    expect(store.getState().events).toHaveLength(1)
+    expect(store.getState().events.map((event) => event.id)).toEqual(['e1', 'e2'])
     expect(isLessonComplete(store.getState(), LESSON)).toBe(true)
   })
 
@@ -272,23 +275,24 @@ describe('malformed stored events (A1)', () => {
         },
         // No `at` and no `type`: the shape the merge's sort would choke on.
         { id: 'broken' },
-        // A type this build does not understand.
+        // A type this build does not understand — structurally valid, so KEPT.
         { id: 'future', at: '2026-10-01T09:00:01.000Z', type: 'from.the.future' },
       ],
     })
 
     const store = new LearnerProgress(adapter)
-    expect(store.getState().events).toHaveLength(1)
+    expect(store.getState().events.map((event) => event.id)).toEqual(['keep-1', 'future'])
 
     // The regression: this re-read the raw log, sorted it, and threw.
     expect(() => store.completeLesson(OTHER_LESSON)).not.toThrow()
 
     const events = persistedEvents(adapter)
-    // The valid stored event survived, the new one persisted, both bad ones are gone.
-    expect(events).toHaveLength(2)
+    // The valid stored event and the unknown-typed one survived; only the
+    // structurally broken entry is gone; the new event was appended.
+    expect(events).toHaveLength(3)
     expect(events.some((event) => event.id === 'keep-1')).toBe(true)
+    expect(events.some((event) => event.id === 'future')).toBe(true)
     expect(events.some((event) => event.id === 'broken')).toBe(false)
-    expect(events.some((event) => event.id === 'future')).toBe(false)
     expect(isLessonComplete(store.getState(), LESSON)).toBe(true)
     expect(isLessonComplete(store.getState(), OTHER_LESSON)).toBe(true)
   })
@@ -330,5 +334,51 @@ describe('malformed stored events (A1)', () => {
     // Whatever storage holds, what reaches React is a valid progress state.
     expect(Array.isArray(store.getState().events)).toBe(true)
     expect(store.getState().events.every((event) => typeof event.at === 'string')).toBe(true)
+  })
+
+  it('preserves an unknown event type across load → append → write (A1-R)', () => {
+    // A log written by a NEWER build holds a type this build has never heard of.
+    // Reading it must not filter it out: the sanitized state is what gets written
+    // back, so filtering would silently DELETE the newer build's event.
+    const adapter = new MemoryStorageAdapter()
+    const fromTheFuture = {
+      id: 'future-1',
+      at: '2026-10-01T09:00:00.000Z',
+      type: 'question.answered',
+      questionId: 'q-1',
+      correct: true,
+    }
+    adapter.write(PROGRESS_KEY, {
+      version: 1,
+      events: [
+        {
+          id: 'known-1',
+          at: '2026-10-01T08:59:00.000Z',
+          type: 'lesson.completed',
+          lessonId: LESSON,
+          source: 'manual',
+        },
+        fromTheFuture,
+      ],
+    })
+
+    const store = new LearnerProgress(adapter)
+    // Folded through untouched: the reducer has no case for the unknown type, so
+    // it simply does not contribute to derived state.
+    expect(store.getState().events.map((event) => event.id)).toEqual(['known-1', 'future-1'])
+    expect(isLessonComplete(store.getState(), LESSON)).toBe(true)
+
+    store.completeLesson(OTHER_LESSON)
+
+    const stored = persistedEvents(adapter)
+    expect(stored).toHaveLength(3)
+    // Still present, and unchanged.
+    expect(stored.find((event) => event.id === 'future-1')).toEqual(fromTheFuture)
+    // The known stored event survived, and the new one was appended.
+    const completions = stored
+      .filter((event) => event.type === 'lesson.completed')
+      .map((event) => (event.type === 'lesson.completed' ? event.lessonId : ''))
+    expect(completions).toEqual([LESSON, OTHER_LESSON])
+    expect(isLessonComplete(store.getState(), OTHER_LESSON)).toBe(true)
   })
 })

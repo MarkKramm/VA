@@ -96,13 +96,14 @@ export const parseProgressExport = (raw: string): ImportResult => {
   }
 
   // Events of an unrecognised type are dropped rather than rejected, so a log
-  // from a slightly different version still yields a working session.
-  const known = parsed.data.events.filter(
-    (event) => typeof event.type === 'string' && KNOWN_EVENT_TYPES.has(event.type),
-  )
+  // from a slightly different version still yields a working session. This is the
+  // IMPORT path's rule alone: it is reported through `skipped`, whereas a storage
+  // read must PRESERVE an unknown type or it would delete a newer build's data
+  // (A1-R).
+  const known = filterKnownEvents(parsed.data.events)
   const skipped = parsed.data.events.length - known.length
 
-  const state = foldEvents(known as unknown as readonly ProgressEvent[])
+  const state = foldEvents(known)
 
   return {
     ok: true,
@@ -153,32 +154,60 @@ export const serializeProgressExport = (state: ProgressState): string =>
 const KNOWN_EVENT_TYPES = new Set<string>(PROGRESS_EVENT_TYPES)
 
 /**
- * True when a value is a progress event this build can fold (pre-M4 hardening, A1).
+ * A persisted event this build can safely PRESERVE (pre-M4 hardening, A1/A1-R).
  *
- * The storage adapter guards invalid JSON but NOT invalid shape: a stored value
- * can be valid JSON and still not be a progress event — an older format, a
- * hand-edited value, a partially written one. Folding a malformed event produces
- * nonsense progress at best, and at worst throws inside the merge's sort, so
+ * STRUCTURAL, NOT SEMANTIC. Only `id`, `at` and `type` must be strings — `type` is
+ * deliberately NOT required to be one this build knows. A log written by a newer
+ * build can hold an event type that did not exist when this build shipped, and a
+ * build that filtered those out would DELETE them on its next write, because the
+ * sanitized state is what gets persisted. The fold ignores a type it has no case
+ * for, so preserving an unknown type is safe; discarding it is silent data loss.
+ *
+ * The storage adapter guards invalid JSON but not invalid shape: a stored value
+ * can be valid JSON and still not be an event — an older format, a hand-edited
+ * value, a partially written one. Folding a malformed one produces nonsense
+ * progress at best, and at worst throws inside the merge's sort, so structurally
  * unusable entries are dropped rather than trusted.
  *
- * This is the same three-field shape `EventSchema` requires of an imported file,
- * plus the same known-type filter applied after it, expressed for a value that is
- * already an object rather than text. One definition of "an event we understand",
- * shared by the import path and the storage read path.
+ * The `ProgressEvent` predicate is a narrowing that cannot be expressed exactly
+ * without widening the public event union — a larger change than this boundary
+ * concern justifies. It does not leak: every consumer either switches on `type`
+ * (no case → no-op) or reads only `id`/`at`.
  */
-export const isProgressEvent = (value: unknown): value is ProgressEvent => {
+export const isStoredProgressEvent = (value: unknown): value is ProgressEvent => {
   if (typeof value !== 'object' || value === null) return false
   const candidate = value as { id?: unknown; at?: unknown; type?: unknown }
   return (
     typeof candidate.id === 'string' &&
     typeof candidate.at === 'string' &&
-    typeof candidate.type === 'string' &&
-    KNOWN_EVENT_TYPES.has(candidate.type)
+    typeof candidate.type === 'string'
   )
 }
 
-/** Filter a raw persisted event array down to the events this build can fold. */
-export const sanitizeProgressEvents = (events: readonly unknown[]): ProgressEvent[] =>
-  events.filter(isProgressEvent)
+/**
+ * A persisted event this build UNDERSTANDS — the same shape, plus a known type.
+ *
+ * The IMPORT path only. An imported file is the one place an unknown type is
+ * dropped, because the learner is told how many entries were skipped. Storage
+ * reads must never take that route (A1-R).
+ */
+export const isKnownProgressEvent = (value: unknown): value is ProgressEvent =>
+  isStoredProgressEvent(value) && KNOWN_EVENT_TYPES.has(value.type)
+
+/**
+ * Filter a raw persisted event array down to what can be preserved: structurally
+ * valid events, INCLUDING types this build does not know.
+ */
+export const sanitizeStoredEvents = (events: readonly unknown[]): ProgressEvent[] =>
+  events.filter(isStoredProgressEvent)
+
+/**
+ * Filter parsed import events down to the types this build UNDERSTANDS.
+ *
+ * The import path's counterpart to `sanitizeStoredEvents`, and the one place an
+ * unknown type is dropped — reported through `skipped`, never silent.
+ */
+export const filterKnownEvents = (events: readonly unknown[]): ProgressEvent[] =>
+  events.filter(isKnownProgressEvent)
 
 export { EvaluatedBySchema, KNOWN_EVENT_TYPES, createInitialState }

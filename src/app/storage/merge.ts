@@ -1,6 +1,6 @@
 import type { NewProgressEvent, ProgressEvent, ProgressState } from '@domain/progress/types.ts'
 import { createInitialState, foldEvents } from '@domain/progress/reducer.ts'
-import { sanitizeProgressEvents } from './export-validate.ts'
+import { sanitizeStoredEvents } from './export-validate.ts'
 import type { StorageAdapter } from './port.ts'
 
 /**
@@ -104,6 +104,12 @@ const sameEventLog = (a: readonly ProgressEvent[], b: readonly ProgressEvent[]):
  * sort and throw on `undefined.localeCompare` — breaking the next interaction
  * with a store that looked fine at boot (pre-M4 hardening, A1).
  *
+ * STRUCTURAL ONLY (A1-R). Sanitizing here drops entries that are not shaped like an
+ * event, but it PRESERVES an event whose `type` this build does not know: the
+ * sanitized state is what gets written back, so filtering by known type would let
+ * an older build silently delete a newer build's events. The fold has no case for
+ * an unknown type and ignores it, which is why preserving is safe.
+ *
  * `derived` is a cache, not a source of truth (D2), so it is always rebuilt from
  * the events rather than trusted, which also makes a stale cache self-healing.
  */
@@ -111,7 +117,7 @@ const sanitizeStoredState = (value: unknown): ProgressState => {
   if (typeof value !== 'object' || value === null) return createInitialState()
   const events = (value as { events?: unknown }).events
   if (!Array.isArray(events)) return createInitialState()
-  return foldEvents(sanitizeProgressEvents(events))
+  return foldEvents(sanitizeStoredEvents(events))
 }
 
 export class ProgressStore {

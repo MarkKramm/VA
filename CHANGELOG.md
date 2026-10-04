@@ -34,6 +34,11 @@ All notable changes to this project. Format follows
 
 ### Fixed
 
+- **Unknown event types survive a storage read (A1-R).** The A1 fix sanitized every read of
+  persisted progress by _known event type_, so an older build would filter out an event type
+  introduced by a newer build and then write the filtered log back — silently destroying it.
+  Storage reads now validate STRUCTURE only (`id`/`at`/`type` are strings) and preserve unknown
+  types; the known-type filter stays on the import path, where a dropped entry is reported.
 - **Malformed stored progress can no longer bypass validation (A1).** Validation ran only at
   initialization, so a corrupted event was filtered out of the in-memory state at boot and then
   re-read RAW by the append, merge and cross-tab-sync paths — where it reached the merge's sort

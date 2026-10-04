@@ -330,6 +330,9 @@ describe('import validation', () => {
     if (result.ok) {
       expect(result.skipped).toBe(1)
       expect(result.note).toMatch(/skipped/i)
+      // The IMPORT path still drops it (A1-R narrowed this rule to import only) —
+      // and it is reported, unlike the storage read path, which must preserve it.
+      expect(result.state.events).toHaveLength(1)
     }
   })
 

@@ -20,7 +20,10 @@ The two P2 findings from the post-M3 adversarial audit are fixed. No M3 architec
   initialization; `append`, `mergeEvents` and `syncFrom` re-read storage RAW, so a corrupted
   event reached the merge's sort and threw on the next interaction. The event-shape predicate
   moved to the storage boundary (`export-validate.ts`) and `ProgressStore.load` sanitizes, so
-  initialization, write and cross-tab sync all get the same treatment.
+  initialization, write and cross-tab sync all get the same treatment. Sanitizing is
+  **structural** (A1-R): an event whose `type` this build does not know is PRESERVED, because the
+  sanitized state is what gets written back and filtering by known type would delete a newer
+  build's data. The known-type filter remains on the import path, where it is reported.
 - **A2 — the cross-tab `storage`-event wiring is now tested.** The existing tests called
   `syncExternal()` directly, so a listener that was never registered would still pass. A unit
   test now dispatches a real `StorageEvent` for `va:progress`, and an integration test asserts
@@ -31,7 +34,7 @@ The two P2 findings from the post-M3 adversarial audit are fixed. No M3 architec
 
 - `npm run content:check` — **0 errors, 3 `quality/no-practice` warnings** (unchanged).
 - `npm run typecheck`, `npm run lint`, `npm run check:contrast` (34 pairs) — clean.
-- `npm run test` — **506 across 30 files; 505 pass.** The single failure is the environmental
+- `npm run test` — **507 across 30 files; 506 pass.** The single failure is the environmental
   `content-gate.test.ts` child-process spawn (`cmd.exe` EBUSY); the test is unchanged.
 - `npm run test:arch` — 16 passing.
 - `npm run build` — 504 kB / 154 kB gzipped (unchanged); SPA fallback written; `check:paths`
