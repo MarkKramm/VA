@@ -3,8 +3,9 @@
 A learning platform that takes a learner from complete beginner to job-ready Virtual
 Assistant, across many career paths.
 
-**Status: Milestone 3 (Progress) complete — lessons are readable, exercises can be practised,
-and your progress is tracked locally; quizzes and labs do not exist yet.**
+**Status: Milestone 3 (Progress) complete, and Milestone 4 (Quiz Engine) in progress — the
+question and quiz content architecture has landed, but there is no quiz UI yet; lessons are
+readable, exercises can be practised, and your progress is tracked locally.**
 
 The curriculum lives in `content/` and is validated and compiled at build time. The
 application renders it: a responsive shell, a dashboard, a roadmaps index, and **lesson pages

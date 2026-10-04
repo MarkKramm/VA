@@ -5,6 +5,56 @@ something that works.
 
 ---
 
+## Checkpoint: M4.1 — Question and quiz content architecture
+
+**Date:** 2026-10-05
+**Milestone:** M4 — Quiz Engine · M4.1 complete (M4.2 not started)
+**Tag:** none — `v0.3.0-content-engine` remains the latest
+**Branch:** `main`
+
+### What this checkpoint is
+
+Questions and quizzes are first-class content entities. This is the CONTENT foundation for the
+quiz engine: no renderer, no route, no scoring, no attempt, and no new progress event.
+
+### Verified working
+
+- `npm run content:check` — **0 errors, 3 `quality/no-practice` warnings** (unchanged); the
+  report now reads "3 questions, 1 quizzes".
+- `npm run typecheck`, `npm run lint`, `npm run check:contrast` (34 pairs) — clean.
+- `npm run test` — **537 across 31 files; 536 pass.** The single failure is the environmental
+  `content-gate.test.ts` child-process spawn (`cmd.exe EBUSY`); the test is unchanged.
+- `npm run test:arch` — 16 passing.
+- `npm run build` — 510 kB / 156 kB gzipped; SPA fallback written; `check:paths` clean; no
+  compiler in the client.
+
+### What was added
+
+- `content/questions/*.mdx` — one file per question (three: two `single-choice`, one
+  `true-false`).
+- `content/quizzes/*.mdx` — one file per quiz (one, referencing all three questions).
+- `src/content/schemas/question.ts` and `quiz.ts`, exported from the schemas index.
+- Registry: `questions` / `quizzes` maps, `parsed.questions` / `parsed.quizzes`, and the
+  derived `questionQuizIds`. Both collections left `pendingCollections`.
+- Validation: fail-closed quiz → question referential integrity, question → skills, duplicate
+  ids, and provenance — all through the existing gates.
+- Selectors: `getQuestion` / `getQuiz` / `questionsOfQuiz` / `quizzesUsingQuestion`, exposed to
+  the app layer as `allQuestions` / `findQuestion` / `allQuizzes` / `findQuiz`.
+- Quality checks: question prose (prompt, explanation, options) is scanned for guarantee
+  language and uncited numeric claims, exactly as lesson and exercise prose is.
+
+### Not done, deliberately
+
+No quiz page, route, renderer, scoring, attempt or progress event. `lesson.quiz` and
+`roadmap.outcomes[].evidence` remain unvalidated pending the M4.2/M4.3 linkage decision, and
+`Quiz.shuffle` is deferred with the renderer. See `BACKLOG.md` → "M4.1 — deferred".
+
+### Recommended next task
+
+**M4.2 — the quiz renderer.**
+
+---
+
 ## Checkpoint: pre-M4 hardening pass
 
 **Date:** 2026-10-04

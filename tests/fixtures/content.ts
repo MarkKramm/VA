@@ -112,3 +112,58 @@ export const validRoadmap = (overrides: Record<string, unknown> = {}) => ({
   updatedAt: '2026-10-01',
   ...overrides,
 })
+
+/**
+ * The question the fixture quiz references by default (`what-does-a-va-do`).
+ *
+ * A fixture set that includes a quiz must include this: `quiz.questionIds` is
+ * checked unconditionally against the question collection, exactly as
+ * `lesson.exercises` is, so a quiz naming a question the set does not contain is
+ * a referential-integrity error rather than a skipped check.
+ */
+export const validQuestion = (overrides: Record<string, unknown> = {}) => ({
+  id: 'what-does-a-va-do',
+  type: 'single-choice' as const,
+  prompt: 'Which of these is a core virtual assistant responsibility?',
+  choices: [
+    { id: 'managing-an-inbox', text: 'Keeping a client’s inbox organised' },
+    { id: 'writing-production-code', text: 'Writing and shipping production software' },
+  ],
+  correctChoiceId: 'managing-an-inbox',
+  explanation:
+    'Virtual assistance is administrative and organisational work rather than software engineering.',
+  skills: ['data-cleaning'],
+  status: 'draft' as const,
+  updatedAt: '2026-10-01',
+  ...overrides,
+})
+
+/** The second variant of the union, for tests that need both question types. */
+export const validTrueFalseQuestion = (overrides: Record<string, unknown> = {}) => ({
+  id: 'confirm-the-deadline',
+  type: 'true-false' as const,
+  prompt: 'A virtual assistant should confirm a deadline before starting work.',
+  answer: true,
+  skills: ['data-cleaning'],
+  status: 'draft' as const,
+  updatedAt: '2026-10-01',
+  ...overrides,
+})
+
+/**
+ * The quiz whose id the fixture roadmap already stages as outcome evidence
+ * (`cleaning-basics`).
+ *
+ * Note that `roadmap.outcomes[].evidence` is NOT validated yet — see
+ * `BACKLOG.md` — so this fixture's purpose is to give tests a quiz to reference,
+ * not to make that link resolve.
+ */
+export const validQuiz = (overrides: Record<string, unknown> = {}) => ({
+  id: 'cleaning-basics',
+  title: 'Cleaning Basics',
+  summary: 'A short check on cleaning a spreadsheet without losing data.',
+  questionIds: ['what-does-a-va-do'],
+  status: 'draft' as const,
+  updatedAt: '2026-10-01',
+  ...overrides,
+})

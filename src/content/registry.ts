@@ -6,6 +6,8 @@ import { SkillSchema, type Skill } from './schemas/skill.ts'
 import { ModuleSchema, type Module } from './schemas/module.ts'
 import { LessonSchema, type Lesson } from './schemas/lesson.ts'
 import { ExerciseSchema, type Exercise } from './schemas/exercise.ts'
+import { QuestionSchema, type Question } from './schemas/question.ts'
+import { QuizSchema, type Quiz } from './schemas/quiz.ts'
 import { RoadmapSchema, type Roadmap } from './schemas/roadmap.ts'
 import type { RegistryIssue } from './validation.ts'
 
@@ -28,6 +30,8 @@ export interface ContentRegistry {
   readonly modules: ReadonlyMap<string, Module>
   readonly lessons: ReadonlyMap<string, Lesson>
   readonly exercises: ReadonlyMap<string, Exercise>
+  readonly questions: ReadonlyMap<string, Question>
+  readonly quizzes: ReadonlyMap<string, Quiz>
   readonly roadmaps: ReadonlyMap<string, Roadmap>
 
   /**
@@ -50,6 +54,8 @@ export interface ContentRegistry {
     readonly modules: readonly ParsedEntity<Module>[]
     readonly lessons: readonly ParsedEntity<Lesson>[]
     readonly exercises: readonly ParsedEntity<Exercise>[]
+    readonly questions: readonly ParsedEntity<Question>[]
+    readonly quizzes: readonly ParsedEntity<Quiz>[]
     readonly roadmaps: readonly ParsedEntity<Roadmap>[]
   }
 
@@ -74,6 +80,17 @@ export interface ContentRegistry {
    * two lessons yields both, and no exercise file ever states its lessons.
    */
   readonly exerciseLessonIds: ReadonlyMap<string, readonly string[]>
+  /**
+   * questionId -> quizId, DERIVED from `quiz.questionIds` (M4.1).
+   *
+   * The quiz owns the reference and a question does not know which quizzes ask
+   * it, so this is computed by scanning quizzes — exactly as `exerciseLessonIds`
+   * is computed by scanning lessons and `moduleRoadmapIds` by scanning roadmaps.
+   * It is what makes "which quizzes ask this question?" answerable without
+   * searching every quiz, and it is the index that proves a question is genuinely
+   * reusable rather than nominally so.
+   */
+  readonly questionQuizIds: ReadonlyMap<string, readonly string[]>
   /**
    * lessonId -> its compiled body tree (M2.2).
    *
@@ -116,6 +133,19 @@ export interface ContentSource {
   readonly exercises?: readonly ContentFile[]
   readonly careerPaths: readonly unknown[]
   readonly skills: readonly unknown[]
+  /**
+   * Question and quiz files (M4.1).
+   *
+   * One file per entity, like lessons and exercises, so these are file wrappers
+   * rather than bare data — which is what lets a validation error name the exact
+   * file to open. Optional at this seam so a fixture that is only about, say,
+   * roadmap validation does not have to fabricate a question bank — but a quiz
+   * that references a question when this is absent or empty still fails
+   * referential integrity. Omitting the collection is not a way to skip the
+   * reference.
+   */
+  readonly questions?: readonly ContentFile[]
+  readonly quizzes?: readonly ContentFile[]
   /**
    * Compiled bodies, keyed by source path (M2.2; exercises added at M2.4).
    *
@@ -258,6 +288,22 @@ export function buildRegistryFromSource(source: ContentSource): ContentRegistry 
     locationOf: () => 'content/roadmaps/',
     issues,
   })
+  const questions = parseAll<Question>({
+    schema: QuestionSchema,
+    inputs: source.questions ?? [],
+    entity: 'question',
+    // Questions are a data file, not a directory of files, so this fallback is
+    // the real location rather than a placeholder.
+    locationOf: () => 'content/questions.ts',
+    issues,
+  })
+  const quizzes = parseAll<Quiz>({
+    schema: QuizSchema,
+    inputs: source.quizzes ?? [],
+    entity: 'quiz',
+    locationOf: () => 'content/quizzes.ts',
+    issues,
+  })
 
   // Bare entity arrays, for the derived indexes. The `ParsedEntity` arrays
   // (which retain each entity's source file) are kept as `parsed` below.
@@ -266,6 +312,8 @@ export function buildRegistryFromSource(source: ContentSource): ContentRegistry 
   const moduleValues = modules.map((entry) => entry.value)
   const lessonValues = lessons.map((entry) => entry.value)
   const exerciseValues = exercises.map((entry) => entry.value)
+  const questionValues = questions.map((entry) => entry.value)
+  const quizValues = quizzes.map((entry) => entry.value)
   const roadmapValues = roadmaps.map((entry) => entry.value)
 
   // --- derived indexes ----------------------------------------------------
@@ -318,6 +366,14 @@ export function buildRegistryFromSource(source: ContentSource): ContentRegistry 
     for (const exerciseId of lesson.exercises) push(exerciseLessonIds, exerciseId, lesson.id)
   }
 
+  // questionId -> quizId. Derived from the quiz side, never authored on a
+  // question. A set, not a tally: a question asked by two quizzes yields both,
+  // and a question listed twice by one quiz is already a schema error.
+  const questionQuizIds = new Map<string, string[]>()
+  for (const quiz of quizValues) {
+    for (const questionId of quiz.questionIds) push(questionQuizIds, questionId, quiz.id)
+  }
+
   // lessonId -> compiled body. The join is on the lesson's SOURCE PATH, because
   // that is what the build compiler keyed its output by. Keying the result by id
   // is what lets a route ask for a lesson body without knowing where the file
@@ -346,10 +402,12 @@ export function buildRegistryFromSource(source: ContentSource): ContentRegistry 
     modules: indexById(moduleValues),
     lessons: indexById(lessonValues),
     exercises: indexById(exerciseValues),
+    questions: indexById(questionValues),
+    quizzes: indexById(quizValues),
     roadmaps: indexById(roadmapValues),
     // The pre-index entities, each with its source file, so duplicate-id
     // detection still has the evidence indexById is about to discard.
-    parsed: { careerPaths, skills, modules, lessons, exercises, roadmaps },
+    parsed: { careerPaths, skills, modules, lessons, exercises, questions, quizzes, roadmaps },
     roadmapModuleIds,
     moduleRoadmapIds,
     lessonModuleIds,
@@ -357,17 +415,12 @@ export function buildRegistryFromSource(source: ContentSource): ContentRegistry 
     skillModuleIds,
     lessonCareerPathIds,
     exerciseLessonIds,
+    questionQuizIds,
     lessonBodies,
     exerciseBodies,
-    pendingCollections: [
-      'tools',
-      'resources',
-      'quizzes',
-      'questions',
-      'assessments',
-      'labs',
-      'topics',
-    ],
+    // Questions and quizzes left this list at M4.1: they are registered
+    // collections now, so a reference to one is checked rather than skipped.
+    pendingCollections: ['tools', 'resources', 'assessments', 'labs', 'topics'],
     issues,
     payloadBytes: 0,
   }
@@ -381,4 +434,4 @@ export const buildRegistry = (): ContentRegistry => {
 /** The runtime registry. Content is compiled into the bundle, so this is a singleton. */
 export const registry: ContentRegistry = buildRegistry()
 
-export type { CareerPath, Skill, Module, Lesson, Exercise, Roadmap }
+export type { CareerPath, Skill, Module, Lesson, Exercise, Question, Quiz, Roadmap }

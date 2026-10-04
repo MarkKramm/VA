@@ -160,6 +160,12 @@ export const utf8Length = (value: string): number => new TextEncoder().encode(va
  * exactly one import for all content, which keeps the "single entry point"
  * invariant legible.
  *
+ * Questions and quizzes (M4.1) deliberately do NOT join them. A question is an
+ * independent, id-bearing entity that the platform expects thousands of, so it is
+ * one file per entity in `content/questions/` — the same shape as lessons and
+ * exercises, and the structure `docs/DATA_MODEL.md` records. A single data module
+ * would have been smaller today and a migration later.
+ *
  * The importer path is emitted as a root-relative specifier, which Vite resolves
  * to the same file in `build`, `dev` and `vite-node`.
  */
@@ -173,6 +179,8 @@ const buildModuleSource = (root: string): string => {
   const modulePaths = findMdxFiles(root, join(CONTENT_DIR, 'modules'))
   const lessonPaths = findMdxFiles(root, join(CONTENT_DIR, 'lessons'))
   const exercisePaths = findMdxFiles(root, join(CONTENT_DIR, 'exercises'))
+  const questionPaths = findMdxFiles(root, join(CONTENT_DIR, 'questions'))
+  const quizPaths = findMdxFiles(root, join(CONTENT_DIR, 'quizzes'))
 
   const toFiles = (paths: readonly string[]): RawContentFile[] =>
     paths.map((path) => parseContentFile(root, path))
@@ -181,10 +189,16 @@ const buildModuleSource = (root: string): string => {
   const modules = toFiles(modulePaths)
   const lessons = toFiles(lessonPaths)
   const exercises = toFiles(exercisePaths)
-  const payloadBytes = [...roadmaps, ...modules, ...lessons, ...exercises].reduce(
-    (total, file) => total + utf8Length(file.body),
-    0,
-  )
+  const questions = toFiles(questionPaths)
+  const quizzes = toFiles(quizPaths)
+  const payloadBytes = [
+    ...roadmaps,
+    ...modules,
+    ...lessons,
+    ...exercises,
+    ...questions,
+    ...quizzes,
+  ].reduce((total, file) => total + utf8Length(file.body), 0)
 
   /*
    * The raw `body` is measured above and then DROPPED from what ships. Nothing in
@@ -217,6 +231,8 @@ export const roadmaps = ${JSON.stringify(shipped(roadmaps))}
 export const modules = ${JSON.stringify(shipped(modules))}
 export const lessons = ${JSON.stringify(shipped(lessons))}
 export const exercises = ${JSON.stringify(shipped(exercises))}
+export const questions = ${JSON.stringify(shipped(questions))}
+export const quizzes = ${JSON.stringify(shipped(quizzes))}
 ${exports}
 export const contentPayloadBytes = ${JSON.stringify(payloadBytes)}
 `

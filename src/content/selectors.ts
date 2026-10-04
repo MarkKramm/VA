@@ -1,6 +1,15 @@
 import type { ContentRegistry } from './registry.ts'
 import type { CompiledBody } from '@content/mdx/tree.ts'
-import type { CareerPath, Exercise, Lesson, Module, Roadmap, Skill } from './schemas/index.ts'
+import type {
+  CareerPath,
+  Exercise,
+  Lesson,
+  Module,
+  Question,
+  Quiz,
+  Roadmap,
+  Skill,
+} from './schemas/index.ts'
 
 /**
  * Read-only queries over the registry.
@@ -158,6 +167,50 @@ export const lessonsUsingExercise = (registry: ContentRegistry, exerciseId: stri
   (registry.exerciseLessonIds.get(exerciseId) ?? []).flatMap((id) => {
     const lesson = registry.lessons.get(id)
     return lesson ? [lesson] : []
+  })
+
+export const getQuestion = (registry: ContentRegistry, questionId: string): Question | undefined =>
+  registry.questions.get(questionId)
+
+export const getQuiz = (registry: ContentRegistry, quizId: string): Quiz | undefined =>
+  registry.quizzes.get(quizId)
+
+/**
+ * The questions a quiz asks, in the quiz's declared order (M4.1).
+ *
+ * Resolved from the quiz's own list rather than from a reverse index, because the
+ * quiz OWNS the sequence — the array order is the only place the order is
+ * expressed, so there is no second source to disagree with. Duplicates are
+ * dropped and unknown ids are skipped here; an unknown id is already a
+ * referential-integrity ERROR at validation time, so this only has to avoid
+ * throwing.
+ */
+export const questionsOfQuiz = (registry: ContentRegistry, quizId: string): Question[] => {
+  const quiz = registry.quizzes.get(quizId)
+  if (!quiz) return []
+  const seen = new Set<string>()
+  const out: Question[] = []
+  for (const questionId of quiz.questionIds) {
+    if (seen.has(questionId)) continue
+    const question = registry.questions.get(questionId)
+    if (!question) continue
+    seen.add(questionId)
+    out.push(question)
+  }
+  return out
+}
+
+/**
+ * The quizzes that ask a question, via the derived `questionQuizIds` (M4.1).
+ *
+ * A question carries no `quizId`; this is the reverse of the quiz-owned
+ * reference, computed by the registry, exactly as `lessonsUsingExercise` reverses
+ * the lesson-owned exercise reference.
+ */
+export const quizzesUsingQuestion = (registry: ContentRegistry, questionId: string): Quiz[] =>
+  (registry.questionQuizIds.get(questionId) ?? []).flatMap((id) => {
+    const quiz = registry.quizzes.get(id)
+    return quiz ? [quiz] : []
   })
 
 /** Resolve a list of skill ids to skill records, in the order given, dropping unknown ids. */

@@ -1,8 +1,8 @@
 # Current State
 
-**As of:** 2026-10-04
-**Milestone:** M3 — Progress · **COMPLETE** (not tagged)
-**Next:** M4 — Quiz Engine · **not started**; see `NEXT_STEPS.md`
+**As of:** 2026-10-05
+**Milestone:** M4 — Quiz Engine · **in progress** (M4.1 complete)
+**Next:** M4.2 — the quiz renderer; see `NEXT_STEPS.md`
 
 This file describes the state _as it is_, rewritten each session. It is not a history. For
 the history, see `CHANGELOG.md`.
@@ -15,7 +15,7 @@ the history, see `CHANGELOG.md`.
 | M1 — Application Shell | ✅ complete                                                               |
 | M2 — Content Engine    | ✅ complete (`v0.3.0-content-engine`)                                     |
 | M3 — Progress          | ✅ complete (not tagged) — local-first progress, dashboard, export/import |
-| M4 — Quiz Engine       | ⏳ not started                                                            |
+| M4 — Quiz Engine       | 🔨 in progress — **M4.1 done** (question + quiz content); no renderer yet |
 
 **Not built:** quizzes, labs, assessments, search, the tool directory, career preparation,
 bookmarks, notes, achievements, XP, streaks. Nothing below claims otherwise.
@@ -106,6 +106,15 @@ per-roadmap progress, "continue learning", and the learner's own export/import. 
 lesson never completes it.** Roadmap progress shown to a learner is a completed-lesson count;
 the domain's stage-mean stays the gating policy (`DECISIONS.md` D27).
 
+**The question and quiz content layer (new at M4.1).** `Question` and `Quiz` are first-class
+content entities, one file per entity in `content/questions/` and `content/quizzes/`. A question
+is a discriminated union on `type` (`single-choice`, `true-false`), so a future type is a new
+variant rather than a widening of an existing one; a quiz is an ORDERED list of canonical
+question ids, with an empty list and a repeated reference both rejected at parse time. The
+registry derives `questionQuizIds` (question → quizzes), and referential integrity fails closed
+on a missing question. **Content only** — there is no quiz page, no route, no scoring and no
+attempt (`DECISIONS.md` D30).
+
 **A working application shell.** React 19 + React Router 7, a real Vite application build,
 five routes, a responsive sidebar/mobile-dialog layout, a dashboard, a roadmaps index and the
 lesson pages, a dark-mode-aware design token layer, and the GitHub Pages deployment path
@@ -141,9 +150,9 @@ achievements, no backend/auth, no state-management library.
 | `npm run typecheck`      | clean, app and tooling configs separately                            |
 | `npm run content:check`  | 0 errors, 3 warnings (all `quality/no-practice`)                     |
 | `npm run check:contrast` | 34 pairs pass, computed from tokens                                  |
-| `npm run test`           | 507 across 30 files — **506 pass**, 1 sandbox-only spawn failure     |
+| `npm run test`           | 537 across 31 files — **536 pass**, 1 sandbox-only spawn failure     |
 | `npm run test:arch`      | 16 passing                                                           |
-| `npm run build`          | succeeds; 504 kB / 154 kB gzipped — no compiler in the client        |
+| `npm run build`          | succeeds; 510 kB / 156 kB gzipped — no compiler in the client        |
 | `npm run check:paths`    | base `/VA/`, assets present, SPA fallback in place, no compiler leak |
 
 **`npm run check` is the single gate.** Every step is green except one test:

@@ -27,7 +27,8 @@ process.stdout.write('==================\n\n')
 process.stdout.write(
   `Loaded ${summary.counts.careerPaths} career paths, ${summary.counts.roadmaps} roadmaps, ` +
     `${summary.counts.modules} modules, ${summary.counts.lessons} lessons, ` +
-    `${summary.counts.exercises} exercises, ${summary.counts.skills} skills\n`,
+    `${summary.counts.exercises} exercises, ${summary.counts.questions} questions, ` +
+    `${summary.counts.quizzes} quizzes, ${summary.counts.skills} skills\n`,
 )
 process.stdout.write(`Content payload (bodies): ${formatKb(summary.payloadBytes)}\n`)
 process.stdout.write(`Pending collections: ${registry.pendingCollections.join(', ')}\n\n`)

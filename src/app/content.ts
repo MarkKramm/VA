@@ -3,6 +3,8 @@ import {
   exerciseBody,
   exercisesOfLesson,
   getModule,
+  getQuestion,
+  getQuiz,
   getRoadmap,
   lessonBody,
   lessonsByIds,
@@ -20,6 +22,8 @@ import type {
   Exercise,
   Lesson,
   Module,
+  Question,
+  Quiz,
   Roadmap,
   Skill,
   Stage,
@@ -212,6 +216,30 @@ export const findLesson = (lessonId: string): LessonWithBody | undefined => {
   if (!lesson) return undefined
   return { lesson, body: lessonBody(registry, lessonId) }
 }
+
+/**
+ * The question bank and the quizzes (M4.1).
+ *
+ * There is no quiz UI yet, and these four functions exist anyway because they are
+ * the SEAM rather than a feature: `src/features/` cannot import `@/content/*`, so
+ * when M4.2 renders a quiz it must read questions through this file exactly as
+ * the lesson page reads lessons through it. Adding them here is what keeps the
+ * layer boundary true from the first commit rather than retrofitting it when a
+ * page needs them.
+ *
+ * They deliberately return validated content unchanged. There is no `QuizView`
+ * and no scoring field, because a view shape invented before the renderer exists
+ * would be a guess, and a score field would be a promise the platform cannot yet
+ * keep.
+ */
+export const allQuestions = (): readonly Question[] => [...registry.questions.values()]
+
+export const findQuestion = (questionId: string): Question | undefined =>
+  getQuestion(registry, questionId)
+
+export const allQuizzes = (): readonly Quiz[] => [...registry.quizzes.values()]
+
+export const findQuiz = (quizId: string): Quiz | undefined => getQuiz(registry, quizId)
 
 /**
  * A resolved reference to another lesson, for navigation and link lists.

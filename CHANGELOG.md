@@ -12,6 +12,13 @@ All notable changes to this project. Format follows
 
 ### Added
 
+- **The question and quiz content architecture (M4.1).** `Question` and `Quiz` are now
+  first-class content entities, one file per entity in `content/questions/` and
+  `content/quizzes/`, validated and registered like every other collection. A question is a
+  discriminated union on `type` — `single-choice` and `true-false` — and a quiz references
+  canonical question ids in an authored order. The registry derives `questionQuizIds`, and a
+  quiz that names a question which does not exist fails the build. **Content only:** no
+  renderer, no route, no scoring, no attempt, and no new progress event (`DECISIONS.md` D30).
 - **The learner progress foundation (M3).** Progress is real: a React-facing store
   (`src/app/progress/`) persists the event log through the existing `StorageAdapter`, syncs
   across tabs, and drives the UI. A lesson can be marked complete (and un-marked), an exercise

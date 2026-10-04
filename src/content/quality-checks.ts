@@ -108,7 +108,7 @@ export function runQualityChecks(registry: ContentRegistry): RegistryIssue[] {
   const lessonPath = (id: string): string => `content/lessons/**/${id}.mdx`
 
   const push = (
-    entity: 'lesson' | 'exercise',
+    entity: 'lesson' | 'exercise' | 'question',
     severity: 'warning' | 'info',
     rule: string,
     path: string,
@@ -234,7 +234,46 @@ export function runQualityChecks(registry: ContentRegistry): RegistryIssue[] {
     }
   }
 
-  // 7. Near-duplicate lessons. AI agents generating content in parallel reliably
+  /*
+   * 7. The same two checks, applied to QUESTIONS (M4.1).
+   *
+   * A question is the prose surface where a fabricated figure does the most
+   * damage, because the learner is being asked to accept it as the correct
+   * answer. The scanned text is everything a learner reads: the prompt, the
+   * explanation and the option text.
+   *
+   * A question has no citation mechanism, so a numeric claim in one always warns
+   * — the same rule as an exercise's, for the same reason.
+   */
+  for (const question of registry.questions.values()) {
+    const at = `content/questions/**/${question.id}.mdx`
+    const body = [
+      question.prompt,
+      question.explanation ?? '',
+      question.type === 'single-choice'
+        ? question.choices.map((choice) => choice.text).join(' ')
+        : '',
+    ].join('\n')
+
+    for (const { pattern, message } of GUARANTEE_PATTERNS) {
+      if (pattern.test(body)) {
+        push('question', 'warning', 'quality/language', at, 'prompt', message)
+      }
+    }
+
+    if (NUMERIC_CLAIM.test(body)) {
+      push(
+        'question',
+        'warning',
+        'quality/numeric-claim',
+        at,
+        'prompt',
+        'contains a currency amount or percentage with no source — verify it, or remove it',
+      )
+    }
+  }
+
+  // 8. Near-duplicate lessons. AI agents generating content in parallel reliably
   //    produce overlapping lessons; catching them here is far cheaper than
   //    unpicking them later.
   for (let i = 0; i < lessons.length; i += 1) {
@@ -280,7 +319,7 @@ export function runQualityChecks(registry: ContentRegistry): RegistryIssue[] {
     }
   }
 
-  // 8. The stale-tool report — a tool whose `updatedAt` is newer than the
+  // 9. The stale-tool report — a tool whose `updatedAt` is newer than the
   //    `updatedAt` of the lessons that reference it — is not implemented yet,
   //    because it needs the tools collection, which arrives at M5. It is a
   //    derivation over the existing reverse indexes, so it is a few lines once

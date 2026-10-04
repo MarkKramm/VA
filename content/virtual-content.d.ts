@@ -46,5 +46,12 @@ declare module 'virtual:content-data' {
   export const exercises: readonly RawContentFile[]
   export const careerPaths: readonly unknown[]
   export const skills: readonly unknown[]
+  /**
+   * Questions and quizzes are one file per entity (M4.1), like lessons and
+   * exercises, so they arrive as file wrappers rather than bare data. Neither
+   * collection has a prose body, so neither carries `rendered`.
+   */
+  export const questions: readonly RawContentFile[]
+  export const quizzes: readonly RawContentFile[]
   export const contentPayloadBytes: number
 }

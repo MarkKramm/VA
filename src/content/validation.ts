@@ -1,6 +1,6 @@
 import type { ContentRegistry } from './registry.ts'
 import { runQualityChecks } from './quality-checks.ts'
-import type { Exercise, Lesson, Module, Roadmap } from './schemas/index.ts'
+import type { Exercise, Lesson, Module, Question, Quiz, Roadmap } from './schemas/index.ts'
 
 /**
  * Content validation.
@@ -45,15 +45,27 @@ const pathOf = {
   module: (module: Module): string => `content/modules/${module.id}.mdx`,
   roadmap: (roadmap: Roadmap): string => `content/roadmaps/${roadmap.id}.mdx`,
   exercise: (exercise: Exercise): string => `content/exercises/**/${exercise.id}.mdx`,
+  /**
+   * Questions and quizzes are one file per entity, so the path names the file to
+   * open — the same contract as lessons and exercises.
+   */
+  question: (question: Question): string => `content/questions/**/${question.id}.mdx`,
+  quiz: (quiz: Quiz): string => `content/quizzes/${quiz.id}.mdx`,
 }
 
 /**
  * Every id reference in the content must resolve.
  *
- * Collections that this milestone has not created yet (tools, resources,
- * quizzes, labs, assessments, topics, questions) are skipped rather than failed.
- * That is deliberate: a lesson may legitimately stage a `tools:` list before the
- * tool directory exists at M5, and the build should not block work in progress.
+ * Collections that this milestone has not created yet (tools, resources, labs,
+ * assessments, topics) are skipped rather than failed. That is deliberate: a
+ * lesson may legitimately stage a `tools:` list before the tool directory exists
+ * at M5, and the build should not block work in progress.
+ *
+ * A *known* collection is always checked, and questions and quizzes became known
+ * at M4.1. So a `quiz.questionIds` reference is checked UNCONDITIONALLY: if the
+ * question does not exist, that is an error, whether the question bank is empty
+ * or missing. Fail-closed is the point — a reference that resolves to nothing
+ * would render a quiz that silently asks fewer questions than its author wrote.
  *
  * A *known* collection is always checked, and exercises became known at M2.4. So
  * a `lesson.exercises` reference is checked UNCONDITIONALLY: if the exercise does
@@ -165,6 +177,54 @@ const checkReferentialIntegrity = (registry: ContentRegistry, issues: RegistryIs
     }
   }
 
+  /*
+   * A question's skill references (M4.1). Checked unconditionally, like every
+   * other `skills` list — the skill collection is registered, so a reference that
+   * does not resolve is an error rather than work in progress.
+   */
+  for (const question of registry.questions.values()) {
+    const at = pathOf.question(question)
+    for (const skillId of question.skills) {
+      if (!resolve(registry.skills, skillId)) {
+        report(
+          issues,
+          'error',
+          'referential-integrity',
+          'question',
+          at,
+          'skills',
+          `"${skillId}" does not exist`,
+        )
+      }
+    }
+  }
+
+  /*
+   * THE quiz -> question reference (M4.1), and the reason questions and quizzes
+   * are registered collections rather than pending ones.
+   *
+   * A quiz that names a question which does not exist is a BUILD error, exactly
+   * as a lesson that names a missing exercise is. The alternative is a quiz that
+   * silently asks fewer questions than its author wrote — which, once scoring
+   * exists, is a score out of the wrong total. Fail-closed is the point.
+   */
+  for (const quiz of registry.quizzes.values()) {
+    const at = pathOf.quiz(quiz)
+    quiz.questionIds.forEach((questionId, index) => {
+      if (!resolve(registry.questions, questionId)) {
+        report(
+          issues,
+          'error',
+          'referential-integrity',
+          'quiz',
+          at,
+          `questionIds[${index}]`,
+          `"${questionId}" does not exist`,
+        )
+      }
+    })
+  }
+
   for (const module of registry.modules.values()) {
     const at = pathOf.module(module)
     module.lessons.forEach((lessonId, index) => {
@@ -273,6 +333,8 @@ const checkDuplicateIds = (registry: ContentRegistry, issues: RegistryIssue[]): 
     { entity: 'lesson', entries: registry.parsed.lessons },
     { entity: 'module', entries: registry.parsed.modules },
     { entity: 'exercise', entries: registry.parsed.exercises },
+    { entity: 'question', entries: registry.parsed.questions },
+    { entity: 'quiz', entries: registry.parsed.quizzes },
     { entity: 'roadmap', entries: registry.parsed.roadmaps },
     { entity: 'skill', entries: registry.parsed.skills },
     { entity: 'career-path', entries: registry.parsed.careerPaths },
@@ -505,6 +567,16 @@ const checkProvenance = (registry: ContentRegistry, issues: RegistryIssue[]): vo
       path: pathOf.exercise(entity),
       value: entity,
     })),
+    ...[...registry.questions.values()].map((entity) => ({
+      entity: 'question',
+      path: pathOf.question(entity),
+      value: entity,
+    })),
+    ...[...registry.quizzes.values()].map((entity) => ({
+      entity: 'quiz',
+      path: pathOf.quiz(entity),
+      value: entity,
+    })),
     ...[...registry.roadmaps.values()].map((entity) => ({
       entity: 'roadmap',
       path: pathOf.roadmap(entity),
@@ -537,6 +609,8 @@ export interface ValidationSummary {
     readonly modules: number
     readonly lessons: number
     readonly exercises: number
+    readonly questions: number
+    readonly quizzes: number
   }
   readonly payloadBytes: number
 }
@@ -562,6 +636,8 @@ export function validateRegistry(registry: ContentRegistry): ValidationSummary {
       modules: registry.modules.size,
       lessons: registry.lessons.size,
       exercises: registry.exercises.size,
+      questions: registry.questions.size,
+      quizzes: registry.quizzes.size,
     },
     payloadBytes: registry.payloadBytes,
   }

@@ -932,3 +932,66 @@ if a later milestone needs middleware, time-travel or cross-store composition.
 (`src/app/progress/__tests__/store.test.ts`). React never owns the state, so a cross-tab write
 reaches the UI without React knowing where it came from. If a future milestone needs more,
 swapping the store for Zustand is a change to one file and its provider.
+
+---
+
+## D30 — Questions and quizzes are first-class content, and M4.1 stops at the content boundary
+
+**Date:** 2026-10-05 (M4.1)
+
+**Context.** The quiz engine is the next milestone, and the single most expensive thing to
+retrofit is question identity: if questions are inlined into quizzes, then a question shared by
+a quiz and a roadmap assessment is two copies, and "which quizzes ask this?" has no answer.
+`docs/DATA_MODEL.md` records this as the project's most expensive-to-retrofit decision, and it
+was wrong in v1–v4 for exactly that reason. M4.1 therefore lands the entities BEFORE anything
+renders or scores them.
+
+**Options for where a question lives.** (a) One data module (`content/questions.ts`), like
+`career-paths.ts`. (b) One file per entity in `content/questions/`, like lessons and exercises.
+
+**Choice.** (b), and the same for `content/quizzes/`.
+
+**Reason.** A question is an independent, id-bearing entity the platform expects thousands of,
+not a small taxonomy edited as a whole — which is what `career-paths.ts` and `skill-tree.ts`
+are. Option (a) is smaller today and a content migration later, because there is no glob for
+`.ts` and a single module does not scale to a real question bank. Option (b) also gives every
+question its own file path, so a validation error names the file to open rather than an offset
+inside a shared one. `docs/DATA_MODEL.md` already records `content/questions/`, so this follows
+the documented structure rather than revising it.
+
+**Initial question types: `single-choice` and `true-false`.** Not every type the plan lists.
+They are enough to prove the architecture in both directions — one type with a list of options
+and a reference to the right one, one type with an intrinsic answer — and each future type
+(`multiple-select`, `matching`, `ordering`, `scenario`, `short-answer`) is a NEW MEMBER of a
+discriminated union rather than a widening of an existing member. That is the property that
+matters: `docs/WORKFLOWS.md` already describes adding a question type as "one member added to
+the `Question` union, discriminated on `type`", and this makes that literally true. The
+alternative — one object with every type's fields optional — makes invalid combinations
+representable, which is the failure mode the union exists to prevent.
+
+**The quiz references canonical questions and never inlines them.** `quiz.questionIds` is an
+ordered list of ids, and the registry derives `questionQuizIds` (question → quizzes) by scanning
+quizzes, exactly as it derives `exerciseLessonIds` from lessons. Order is the ARRAY ORDER: a
+quiz is an authored sequence, so nothing sorts it on the way in and there is no second place an
+order could be expressed.
+
+**Empty and duplicated are schema failures, not warnings.** A quiz with no questions is not a
+quiz; a repeated question would be asked twice and, once scoring exists, counted twice. Both
+are rejected at parse time so a malformed quiz is DROPPED rather than entering the registry as
+an entity that looks usable.
+
+**Referential integrity is fail-closed.** A quiz that names a question which does not exist is
+a build ERROR, whether the question bank is empty or absent — the same rule `lesson.exercises`
+has had since M2.4. Questions and quizzes therefore left `pendingCollections`.
+
+**Explicit boundary.** M4.1 is content architecture only. No renderer, no route, no scoring, no
+attempt, no `ProgressEvent` change, and no mastery change. Two linkage questions are
+deliberately NOT answered here: `lesson.quiz` and `roadmap.outcomes[].evidence` exist in the
+schemas but remain unvalidated, because deciding how a learner REACHES a quiz is M4.2/M4.3's
+job and validating the singular `lesson.quiz` field now would pre-empt that decision. Both are
+recorded in `BACKLOG.md` as follow-ups that must become fail-closed when the linkage lands.
+
+**Consequences.** Scoring has no schema yet — no `points`, no `passMark`, no `weight` — because
+a field no code reads is a guess made before the milestone that has to live with it. Zod strips
+unknown keys, so content cannot stage one either. `Quiz.shuffle`, which `docs/DATA_MODEL.md`
+sketches, is deferred with the renderer for the same reason.

@@ -128,6 +128,31 @@ belongs to a later milestone, and recording them here is what kept them out of M
 - **Browser-automation journeys** — M3 tests the real store, storage and routes through jsdom.
   Playwright stays a M9 item rather than a mid-milestone install.
 
+## M4.1 — deferred
+
+Deliberately NOT done in M4.1, which is content architecture only. Each is a follow-up with a
+named owner milestone.
+
+- **`lesson.quiz` is not validated.** The field exists (`QuizSlugSchema.optional()`) but
+  referential integrity skips it, so a lesson naming a quiz that does not exist is silently
+  ignored. It must become fail-closed the moment M4.2/M4.3 decides how a learner REACHES a
+  quiz — validating the singular field now would pre-empt that decision (a lesson may end up
+  linking to several quizzes). See `DECISIONS.md` D30.
+- **`roadmap.outcomes[].evidence` is not validated.** It has never been validated for ANY kind
+  (`quiz`, `lab`, `assessment`), so making quizzes a registered collection does not change it.
+  Belongs with the job-readiness work (M7), where evidence is actually consumed.
+- **`Quiz.shuffle` does not exist.** `docs/DATA_MODEL.md` sketches it as a per-quiz opt-in
+  defaulting to `false`. Deferred with the renderer, because "what does shuffling mean" is a
+  presentation decision and a field no code reads is a guess. Add it in M4.2 if the renderer
+  needs it.
+- **No alias or deprecated-id resolution.** `deprecatedIds` is parsed and preserved on every
+  entity, but nothing in `src/` resolves it — there is no mechanism to hook into. Quiz
+  references therefore resolve by exact id. A resolution mechanism, if it is ever wanted, is a
+  separate decision affecting every entity, not a quiz-specific concern.
+- **No question-bank scale-out.** Three questions exist to prove the pipeline. Populating the
+  curriculum is not M4.1's job, and a large bank written before the renderer exists would be
+  written against a guess about presentation.
+
 ## Post-M3 audit (deferred)
 
 Findings from the post-M3 adversarial audit that were consciously **not** fixed in the pre-M4

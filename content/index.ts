@@ -36,6 +36,8 @@ import {
   exercises as rawExercises,
   lessons as rawLessons,
   modules as rawModules,
+  questions as rawQuestions,
+  quizzes as rawQuizzes,
   roadmaps as rawRoadmaps,
   skills as rawSkills,
 } from 'virtual:content-data'
@@ -79,6 +81,13 @@ export const rawContent = {
   /** Plain data arrays. The registry validates these against their schemas. */
   careerPaths: rawCareerPaths as readonly unknown[],
   skills: rawSkills as readonly unknown[],
+  /**
+   * Questions and quizzes (M4.1). One file per entity, like lessons and
+   * exercises, so the registry joins them by path and a validation error names
+   * the exact file. Neither collection carries a compiled body.
+   */
+  questions: rawQuestions as readonly RawContentFile[],
+  quizzes: rawQuizzes as readonly RawContentFile[],
   /**
    * Compiled bodies, keyed by source path (M2.2; exercises added at M2.4).
    *
