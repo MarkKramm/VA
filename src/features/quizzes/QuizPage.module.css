@@ -90,3 +90,56 @@
   color: var(--color-text-muted);
   line-height: var(--leading-normal);
 }
+
+/* ---------------------------------------------------------------------------
+ * The result (M4.3).
+ *
+ * The design system has no negative colour, so a pass reuses the existing
+ * contrast-validated "complete chip" pair and everything else uses the neutral
+ * inset surface. The WORD carries the outcome; the colour only reinforces it.
+ * ------------------------------------------------------------------------ */
+
+.history {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+
+.verdict {
+  align-self: flex-start;
+  margin: 0;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-inset);
+  color: var(--color-text-muted);
+  font-weight: 600;
+}
+
+.footer[data-passed='true'] .verdict {
+  background: var(--state-complete-soft);
+  color: var(--state-complete-strong);
+}
+
+.figures {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-5);
+  margin: 0;
+}
+
+.figure {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.figureLabel {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+
+.figureValue {
+  margin: 0;
+  font-size: var(--text-lg);
+  font-weight: 600;
+  color: var(--color-text-primary);
+}

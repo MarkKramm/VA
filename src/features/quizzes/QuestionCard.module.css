@@ -107,3 +107,59 @@
   font-size: var(--text-sm);
   color: var(--color-text-muted);
 }
+
+/* ---------------------------------------------------------------------------
+ * The marked outcome (M4.3).
+ *
+ * The design system has no negative colour, and inventing one would change the
+ * visual identity — out of scope here. So the WORD carries the outcome and the
+ * colour only reinforces it: a correct answer reuses the existing, already
+ * contrast-validated "complete chip" pair, and anything else uses the neutral
+ * inset surface. Nothing in this file signals a result by colour alone.
+ * ------------------------------------------------------------------------ */
+
+.verdict {
+  align-self: flex-start;
+  margin: var(--space-3) 0 0;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-inset);
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.card[data-state='correct'] .verdict {
+  background: var(--state-complete-soft);
+  color: var(--state-complete-strong);
+}
+
+.option[data-correct='true'] {
+  border-color: var(--state-complete-strong);
+  background: var(--state-complete-soft);
+}
+
+.option[data-wrong='true'] {
+  border-color: var(--color-border-strong);
+  background: var(--color-surface-inset);
+}
+
+.flag {
+  margin-inline-start: auto;
+  padding-inline-start: var(--space-2);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.option[data-correct='true'] .flag {
+  color: var(--state-complete-strong);
+}
+
+.explanation {
+  margin: var(--space-3) 0 0;
+  max-width: var(--measure-prose);
+  color: var(--color-text-secondary);
+  line-height: var(--leading-relaxed);
+}

@@ -5,6 +5,53 @@ something that works.
 
 ---
 
+## Checkpoint: M4.3 — Quiz scoring, results and persisted attempts
+
+**Date:** 2026-10-05
+**Milestone:** M4 — Quiz Engine · M4.3 complete
+**Tag:** none — `v0.3.0-content-engine` remains the latest
+**Branch:** `main`
+
+### What this checkpoint is
+
+A quiz can be taken, scored, passed or failed, and the attempt is saved. `PLAN.md` §Milestone 4
+(quiz data, question rendering, scoring, results) is now delivered end to end.
+
+### Verified working
+
+- `npm run content:check` — **0 errors, 2 `quality/no-practice` warnings** (unchanged).
+- `npm run typecheck`, `npm run lint`, `npm run check:contrast` (34 pairs) — clean.
+- `npm run test` — **605 across 34 files; 604 pass.** The single failure is the environmental
+  `content-gate.test.ts` child-process spawn (`cmd.exe EBUSY`); the test is unchanged.
+- `npm run test:arch` — 16 passing.
+- `npm run build` — 519 kB / 158 kB gzipped; SPA fallback written; `check:paths` clean; no
+  compiler in the client.
+
+### What was added
+
+- `src/app/quiz/score.ts` — the pure scorer: one point per question, a `never` guard over the
+  question union, unanswered reported separately from incorrect.
+- `src/app/quiz/answers.ts` — the answer model, moved out of the feature so the scorer and the
+  renderer both import downward.
+- `quizScoringInput` in `src/app/content.ts` — the canonical questions, read only at submission.
+- `LearnerProgress.submitQuizAttempt` — the one write, as the existing `quiz.attempted` event.
+- The quiz page: submit, result (score / max / percentage / pass), per-question feedback, the
+  explanation after submission, a history line, and "Try again" that adds an attempt.
+- 18 scorer tests, 16 submission/persistence tests, 4 store tests, and a discriminating mutation
+  check that broke 20 tests across three deliberate defects.
+
+### Not done, deliberately
+
+No XP, achievements or streaks; no mastery claim for a quiz; no `assessmentEligibility` gating;
+no shuffling; no additional question types; no answer persistence; no roadmap evidence linkage.
+See `BACKLOG.md` → "M4.3 — deferred".
+
+### Recommended next task
+
+**M5 — search and the tool directory**, unless further M4 scope is defined. See `NEXT_STEPS.md`.
+
+---
+
 ## Checkpoint: M4.2 — Learner quiz renderer
 
 **Date:** 2026-10-05

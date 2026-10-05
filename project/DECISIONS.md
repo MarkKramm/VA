@@ -1034,3 +1034,85 @@ A lesson may still have at most one quiz. If a later milestone needs several, th
 change (a `quizzes` list) and its own decision — the field's shape would move, not the
 rendering. `roadmap.outcomes[].evidence` remains unvalidated: it has never been validated for
 ANY kind, and it belongs with the job-readiness work where evidence is actually consumed.
+
+---
+
+## D32 — Quiz scoring is a pure seam over canonical questions, and one submission is one attempt
+
+**Date:** 2026-10-05 (M4.3)
+
+**Context.** M4.2 could collect answers and nothing else: a quiz that cannot be passed is not a
+check, and an attempt that is not recorded is not progress. M4.3 closes that without reopening
+the M4.1/M4.2 content architecture.
+
+**WHERE THE SCORER LIVES.** `src/app/quiz/score.ts`, not `src/domain/` and not the feature.
+
+- Not the domain: `src/domain/` deliberately knows nothing about content — `unlock.ts` says so
+  in as many words, and the boundary test enforces it. Scoring has to compare a submission
+  against a canonical `Question`, which is a content type.
+- Not `src/features/quizzes/`: the answer model is read by BOTH the renderer and the scorer, so
+  putting it in the feature would make the scorer import from a feature — reversing the
+  dependency direction the architecture rests on. The answer model therefore moved to
+  `src/app/quiz/answers.ts`, and both layers import downward.
+- `scoreQuestions(questions, answers)` takes the canonical questions as an ARGUMENT, so it reads
+  no registry, no clock, no randomness and no DOM. The same inputs always give the same result,
+  which is what makes a score a fact about the learner rather than about the machine that
+  rendered the page.
+
+**THE SCORING MODEL.** One point per question, so `maxScore` is the number of questions. A
+question earns its point only if the answer is well formed for its type AND matches the
+canonical answer. No partial credit, no weighting, no negative marking, no fuzzy matching, no
+tolerance — the two supported types have exactly one right answer each, and pretending otherwise
+would invent a precision the content does not carry.
+
+Unanswered and malformed submissions score zero and are reported **separately** from wrong ones,
+so the UI can say "you skipped 2" rather than calling a skipped question incorrect. Nothing
+throws: a submission the platform cannot read is a zero, not a crash on a page a learner is
+looking at.
+
+The `switch` over `question.type` ends in a `never` guard, so adding a question type is a
+COMPILE error here rather than a new type that silently scores every learner zero.
+
+**THE PASS MARK.** A single constant, `QUIZ_PASS_THRESHOLD = 0.8`, matching the domain's
+existing `DEFAULT_STAGE_THRESHOLD` so "passing" means the same thing at both levels. Not a
+per-quiz field: D30 deliberately left `passMark` out of the schema, and inventing one now would
+be a content decision made by an implementation detail. A per-quiz mark would be a schema change
+and its own decision.
+
+**ONE SUBMISSION IS ONE ATTEMPT.** A completed submission emits exactly one `quiz.attempted`
+event — the existing event, with `evaluatedBy: 'system'` because the platform marked it against
+the canonical answers. Two properties make that structural rather than hopeful:
+
+1. Submission runs in the click handler, never in an effect. A re-render cannot re-run a
+   handler; an effect that submitted would re-run on every render that touched its deps.
+2. The canonical questions are read INSIDE that handler. The render path only ever sees the
+   stripped `quizContext` view, so a correct answer cannot reach the page before submission.
+
+The `attemptId` comes from the store's existing `newEventId()`, and the store still supplies the
+event `id` and `at`, so cross-tab merging and ordering are unchanged.
+
+**ANSWERS ARE NOT STORED.** The data model defines an attempt as a score against a quiz, not as
+an answer sheet. Persisting the learner's individual answers would put a second, disagreeing
+source of truth beside the log — and the log is the single source of truth by design.
+
+**ANSWERS STAY TRANSIENT UNTIL SUBMITTED.** Answering every question and then navigating away or
+reloading records nothing. Only a completed submission is progress. This is the M4.2 invariant
+restated for M4.3: a half-finished quiz is not evidence of anything.
+
+**RETRY ADDS, IT NEVER REPLACES.** "Try again" clears the local answer sheet and the displayed
+result and starts a fresh attempt. History is read back from the log, so a retry appends and the
+previous attempt remains — which is what makes "best so far" meaningful.
+
+**WHAT IS DELIBERATELY NOT USED.** `masteryLevel` is NOT rendered for a quiz. It labels a
+SKILL's accumulated evidence; a three-question quiz reading "mastered" would overstate what the
+platform knows, and the domain's own comment says the level is always shown beside the evidence
+that produced it. The result shows `summariseAttempts`' best and attempt count instead, which IS
+that evidence, and the level word belongs with the skill/assessment work at M7.
+`assessmentEligibility` is likewise unused: it gates an assessment, and no assessment exists.
+
+**THE STATIC-SITE LIMITATION, RESTATED.** The canonical answers necessarily ship in the client
+bundle (`docs/DATA_MODEL.md` records this), so a score is computed in the learner's browser and
+is inspectable. That is inherent to a backendless site, not a defect of this implementation, and
+it is why the platform's job-readiness model is weighted on evidence rather than on quiz scores.
+A quiz score is a check that the learner did the reading; it is not high-stakes evidence, and
+nothing should treat it as such.

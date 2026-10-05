@@ -12,6 +12,14 @@ All notable changes to this project. Format follows
 
 ### Added
 
+- **Quiz scoring, results and persisted attempts (M4.3).** A submitted quiz is marked against
+  the canonical content by a pure scorer (`src/app/quiz/score.ts`), one point per question, and
+  the attempt is recorded through the existing `quiz.attempted` event with `evaluatedBy:
+'system'`. The result shows score, max score, percentage, pass/fail and per-question
+  correctness, with the correct answer and the authored explanation revealed only after
+  submission. "Try again" starts a new attempt and keeps the old one; history and best score are
+  read back from the event log. Answers remain transient until submitted — answering everything
+  and navigating away records nothing. `DECISIONS.md` D32.
 - **The learner-facing quiz renderer (M4.2).** `/quizzes/:quizId` renders a validated quiz — its
   title, summary and questions in the declared order — with single-choice and true/false
   questions as accessible radio groups, a live "N of M answered" count, and a completion control

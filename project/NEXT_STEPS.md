@@ -8,42 +8,42 @@ is too large or work is not being closed out.
 
 ---
 
-## Current milestone: M4 — Quiz Engine · **in progress** (M4.1 and M4.2 complete)
+## Current milestone: M4 — Quiz Engine · **in progress** (M4.1, M4.2 and M4.3 complete)
 
-M4.1 landed the content foundation and M4.2 the renderer, so a learner can now take a quiz:
+`PLAN.md` §Milestone 4 — quiz data, question rendering, scoring and results — is now delivered
+end to end:
 
-- **`/quizzes/:quizId`** — renders a validated quiz: its title, summary, and its questions in the
-  order the quiz declares.
-- **Interaction** — `single-choice` and `true-false` as accessible radio groups, one group per
-  question, with a live "N of M answered" count and a completion control.
-- **Transient answers only** — no storage, no progress event, no attempt, no score, and the
-  correct answers are stripped before the renderer sees them.
-- **Reachable** — a lesson links the quiz it declares through `lesson.quiz`, now a fail-closed
-  reference (`DECISIONS.md` D31).
-
-**Nothing is scored.** No grading, no pass/fail, no attempt, no saved answers — the page says so.
-See `CHECKPOINT.md` and `DECISIONS.md` D30/D31.
+- **Content (M4.1)** — `Question` and `Quiz` as first-class entities, one file per entity, with
+  fail-closed quiz → question integrity (`DECISIONS.md` D30).
+- **Renderer (M4.2)** — `/quizzes/:quizId` renders a validated quiz, with `single-choice` and
+  `true-false` as accessible radio groups, and the correct answers stripped from the view.
+- **Scoring and attempts (M4.3)** — submitting marks the quiz against the canonical content and
+  records exactly one `quiz.attempted` event; the result shows score, percentage, pass/fail and
+  per-question correctness, and history is read back from the log. Answers stay transient until
+  submitted (`DECISIONS.md` D32).
 
 **Not tagged.** `v0.3.0-content-engine` remains the latest tag.
 
-## Next milestone: M4.3 — scoring, attempts and progress · **not started**
+## Next milestone: M5 — Search and the tool directory · **not started**
 
-### 1. M4.3 — scoring, attempts and progress
+### 1. M5 — Search and the tool directory
 
-Score a submitted quiz and record the attempt as the existing `quiz.attempted` event through the
-progress store. This is where an answer stops being transient. Two decisions must be made and
-documented rather than assumed: whether a quiz attempt counts as "practice" for its lesson
-(today only `exercise.attempted` sets `practisedLessons`, so a quiz would not), and how a
-client-computed score is framed given that the correct answers necessarily ship in the bundle
-(`docs/DATA_MODEL.md`).
+No further M4 work is defined in this repository, so this is the next milestone the plan names:
+the `tools` collection (a new content entity and its directory), and search across the
+curriculum. See `PLAN.md` and `BACKLOG.md`. If the owner intends a further M4 slice, it should
+be written into this file before work starts.
 
 ---
 
 ## Earlier milestones
 
+- **M4.3 — Quiz scoring, results and persisted attempts** · complete, untagged. A pure scorer
+  over canonical questions, the existing `quiz.attempted` event, a result view, and retry that
+  adds an attempt (`DECISIONS.md` D32).
+- **M4.2 — Learner quiz renderer** · complete, untagged. The quiz route, accessible radio
+  groups, transient answers, and the fail-closed `lesson.quiz` link (`DECISIONS.md` D31).
 - **M4.1 — Question and quiz content architecture** · complete, untagged. `Question` and `Quiz`
-  as first-class content, one file per entity in `content/questions/` and `content/quizzes/`,
-  with fail-closed quiz → question integrity (`DECISIONS.md` D30).
+  as first-class content, one file per entity (`DECISIONS.md` D30).
 - **M3 — Progress** · complete, untagged. Local-first progress: lesson completion, ungraded
   exercise attempts, the dashboard, and export/import (`DECISIONS.md` D27–D29).
 - **M2 — Content Engine** · complete, tagged `v0.3.0-content-engine`. M2.1 build-time frontmatter

@@ -207,7 +207,11 @@ describe('the completion control', () => {
     expect(screen.getByRole('button', { name: /Check answers/i })).toBeEnabled()
   })
 
-  it('does not score, grade or save anything', async () => {
+  it('submits rather than merely acknowledging, and still writes nothing until then', async () => {
+    // M4.3 changed what this control DOES: it now scores and records an attempt.
+    // What has NOT changed is the invariant that matters here — answering every
+    // question on its own records nothing. The submission path itself is covered
+    // in `QuizSubmission.test.tsx`.
     const user = userEvent.setup()
     const storage = new MemoryStorageAdapter()
     renderApp({ initialEntries: [`/quizzes/${QUIZ}`], storage })
@@ -216,15 +220,9 @@ describe('the completion control', () => {
       const [firstOption] = within(group).getAllByRole('radio')
       if (firstOption) await user.click(firstOption)
     }
-    await user.click(screen.getByRole('button', { name: /Check answers/i }))
 
-    // It says what it does not do, rather than implying a result was recorded.
-    expect(screen.getByText(/Nothing is scored or saved yet/i)).toBeInTheDocument()
-    // No score, no percentage, no pass/fail anywhere on the page.
-    const text = document.body.textContent ?? ''
-    expect(text).not.toMatch(/\bscore\b|\bpassed\b|\bfailed\b|\d\s?%/i)
-    // And nothing was written to progress: no event, so no attempt.
     expect(eventsOf(storage)).toEqual([])
+    expect(screen.queryByRole('heading', { name: /Your result/i })).not.toBeInTheDocument()
   })
 })
 
@@ -241,10 +239,33 @@ describe('the correct answers', () => {
     }
   })
 
-  it('are not revealed by anything the page renders', () => {
+  it('are not revealed by the pre-submission DOM', () => {
+    // Asserting what a leak would actually LOOK like. A component spreading the
+    // raw question onto an element would produce a `correctchoiceid` attribute
+    // (the browser lowercases attribute names), and a CSS-driven leak would use a
+    // correctness flag on the option — so this checks for those, not for a field
+    // name that could never appear in markup anyway.
     renderApp({ initialEntries: [`/quizzes/${QUIZ}`] })
+
     expect(screen.queryByText(/correct answer/i)).not.toBeInTheDocument()
-    expect(document.body.innerHTML).not.toMatch(/correctChoiceId/)
+    expect(document.body.innerHTML.toLowerCase()).not.toContain('correctchoiceid')
+
+    const first = screen.getAllByRole('group')[0]
+    if (!first) throw new Error('expected a first question')
+    const options = within(first).getAllByRole('radio')
+
+    // Exactly the authored choices, in order: nothing added, nothing flagged.
+    expect(options.map((option) => option.getAttribute('value'))).toEqual([
+      'managing-an-inbox',
+      'writing-production-code',
+      'auditing-accounts',
+      'designing-a-brand',
+    ])
+    for (const option of options) {
+      expect(option.closest('label')).not.toHaveAttribute('data-correct', 'true')
+      expect(option.closest('label')).not.toHaveAttribute('data-wrong', 'true')
+      expect(option).not.toBeDisabled()
+    }
   })
 })
 

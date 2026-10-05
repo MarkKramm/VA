@@ -319,6 +319,33 @@ export const quizContext = (quizId: string): QuizContext | undefined => {
   return { quiz, questions: questionsOfQuiz(registry, quizId).map(toQuizQuestionView) }
 }
 
+export interface QuizScoringInput {
+  readonly quiz: Quiz
+  /** The CANONICAL questions, in the quiz's declared order. */
+  readonly questions: readonly Question[]
+}
+
+/**
+ * The canonical questions for a quiz, for SCORING (M4.3).
+ *
+ * WHY THIS EXISTS BESIDE `quizContext`
+ *
+ * `quizContext` is the renderer's view, and it deliberately has no correct
+ * answers. A scorer needs exactly what that view withholds, so it reads the
+ * canonical entities here instead. Two functions rather than one extra field,
+ * because the separation IS the guarantee: a renderer cannot leak an answer it is
+ * never given.
+ *
+ * It is named for its single purpose so that finding it in a component is a
+ * reviewable act rather than an incidental registry read. Its one caller is a
+ * submission.
+ */
+export const quizScoringInput = (quizId: string): QuizScoringInput | undefined => {
+  const quiz = getQuiz(registry, quizId)
+  if (!quiz) return undefined
+  return { quiz, questions: questionsOfQuiz(registry, quizId) }
+}
+
 /**
  * A resolved reference to another lesson, for navigation and link lists.
  *

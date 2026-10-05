@@ -138,6 +138,42 @@ export class LearnerProgress {
   }
 
   /**
+   * Record a completed quiz attempt (M4.3).
+   *
+   * The ONE write a quiz submission makes, and the only thing that turns an
+   * answer into progress. `evaluatedBy: 'system'` because the platform marked it
+   * against the canonical answers — the domain distinguishes that from `'self'`,
+   * which is a learner checking their own work, and weights them differently.
+   *
+   * The `attemptId` is supplied by the caller rather than generated here, because
+   * the caller is the thing that knows a submission happened exactly once. The
+   * store still supplies the event `id` and `at` (see `append`), so cross-tab
+   * merging and event ordering are unchanged.
+   *
+   * Note what is NOT recorded: the learner's individual answers. The data model
+   * defines an attempt as a score against a quiz, not as an answer sheet, and
+   * storing answers the model does not require would put a second, disagreeing
+   * source of truth beside the log.
+   */
+  submitQuizAttempt(attempt: {
+    readonly quizId: string
+    readonly attemptId: string
+    readonly score: number
+    readonly maxScore: number
+    readonly passed: boolean
+  }): void {
+    this.record({
+      type: 'quiz.attempted',
+      quizId: attempt.quizId,
+      attemptId: attempt.attemptId,
+      score: attempt.score,
+      maxScore: attempt.maxScore,
+      passed: attempt.passed,
+      evaluatedBy: 'system',
+    })
+  }
+
+  /**
    * Re-read after another tab wrote. Called from the `storage` subscription.
    *
    * `syncFrom` compares event identity, so this is a no-op when the log is

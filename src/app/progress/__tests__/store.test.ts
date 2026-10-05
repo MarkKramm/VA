@@ -382,3 +382,77 @@ describe('malformed stored events (A1)', () => {
     expect(isLessonComplete(store.getState(), OTHER_LESSON)).toBe(true)
   })
 })
+
+/**
+ * QUIZ ATTEMPTS (M4.3).
+ *
+ * The store method is the only thing that turns a submission into progress, so it
+ * is worth pinning directly as well as through the quiz page: the event type, the
+ * evaluator, one event per call, and history that accumulates rather than being
+ * overwritten.
+ */
+describe('recording a quiz attempt', () => {
+  const QUIZ = 'va-foundations-basics'
+
+  const attemptOf = (store: LearnerProgress, quizId: string) =>
+    store.getState().derived.quizAttempts[quizId] ?? []
+
+  it('records the existing quiz.attempted event, evaluated by the system', () => {
+    const adapter = new MemoryStorageAdapter()
+    const store = new LearnerProgress(adapter)
+
+    store.submitQuizAttempt({
+      quizId: QUIZ,
+      attemptId: 'attempt-1',
+      score: 3,
+      maxScore: 3,
+      passed: true,
+    })
+
+    const [event] = persistedEvents(adapter)
+    expect(event).toMatchObject({
+      type: 'quiz.attempted',
+      quizId: QUIZ,
+      attemptId: 'attempt-1',
+      score: 3,
+      maxScore: 3,
+      passed: true,
+      // The platform marked it against the canonical answers, which is what
+      // `'system'` means and why it is not `'self'`.
+      evaluatedBy: 'system',
+    })
+    // The store still supplies the event id and timestamp, so merging and
+    // ordering are unchanged.
+    expect(event?.id).toBeTypeOf('string')
+    expect(event?.at).toBeTypeOf('string')
+  })
+
+  it('keeps every attempt, in order, rather than replacing the last one', () => {
+    const store = new LearnerProgress(new MemoryStorageAdapter())
+
+    store.submitQuizAttempt({ quizId: QUIZ, attemptId: 'a', score: 0, maxScore: 3, passed: false })
+    store.submitQuizAttempt({ quizId: QUIZ, attemptId: 'b', score: 3, maxScore: 3, passed: true })
+
+    expect(attemptOf(store, QUIZ).map((attempt) => attempt.attemptId)).toEqual(['a', 'b'])
+    expect(attemptOf(store, QUIZ).map((attempt) => attempt.passed)).toEqual([false, true])
+  })
+
+  it('survives a reload, because it went through storage', () => {
+    const adapter = new MemoryStorageAdapter()
+    new LearnerProgress(adapter).submitQuizAttempt({
+      quizId: QUIZ,
+      attemptId: 'attempt-1',
+      score: 2,
+      maxScore: 3,
+      passed: false,
+    })
+
+    expect(attemptOf(new LearnerProgress(adapter), QUIZ)).toHaveLength(1)
+  })
+
+  it('records nothing for a different quiz', () => {
+    const store = new LearnerProgress(new MemoryStorageAdapter())
+    store.submitQuizAttempt({ quizId: QUIZ, attemptId: 'a', score: 1, maxScore: 1, passed: true })
+    expect(attemptOf(store, 'some-other-quiz')).toEqual([])
+  })
+})

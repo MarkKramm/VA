@@ -1,24 +1,25 @@
 # Current State
 
 **As of:** 2026-10-05
-**Milestone:** M4 — Quiz Engine · **in progress** (M4.1 and M4.2 complete)
-**Next:** M4.3 — scoring, attempts and progress integration; see `NEXT_STEPS.md`
+**Milestone:** M4 — Quiz Engine · **in progress** (M4.1, M4.2 and M4.3 complete)
+**Next:** no further M4 work is defined in this repository — `PLAN.md` §Milestone 4 (quiz data,
+question rendering, scoring, results) is now delivered. See `NEXT_STEPS.md`.
 
 This file describes the state _as it is_, rewritten each session. It is not a history. For
 the history, see `CHANGELOG.md`.
 
 ## Milestone status
 
-| Milestone              | State                                                                             |
-| ---------------------- | --------------------------------------------------------------------------------- |
-| M0 — Foundation        | ✅ complete (`v0.1.0-foundation`)                                                 |
-| M1 — Application Shell | ✅ complete                                                                       |
-| M2 — Content Engine    | ✅ complete (`v0.3.0-content-engine`)                                             |
-| M3 — Progress          | ✅ complete (not tagged) — local-first progress, dashboard, export/import         |
-| M4 — Quiz Engine       | 🔨 in progress — **M4.1 + M4.2 done** (content + renderer); nothing is scored yet |
+| Milestone              | State                                                                                  |
+| ---------------------- | -------------------------------------------------------------------------------------- |
+| M0 — Foundation        | ✅ complete (`v0.1.0-foundation`)                                                      |
+| M1 — Application Shell | ✅ complete                                                                            |
+| M2 — Content Engine    | ✅ complete (`v0.3.0-content-engine`)                                                  |
+| M3 — Progress          | ✅ complete (not tagged) — local-first progress, dashboard, export/import              |
+| M4 — Quiz Engine       | 🔨 in progress — **M4.1 + M4.2 + M4.3 done**; a quiz can be taken, scored and recorded |
 
-**Not built:** scoring and quiz attempts, labs, assessments, search, the tool directory, career
-preparation, bookmarks, notes, achievements, XP, streaks. Nothing below claims otherwise.
+**Not built:** labs, assessments, search, the tool directory, career preparation, bookmarks,
+notes, achievements, XP, streaks. Nothing below claims otherwise.
 
 ---
 
@@ -127,6 +128,27 @@ sees them, so the page could not reveal one even by accident — that boundary i
 convention. A lesson links to the quiz it declares through `lesson.quiz`, which is now a
 **fail-closed** reference (`DECISIONS.md` D31). An unknown quiz id renders the normal in-shell 404.
 
+**Quiz scoring and saved attempts (new at M4.3).** Submitting a quiz marks it against the
+canonical content and records the attempt, so a quiz is now a real check rather than a form.
+`scoreQuestions` in `src/app/quiz/score.ts` is **pure** — canonical questions in, deterministic
+result out, no registry, no clock, no randomness — at **one point per question**, with a pass at
+`QUIZ_PASS_THRESHOLD` (0.8, matching the domain's stage threshold). Unanswered and malformed
+submissions score zero and are reported **separately** from wrong ones, so the UI can say "you
+skipped 2" rather than calling a skipped question incorrect. The result shows score, max score,
+percentage, pass/fail and per-question correctness, and the **correct answer and explanation
+appear only after submission** — before it, the renderer still holds the stripped view. One
+submission emits exactly **one** `quiz.attempted` event (`evaluatedBy: 'system'`) through the
+existing store; the answers themselves are **not** stored. "Try again" starts a new attempt and
+keeps the old one, and history and best score are read back from the event log. **Answers stay
+transient until submitted**: answering everything and navigating away, or reloading, records
+nothing (`DECISIONS.md` D32).
+
+**The static-site limitation, on the record.** The canonical answers necessarily ship in the
+client bundle (`docs/DATA_MODEL.md`), so a quiz score is computed in the browser and is
+inspectable. That is inherent to a backendless site, and it is why job readiness is weighted on
+evidence rather than on quiz scores — a quiz score is a check that the learner did the reading,
+not high-stakes evidence.
+
 **A working application shell.** React 19 + React Router 7, a real Vite application build,
 five routes, a responsive sidebar/mobile-dialog layout, a dashboard, a roadmaps index and the
 lesson pages, a dark-mode-aware design token layer, and the GitHub Pages deployment path
@@ -144,9 +166,8 @@ scans the emitted JS for compiler markers. Both were proven to bite.
 
 ## What does not exist yet
 
-No search, no tool directory, no labs, no career preparation, no bookmarks or notes, and no quiz
-scoring or saved attempts. Lessons, roadmaps, the progress UI, and a learner-facing quiz now
-exist.
+No search, no tool directory, no labs, no career preparation, no bookmarks or notes. Lessons,
+roadmaps, the progress UI, and a scored quiz with saved attempts now exist.
 
 Not implemented, by milestone: quizzes (M4), the tool directory and search (M5), labs (M6),
 career preparation (M7), the remaining roadmaps and skill visualisation (M8), polish (M9).
@@ -163,9 +184,9 @@ achievements, no backend/auth, no state-management library.
 | `npm run typecheck`      | clean, app and tooling configs separately                            |
 | `npm run content:check`  | 0 errors, 2 warnings (both `quality/no-practice`)                    |
 | `npm run check:contrast` | 34 pairs pass, computed from tokens                                  |
-| `npm run test`           | 567 across 32 files — **566 pass**, 1 sandbox-only spawn failure     |
+| `npm run test`           | 605 across 34 files — **604 pass**, 1 sandbox-only spawn failure     |
 | `npm run test:arch`      | 16 passing                                                           |
-| `npm run build`          | succeeds; 515 kB / 157 kB gzipped — no compiler in the client        |
+| `npm run build`          | succeeds; 519 kB / 158 kB gzipped — no compiler in the client        |
 | `npm run check:paths`    | base `/VA/`, assets present, SPA fallback in place, no compiler leak |
 
 **`npm run check` is the single gate.** Every step is green except one test:

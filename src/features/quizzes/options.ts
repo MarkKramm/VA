@@ -1,22 +1,15 @@
 import type { QuizQuestionView } from '@/app/content.ts'
+import type { Answer, AnswerMap } from '@/app/quiz/answers.ts'
 
 /**
- * The answer model for M4.2.
+ * Renderer helpers over the answer model.
  *
- * TRANSIENT BY DESIGN. An answer lives in component state and nowhere else: it is
- * not written to storage, it does not become a progress event, and nothing scores
- * it. M4.3 owns what happens to an answer — M4.2 only collects one.
- *
- * The tag matters. A `choice` answer names a choice id and a `boolean` answer is a
- * true/false state, so a future scorer cannot mistake one for the other — the same
- * distinction the content's discriminated union already makes.
+ * The model itself — `Answer`, `AnswerMap`, `answerValue` — lives in
+ * `src/app/quiz/answers.ts`, because the SCORER reads it too and the scorer may
+ * not import from a feature. What is left here is what only a renderer needs:
+ * turning a question into a list of options, and turning a radio's value back
+ * into an answer.
  */
-export type Answer =
-  | { readonly kind: 'choice'; readonly choiceId: string }
-  | { readonly kind: 'boolean'; readonly value: boolean }
-
-/** questionId -> the learner's answer. A missing key means unanswered. */
-export type AnswerMap = Readonly<Record<string, Answer>>
 
 /** One option as the radio group renders it. `value` is what gets stored. */
 export interface AnswerOption {
@@ -49,17 +42,13 @@ export const answerOptions = (question: QuizQuestionView): readonly AnswerOption
   }
 }
 
-/** The stored value an answer represents, for comparing against an option. */
-export const answerValue = (answer: Answer | undefined): string | undefined => {
-  if (answer === undefined) return undefined
-  return answer.kind === 'choice' ? answer.choiceId : String(answer.value)
-}
-
 /**
  * Build an answer from a selected option value.
  *
  * `undefined` for a question type this build cannot render, so an unrecognised
  * type records NOTHING rather than a plausible-looking answer of the wrong shape.
+ * The scorer treats both as unanswered, so the learner is never marked wrong for
+ * a question the platform could not draw.
  */
 export const answerFromValue = (question: QuizQuestionView, value: string): Answer | undefined => {
   switch (question.type) {

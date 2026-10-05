@@ -128,27 +128,55 @@ belongs to a later milestone, and recording them here is what kept them out of M
 - **Browser-automation journeys** — M3 tests the real store, storage and routes through jsdom.
   Playwright stays a M9 item rather than a mid-milestone install.
 
+## M4.3 — deferred
+
+Deliberately NOT done in M4.3, which scores a quiz and records the attempt. Each is a follow-up
+with a named owner milestone.
+
+- **A per-quiz pass mark.** The threshold is one constant (0.8 — `DECISIONS.md` D32). A per-quiz
+  `passMark` would be a content schema field and its own decision; D30 left it out on purpose.
+- **Mastery from quiz attempts.** `masteryLevel` is deliberately NOT rendered for a quiz: it
+  labels a SKILL's accumulated evidence, and a three-question quiz reading "mastered" would
+  overstate what the platform knows. Skill-level aggregation belongs with the job-readiness work
+  at M7.
+- **`assessmentEligibility` gating.** It gates an assessment, and no assessment entity exists.
+- **Storing the learner's answers.** The data model defines an attempt as a score, not an answer
+  sheet (`DECISIONS.md` D32). Storing answers would need a schema decision first.
+- **Reviewing a past attempt.** The result view shows the attempt just submitted. A past attempt
+  is summarised (best, count) but its per-question answers are not replayed, because they were
+  never stored.
+- **XP, achievements and streaks.** Not in the plan's M4 scope; inventing them would be a product
+  decision rather than an engineering one.
+- **Additional question types** (`multiple-select`, `matching`, `ordering`, `scenario`,
+  `short-answer`). The scorer's `never` guard makes each a COMPILE error until it has a marking
+  case, which is the intended failure rather than a silent zero.
+- **`Quiz.shuffle`.** Still absent; still a presentation decision.
+- **Roadmap `outcomes[].evidence` linkage.** Untouched, and unvalidated for every kind.
+- **A quizzes index.** There is still no `/quizzes` route.
+- **Multiple quizzes per lesson.** `lesson.quiz` is singular (`DECISIONS.md` D31).
+
 ## M4.2 — deferred
 
 Deliberately NOT done in M4.2, which renders a quiz and collects answers. Each is a follow-up with
 a named owner milestone.
 
-- **Scoring, pass/fail and mastery.** M4.3. The renderer deliberately has no access to the correct
-  answers — `quizContext` strips `correctChoiceId`, `answer` and `explanation` — so a scorer must
-  read the canonical `Question` through its own seam rather than by widening the view.
-- **Quiz attempts and progress integration.** M4.3. No `quiz.attempted` event is emitted, nothing
-  is written to storage, and no lesson is marked practised.
-- **Answer persistence.** Answers are transient component state; leaving the page discards them.
-  M4.3 decides whether a submitted attempt is recorded, and how.
-- **Whether a quiz attempt counts as "practice".** Only `exercise.attempted` sets
-  `practisedLessons` today, so taking a quiz would not move the dashboard's "exercises practised"
-  count. An M4.3 decision, not an M4.2 defect.
+- **Scoring, pass/fail and mastery.** ~~M4.3~~ **Done at M4.3** — see `DECISIONS.md` D32. The
+  renderer still has no access to the correct answers, so the scorer reads the canonical
+  `Question` through its own seam (`quizScoringInput`) rather than by widening the view.
+- **Quiz attempts and progress integration.** ~~M4.3~~ **Done at M4.3** — one `quiz.attempted`
+  event per submission, through the existing store.
+- **Answer persistence.** **Resolved at M4.3, as a deliberate NO** — answers stay transient and
+  are never stored (`DECISIONS.md` D32).
+- **Whether a quiz attempt counts as "practice".** **Still open, and now documented.** Only
+  `exercise.attempted` sets `practisedLessons`, so taking a quiz does not move the dashboard's
+  "exercises practised" count. Left as-is deliberately: a quiz is a check on reading, and calling
+  it practice would conflate two different kinds of evidence (D5/D6).
 - **A quizzes index.** There is no `/quizzes` route; a quiz is reached from the lesson that
   declares it. An index becomes worth building once there are enough quizzes to browse.
 - **Additional question types** (`multiple-select`, `matching`, `ordering`, `scenario`,
-  `short-answer`). Each is a new member of the content union plus a renderer. The renderer's
-  `switch` and the view's `never` guard both fail loudly rather than mis-rendering, so adding one
-  is additive — but it is its own milestone.
+  `short-answer`). Each is a new member of the content union plus a renderer AND a scoring case.
+  The renderer's `switch` and the scorer's `never` guard both fail loudly rather than
+  mis-rendering or scoring a learner zero.
 - **`Quiz.shuffle`.** Still absent; still a presentation decision.
 - **Roadmap `outcomes[].evidence` linkage.** Untouched, and unvalidated for every kind.
 - **Multiple quizzes per lesson.** `lesson.quiz` is singular (`DECISIONS.md` D31). Several would
