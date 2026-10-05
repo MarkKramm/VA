@@ -20,15 +20,28 @@ const RESET = '[0m'
 
 const formatKb = (bytes: number): string => `${(bytes / 1024).toFixed(1)} KB`
 
+/**
+ * "3 questions", "1 quiz" ¡ª the summary reads as prose, so the counts are
+ * pluralised. The plural is a parameter because English is not regular
+ * (`quiz` ¡ú `quizzes`), and a helper that guessed would be wrong the first time
+ * a collection ended in `y` or `s`.
+ */
+const count = (n: number, singular: string, plural = `${singular}s`): string =>
+  `${n} ${n === 1 ? singular : plural}`
+
 process.stdout.write('\n')
 process.stdout.write('Content validation\n')
 process.stdout.write('==================\n\n')
 
 process.stdout.write(
-  `Loaded ${summary.counts.careerPaths} career paths, ${summary.counts.roadmaps} roadmaps, ` +
-    `${summary.counts.modules} modules, ${summary.counts.lessons} lessons, ` +
-    `${summary.counts.exercises} exercises, ${summary.counts.questions} questions, ` +
-    `${summary.counts.quizzes} quizzes, ${summary.counts.skills} skills\n`,
+  `Loaded ${count(summary.counts.careerPaths, 'career path')}, ` +
+    `${count(summary.counts.roadmaps, 'roadmap')}, ` +
+    `${count(summary.counts.modules, 'module')}, ` +
+    `${count(summary.counts.lessons, 'lesson')}, ` +
+    `${count(summary.counts.exercises, 'exercise')}, ` +
+    `${count(summary.counts.questions, 'question')}, ` +
+    `${count(summary.counts.quizzes, 'quiz', 'quizzes')}, ` +
+    `${count(summary.counts.skills, 'skill')}\n`,
 )
 process.stdout.write(`Content payload (bodies): ${formatKb(summary.payloadBytes)}\n`)
 process.stdout.write(`Pending collections: ${registry.pendingCollections.join(', ')}\n\n`)

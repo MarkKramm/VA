@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { fileURLToPath } from 'node:url'
 import { resolve } from 'node:path'
 import {
@@ -297,5 +297,61 @@ describe('content ingestion — exercises (M2.4)', () => {
       node.kind === 'element' ? node.tag : node.kind,
     )
     expect(tags).toContain('h2')
+  })
+})
+
+/**
+ * A body on a frontmatter-only collection (M4.1 hardening).
+ *
+ * Questions and quizzes carry everything in frontmatter, so `shipped()` drops
+ * their body and nothing renders it. Writing the explanation as prose under the
+ * frontmatter is the natural instinct, and before this it was discarded in
+ * silence. These pin the warning that replaced the silence.
+ */
+describe('content ingestion — a body on a frontmatter-only collection', () => {
+  /** Run `parseContentSource` with `console.warn` captured. */
+  const warningsFor = (path: string, source: string): string[] => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    parseContentSource(path, source)
+    const calls = warn.mock.calls.map((args) => String(args[0]))
+    warn.mockRestore()
+    return calls
+  }
+
+  it('warns, naming the file, when a question carries prose in its body', () => {
+    const warnings = warningsFor(
+      'content/questions/x/what-does-a-va-do.mdx',
+      '---\nid: what-does-a-va-do\ntype: true-false\nanswer: true\n---\n\nThis was meant as the explanation.\n',
+    )
+    expect(warnings).toHaveLength(1)
+    expect(warnings[0]).toContain('content/questions/x/what-does-a-va-do.mdx')
+    expect(warnings[0]).toContain('frontmatter-only')
+  })
+
+  it('warns for a quiz body too', () => {
+    const warnings = warningsFor(
+      'content/quizzes/x/basics.mdx',
+      '---\nid: basics\ntitle: Basics\n---\n\nSome prose.\n',
+    )
+    expect(warnings).toHaveLength(1)
+    expect(warnings[0]).toContain('content/quizzes/x/basics.mdx')
+  })
+
+  it('stays quiet for a frontmatter-only file with no body', () => {
+    expect(
+      warningsFor(
+        'content/questions/x/what-does-a-va-do.mdx',
+        '---\nid: q\ntype: true-false\n---\n',
+      ),
+    ).toEqual([])
+  })
+
+  it('stays quiet for a lesson body, which IS rendered', () => {
+    expect(
+      warningsFor(
+        'content/lessons/x/example.mdx',
+        '---\nid: example\ntitle: X\n---\n## A heading\n',
+      ),
+    ).toEqual([])
   })
 })

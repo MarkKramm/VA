@@ -132,6 +132,19 @@ describe('the question schema', () => {
     const parsed = QuestionSchema.parse(validQuestion({ points: 5 }))
     expect(parsed).not.toHaveProperty('points')
   })
+
+  it('strips a single-choice field from a true/false question', () => {
+    // Cross-type contamination is not a new policy — Zod strips unknown keys, the
+    // behaviour `exercises.test.ts` already pins — but nothing pinned it for the
+    // union, and it is what stops the two variants silently merging into one
+    // object with every type's fields present.
+    const parsed = QuestionSchema.parse(
+      validTrueFalseQuestion({ choices: [{ id: 'yes', text: 'True' }] }),
+    )
+    expect(parsed.type).toBe('true-false')
+    expect(parsed).not.toHaveProperty('choices')
+    if (parsed.type === 'true-false') expect(parsed.answer).toBe(true)
+  })
 })
 
 describe('the quiz schema', () => {
@@ -172,12 +185,15 @@ describe('quiz → question references through the registry', () => {
   it('resolves a quiz to its questions in the DECLARED order', () => {
     const built = registryWith({
       questions: [
-        validQuestion({ id: 'second', skills: [] }),
+        // Registry order is deliberately the OPPOSITE of the quiz's order, so this
+        // can only pass if `questionsOfQuiz` follows the quiz's own sequence
+        // rather than the order the registry happens to hold the questions in.
+        // Without that mismatch the assertion held for either implementation.
         validQuestion({ id: 'first', skills: [] }),
+        validQuestion({ id: 'second', skills: [] }),
       ],
       quizzes: [validQuiz({ questionIds: ['second', 'first'] })],
     })
-    // The array order is the order asked. Nothing sorts it on the way in.
     expect(questionsOfQuiz(built, 'cleaning-basics').map((question) => question.id)).toEqual([
       'second',
       'first',
@@ -197,6 +213,17 @@ describe('quiz → question references through the registry', () => {
       'quiz-b',
     ])
     expect(quizzesUsingQuestion(built, 'another').map((quiz) => quiz.id)).toEqual(['quiz-a'])
+  })
+
+  it('records no reverse entry for a question no quiz asks', () => {
+    const built = registryWith({
+      questions: [validQuestion({ skills: [] }), validQuestion({ id: 'orphan', skills: [] })],
+      quizzes: [validQuiz()],
+    })
+    // Absent rather than an empty list, matching every other reverse index — the
+    // same contract `exerciseLessonIds` has for an unreferenced exercise.
+    expect(built.questionQuizIds.get('orphan')).toBeUndefined()
+    expect(quizzesUsingQuestion(built, 'orphan')).toEqual([])
   })
 
   it('fails referential integrity when a quiz names a question that does not exist', () => {
@@ -265,6 +292,13 @@ describe('the real question bank and quiz', () => {
       'client-data-handling',
       'confirm-deadline-before-starting',
     ])
+  })
+
+  it('finds the quizzes that ask a real question, from the real registry', () => {
+    // The real content rather than a fixture, because this is the selector the app
+    // layer would use and it must agree with the reverse index the registry built.
+    expect(quizzesUsingQuestion(registry, QUESTION).map((quiz) => quiz.id)).toEqual([QUIZ])
+    expect(quizzesUsingQuestion(registry, 'no-such-question')).toEqual([])
   })
 
   it('leaves questions and quizzes out of pendingCollections', () => {

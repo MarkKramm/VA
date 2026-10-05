@@ -2,7 +2,13 @@ import { describe, expect, it } from 'vitest'
 import { buildRegistryFromSource } from '../registry.ts'
 import { runQualityChecks } from '../quality-checks.ts'
 import type { CompiledBody } from '@content/mdx/tree.ts'
-import { validExercise, validLesson, validSkill } from '../../../tests/fixtures/content.ts'
+import {
+  validExercise,
+  validLesson,
+  validQuestion,
+  validQuiz,
+  validSkill,
+} from '../../../tests/fixtures/content.ts'
 
 /**
  * Quality checks are the mechanical half of content governance. The judgement
@@ -305,5 +311,57 @@ describe('compiled exercise prose is inspected (F3)', () => {
   it('passes a clean exercise, so the new checks are not noisy', () => {
     const issues = runQualityChecks(exerciseWith(proseBody('Create four folders and three files.')))
     expect(issues.filter((i) => i.entity === 'exercise')).toEqual([])
+  })
+})
+
+/**
+ * Quiz prose (M4.1 hardening).
+ *
+ * M4.1 added the questions loop and missed the entity that CONTAINS the
+ * questions, so a quiz title or summary reached the page with nothing inspecting
+ * it. These fail if the quizzes loop is removed, which is the point.
+ */
+describe('quiz prose is inspected (M4.1 hardening)', () => {
+  /** A registry with one quiz and the question it references. */
+  const quizIssuesFor = (quiz: unknown) => {
+    const registry = buildRegistryFromSource({
+      careerPaths: [],
+      skills: [],
+      lessons: [],
+      exercises: [],
+      modules: [],
+      roadmaps: [],
+      questions: [
+        { path: 'content/questions/what-does-a-va-do.mdx', data: validQuestion({ skills: [] }) },
+      ],
+      quizzes: [{ path: 'content/quizzes/cleaning-basics.mdx', data: quiz }],
+    })
+    return runQualityChecks(registry)
+  }
+
+  const quizRulesFor = (quiz: unknown): string[] => quizIssuesFor(quiz).map((issue) => issue.rule)
+
+  it('flags a guarantee claim in the summary, naming the quiz file', () => {
+    const issues = quizIssuesFor(
+      validQuiz({ summary: 'A short check that is guaranteed to get you hired.' }),
+    )
+    expect(issues).toHaveLength(1)
+    expect(issues[0]?.rule).toBe('quality/language')
+    expect(issues[0]?.entity).toBe('quiz')
+    expect(issues[0]?.path).toBe('content/quizzes/cleaning-basics.mdx')
+  })
+
+  it('flags a guarantee claim in the TITLE, not only the summary', () => {
+    expect(quizRulesFor(validQuiz({ title: 'Guaranteed Results' }))).toContain('quality/language')
+  })
+
+  it('flags a numeric claim with no source', () => {
+    expect(
+      quizRulesFor(validQuiz({ summary: 'Covers the 40% of tasks that repeat every week.' })),
+    ).toContain('quality/numeric-claim')
+  })
+
+  it('passes a clean quiz, so the new check is not noisy', () => {
+    expect(quizIssuesFor(validQuiz())).toEqual([])
   })
 })

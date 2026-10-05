@@ -167,9 +167,9 @@ blocks on a judgement call teaches authors to work around the check. Only
 machine-detectable problems are errors.
 
 The one deliberate exception to "every reference must resolve": collections that do not
-exist yet (`tools`, `quizzes`, `labs`, …) are skipped rather than failed, so a lesson can
+exist yet (`tools`, `labs`, `assessments`, …) are skipped rather than failed, so a lesson can
 stage a `tools:` list before the tool directory exists at M5. A _known_ collection is
-always checked.
+always checked — `exercises` from M2.4, and `questions` and `quizzes` from M4.1.
 
 ## Deliberate non-features
 

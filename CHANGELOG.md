@@ -41,6 +41,13 @@ All notable changes to this project. Format follows
 
 ### Fixed
 
+- **Quiz prose is inspected by the quality gate, and frontmatter-only bodies are no longer
+  dropped in silence (M4.1 hardening).** M4.1 added the questions loop and missed the entity
+  that contains them, so a quiz `title` or `summary` carrying a guarantee claim or an uncited
+  figure reached the page with nothing looking at it. A non-empty body on a question or quiz
+  file now warns at build time, naming the file, instead of being silently discarded; the
+  `content:check` summary pluralises its counts; and the quiz ordering fixture test plus three
+  negative cases were strengthened. No client code changed — the build hash is identical.
 - **Unknown event types survive a storage read (A1-R).** The A1 fix sanitized every read of
   persisted progress by _known event type_, so an older build would filter out an event type
   introduced by a newer build and then write the filtered log back — silently destroying it.

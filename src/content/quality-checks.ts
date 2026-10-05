@@ -108,7 +108,7 @@ export function runQualityChecks(registry: ContentRegistry): RegistryIssue[] {
   const lessonPath = (id: string): string => `content/lessons/**/${id}.mdx`
 
   const push = (
-    entity: 'lesson' | 'exercise' | 'question',
+    entity: 'lesson' | 'exercise' | 'question' | 'quiz',
     severity: 'warning' | 'info',
     rule: string,
     path: string,
@@ -273,7 +273,41 @@ export function runQualityChecks(registry: ContentRegistry): RegistryIssue[] {
     }
   }
 
-  // 8. Near-duplicate lessons. AI agents generating content in parallel reliably
+  /*
+   * 8. The same two checks, applied to QUIZZES (M4.1 hardening).
+   *
+   * A quiz's title and summary are the last prose surface a learner reads before
+   * starting one, and they were the one surface nothing inspected — so a summary
+   * promising a guaranteed outcome reached the page with nothing looking at it.
+   * M4.1 added questions here and missed the entity that CONTAINS them; this
+   * closes that, with the same patterns and the same reporting conventions as
+   * every other surface.
+   *
+   * A quiz has no citation mechanism either, so a numeric claim always warns.
+   */
+  for (const quiz of registry.quizzes.values()) {
+    const at = `content/quizzes/${quiz.id}.mdx`
+    const body = [quiz.title, quiz.summary].join('\n')
+
+    for (const { pattern, message } of GUARANTEE_PATTERNS) {
+      if (pattern.test(body)) {
+        push('quiz', 'warning', 'quality/language', at, 'summary', message)
+      }
+    }
+
+    if (NUMERIC_CLAIM.test(body)) {
+      push(
+        'quiz',
+        'warning',
+        'quality/numeric-claim',
+        at,
+        'summary',
+        'contains a currency amount or percentage with no source — verify it, or remove it',
+      )
+    }
+  }
+
+  // 9. Near-duplicate lessons. AI agents generating content in parallel reliably
   //    produce overlapping lessons; catching them here is far cheaper than
   //    unpicking them later.
   for (let i = 0; i < lessons.length; i += 1) {
@@ -319,7 +353,7 @@ export function runQualityChecks(registry: ContentRegistry): RegistryIssue[] {
     }
   }
 
-  // 9. The stale-tool report — a tool whose `updatedAt` is newer than the
+  // 10. The stale-tool report — a tool whose `updatedAt` is newer than the
   //    `updatedAt` of the lessons that reference it — is not implemented yet,
   //    because it needs the tools collection, which arrives at M5. It is a
   //    derivation over the existing reverse indexes, so it is a few lines once

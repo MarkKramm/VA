@@ -31,9 +31,12 @@ Plus two orthogonal taxonomies that anything can reference: `Skill` (a tree) and
 
 **M0 has:** `CareerPath`, `Skill`, `Module`, `Roadmap`, `Lesson`, and `Lesson.topics`.
 **M2.4 adds:** `Exercise` — the first practice entity, referenced by `lesson.exercises`.
-**Later milestones add:** `Topic` (standalone), `Quiz`, `Question`, `Assessment`, `Lab`,
-`Tool`, `Resource`. The schema files live in one directory and the validator checks a
-collection as soon as it is registered, so adding one later is additive.
+**M4.1 adds:** `Question` and `Quiz` — the assessment entities. One file per entity in
+`content/questions/` and `content/quizzes/`, with `quiz.questionIds` referencing canonical
+questions. See `DECISIONS.md` D30.
+**Later milestones add:** `Topic` (standalone), `Assessment`, `Lab`, `Tool`, `Resource`. The
+schema files live in one directory and the validator checks a collection as soon as it is
+registered, so adding one later is additive.
 
 ## Topics, and why they are a first-class entity
 

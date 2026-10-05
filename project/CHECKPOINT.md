@@ -22,7 +22,7 @@ quiz engine: no renderer, no route, no scoring, no attempt, and no new progress 
 - `npm run content:check` — **0 errors, 3 `quality/no-practice` warnings** (unchanged); the
   report now reads "3 questions, 1 quizzes".
 - `npm run typecheck`, `npm run lint`, `npm run check:contrast` (34 pairs) — clean.
-- `npm run test` — **537 across 31 files; 536 pass.** The single failure is the environmental
+- `npm run test` — **548 across 31 files; 547 pass.** The single failure is the environmental
   `content-gate.test.ts` child-process spawn (`cmd.exe EBUSY`); the test is unchanged.
 - `npm run test:arch` — 16 passing.
 - `npm run build` — 510 kB / 156 kB gzipped; SPA fallback written; `check:paths` clean; no
@@ -42,6 +42,11 @@ quiz engine: no renderer, no route, no scoring, no attempt, and no new progress 
   the app layer as `allQuestions` / `findQuestion` / `allQuizzes` / `findQuiz`.
 - Quality checks: question prose (prompt, explanation, options) is scanned for guarantee
   language and uncited numeric claims, exactly as lesson and exercise prose is.
+- **Post-audit hardening.** Quiz prose (`title`/`summary`) joined the quality gate; a
+  frontmatter-only question or quiz file with a body now warns at build time instead of dropping
+  it in silence; the `content:check` summary pluralises its counts; the quiz ordering fixture
+  test and three negative cases were strengthened; `AGENTS.md` §2 and two `docs/` lines were
+  corrected. No client code changed — the build hash is identical.
 
 ### Not done, deliberately
 

@@ -150,7 +150,7 @@ achievements, no backend/auth, no state-management library.
 | `npm run typecheck`      | clean, app and tooling configs separately                            |
 | `npm run content:check`  | 0 errors, 3 warnings (all `quality/no-practice`)                     |
 | `npm run check:contrast` | 34 pairs pass, computed from tokens                                  |
-| `npm run test`           | 537 across 31 files — **536 pass**, 1 sandbox-only spawn failure     |
+| `npm run test`           | 548 across 31 files — **547 pass**, 1 sandbox-only spawn failure     |
 | `npm run test:arch`      | 16 passing                                                           |
 | `npm run build`          | succeeds; 510 kB / 156 kB gzipped — no compiler in the client        |
 | `npm run check:paths`    | base `/VA/`, assets present, SPA fallback in place, no compiler leak |

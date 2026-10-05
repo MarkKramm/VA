@@ -138,7 +138,31 @@ const parseSourceIntoFile = (path: string, source: string): RawContentFile => {
   // keeps each collection's heading rule structural.
   if (isLessonPath(path)) return { ...base, rendered: compileMdx(content, path) }
   if (isExercisePath(path)) return { ...base, rendered: compileExerciseMdx(content, path) }
+  warnIfBodyIsIgnored(path, content)
   return base
+}
+
+/**
+ * A body on a frontmatter-only collection is DROPPED, so say so (M4.1 hardening).
+ *
+ * Questions and quizzes carry everything in frontmatter — there is no prose to
+ * compile — so `shipped()` drops their body and nothing renders it. Writing the
+ * explanation as prose under the frontmatter is the natural instinct, and
+ * discarding it in silence is exactly the class of quiet loss this pipeline
+ * refuses everywhere else.
+ *
+ * A warning rather than a throw, because it is a soft authoring mistake rather
+ * than malformed content. A warning rather than compiling the body, because
+ * that would invent a second prose surface for these collections and put a
+ * question's rationale in two places.
+ */
+const warnIfBodyIsIgnored = (path: string, body: string): void => {
+  if (!isQuestionPath(path) && !isQuizPath(path)) return
+  if (body.trim() === '') return
+  console.warn(
+    `[content] ${path} has a body, but questions and quizzes are frontmatter-only — ` +
+      'the body is not rendered and will be dropped. Put the text in `explanation`.',
+  )
 }
 
 /** True for a repo-relative path under `content/lessons/`. */
@@ -147,6 +171,13 @@ export const isLessonPath = (path: string): boolean => path.startsWith(`${CONTEN
 /** True for a repo-relative path under `content/exercises/`. */
 export const isExercisePath = (path: string): boolean =>
   path.startsWith(`${CONTENT_DIR}/exercises/`)
+
+/** True for a repo-relative path under `content/questions/` (M4.1). */
+export const isQuestionPath = (path: string): boolean =>
+  path.startsWith(`${CONTENT_DIR}/questions/`)
+
+/** True for a repo-relative path under `content/quizzes/` (M4.1). */
+export const isQuizPath = (path: string): boolean => path.startsWith(`${CONTENT_DIR}/quizzes/`)
 
 /** UTF-8 byte length, matching `contentPayloadBytes`'s definition in M1. */
 export const utf8Length = (value: string): number => new TextEncoder().encode(value).length
