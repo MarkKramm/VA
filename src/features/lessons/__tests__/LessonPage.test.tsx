@@ -26,7 +26,8 @@ const FIRST = 'what-is-a-virtual-assistant'
 const SECOND = 'who-hires-virtual-assists'
 /** The first lesson to reach practice (M2.4). */
 const PRACTICE = 'files-and-folders'
-const LAST = 'browser-basics'
+/** The final lesson of the beginner-va sequence, which is what "last" means here. */
+const LAST = 'spotting-a-scam-client'
 
 describe('lesson page — content resolution', () => {
   it('renders the lesson title as the page h1', () => {
@@ -179,7 +180,7 @@ describe('lesson page — deep links', () => {
     // safe with a `404.html` fallback, and the reason the route is keyed on the
     // lesson id rather than a path.
     renderApp({ initialEntries: [`/lessons/${LAST}`] })
-    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/browser basics/i)
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/spotting a scam client/i)
   })
 })
 

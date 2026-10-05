@@ -1,0 +1,78 @@
+---
+id: sort-a-request-queue
+title: Sort and Close a Request Queue
+summary: >-
+  Sort fourteen written client requests into do-now, ask, work and defer, then
+  write the closing status a client could read in five seconds.
+difficulty: beginner
+estimatedMinutes: 20
+deliverable: >-
+  Four sorted piles with a reason for each item, a batched question message, and a
+  three-line closing status.
+selfCheck:
+  - Every request is in exactly one pile
+  - Nothing is in "do now" that takes longer than a few minutes
+  - Every deferred item has a date
+  - All questions are batched into one message
+  - The closing status names what is done, waiting and next
+skills:
+  - administration-prioritisation
+  - communication-client-updates
+status: draft
+updatedAt: '2026-10-05'
+changeNote: Written at M6 as part of the core VA foundation curriculum.
+---
+
+#### The queue
+
+| #   | Request                                         | Notes                                      |
+| --- | ----------------------------------------------- | ------------------------------------------ |
+| 1   | Confirm Thursday's meeting                      | You have the client's availability         |
+| 2   | Send the signed contract to the supplier        | You have the signed PDF                    |
+| 3   | Prepare the monthly summary                     | Needs last month's figures, which you have |
+| 4   | Update the client's contact list                | You do not know which list is current      |
+| 5   | Reply to a customer asking about delivery times | You do not know the delivery times         |
+| 6   | Book a venue for the team day                   | Date not confirmed                         |
+| 7   | Fix the typo on the pricing page                | You have edit access                       |
+| 8   | Research three competitors                      | Substantial work, no deadline given        |
+| 9   | Send the invoice for this month                 | Waiting on the client to confirm hours     |
+| 10  | Archive last year's project folders             | Nobody is waiting                          |
+| 11  | Draft a reply to a complaint                    | Needs a decision on the refund             |
+| 12  | Add a new starter to the shared drive           | You have their name and email              |
+| 13  | Update the team on progress                     | You have nothing new since yesterday       |
+| 14  | Renew the domain before it expires              | Expires in two days                        |
+
+#### What to produce
+
+```text
+Do now (minutes each)
+  1  Confirm Thursday   — one line reply, nothing needed from anyone
+  7  Fix the typo       — have access, takes two minutes
+  …
+
+Ask (blocked on a detail)
+  4  Which contact list?     5  What are the delivery times?
+  …
+
+Work (scheduled)
+  3  Monthly summary   — needs a block, you have the inputs
+  …
+
+Defer (with a date)
+  8  Competitor research — nothing is waiting, schedule for next week
+  10 Archive folders     — low value, do it when the queue is empty
+```
+
+Then the batched question message, and the closing status.
+
+#### How it will be judged
+
+- **#14 is first, not last.** A domain expiring in two days is a hard deadline with
+  a consequence nobody can undo. It is the item most likely to be deferred because
+  it is boring.
+- **#9 is "ask", not "work".** You cannot invoice hours the client has not
+  confirmed.
+- **#13 is neither.** An update with nothing new is noise, and sending it trains
+  the client to ignore updates.
+- **#11 is not yours to answer.** A refund decision is an escalation.
+- **Four questions in one message**, not four messages.

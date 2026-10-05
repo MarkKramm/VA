@@ -1,0 +1,60 @@
+---
+id: clean-a-small-dataset
+title: Clean a Small Dataset Without Losing Anything
+summary: >-
+  Clean a deliberately messy list of companies — duplicates, inconsistent
+  capitalisation, mixed date formats — and produce a change log that makes your
+  work reversible.
+difficulty: beginner
+estimatedMinutes: 25
+deliverable: >-
+  A cleaned sheet, the suspected duplicates marked rather than deleted, and a
+  change log listing every transformation you applied.
+selfCheck:
+  - Nothing was deleted
+  - Duplicates are flagged in their own column with a note
+  - One date format is used for anything you created
+  - Values that could not be interpreted are left alone and listed
+  - The change log has one line per transformation
+skills:
+  - data-cleaning
+  - data-quality-control
+status: draft
+updatedAt: '2026-10-05'
+changeNote: Written at M6 as part of the core VA foundation curriculum.
+---
+
+#### Build the mess
+
+Create a sheet of about twenty companies. Then make it messy on purpose:
+
+- Write two of them twice, once with a trailing space and once without.
+- Use three capitalisations: `ACME CO`, `Acme Co`, `acme co`.
+- Enter dates in two formats: `01/02/2026` and `2026-02-01`.
+- Put a comma thousands separator in some amounts and not others.
+- Leave one row with a company name but no other data.
+- Add one row that could be the same company under a different name.
+
+#### What to produce
+
+```text
+Sheet 1  raw            — untouched
+Sheet 2  cleaned        — your work
+Column H Duplicate?     — "yes" + a short note, or blank
+Change log              — one line per transformation, with a date
+```
+
+#### How it will be judged
+
+- **Nothing deleted.** The whole exercise is about the difference between marking
+  and removing.
+- **Standardise before you look for duplicates.** Near-duplicates become exact
+  ones once the spaces and capitalisation are consistent, which is when a
+  duplicate check is worth anything.
+- **Ambiguous dates are left alone.** `01/02/2026` is January in one country and
+  February in another. Guessing changes the meaning of the data; flagging does
+  not.
+- **The change log is complete.** If somebody reverted your work they should be
+  able to see exactly what they reverted.
+- **The near-match under a different name is flagged, not merged.** That is the
+  judgement call, and the right answer is a question to the client.

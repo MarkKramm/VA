@@ -1,0 +1,63 @@
+---
+id: verify-a-data-entry-batch
+title: Verify a Data Entry Batch
+summary: >-
+  Enter a small batch of records, then verify your own work with a method that
+  actually catches mistakes, and write the entry log.
+difficulty: beginner
+estimatedMinutes: 20
+deliverable: >-
+  Twenty records entered, a verification record showing the checks you ran, and a
+  four-line entry log naming anything you skipped.
+selfCheck:
+  - A row count was taken before and after, and they match
+  - Verification was done in a different direction or by a different method
+  - The first, last and longest values were spot-checked
+  - Anything skipped is listed with the reason
+skills:
+  - data-entry
+  - data-quality-control
+status: draft
+updatedAt: '2026-10-05'
+changeNote: Written at M6 as part of the core VA foundation curriculum.
+---
+
+#### The batch
+
+Create twenty records with these columns. Deliberately make the source slightly
+awkward — mix the formats, as real sources do.
+
+```text
+Name | Company | Email | Phone | Date joined | Amount
+```
+
+Copy them from anywhere: a web page, a document, a list you write yourself in a
+scrambled order. The source does not matter; the verification does.
+
+#### What to produce
+
+**1. The entered data**, in a spreadsheet.
+
+**2. The verification record:**
+
+```text
+Source rows:      20
+Entered rows:     20
+Direction:        entered down the sheet, verified across each row
+Spot-checked:     first row, last row, longest company name, smallest amount
+Totals:           Amount column sums to <x> in both source and destination
+```
+
+**3. The entry log**, naming anything you could not enter cleanly and why.
+
+#### How it will be judged
+
+- **A row count, twice.** Without it you have no evidence you finished.
+- **A different verification method.** Reading back what you typed does not count,
+  because you read what you meant.
+- **Transposition is the enemy.** Swap two digits in one phone number on purpose,
+  then see whether your verification catches it. If it does not, change your
+  method.
+- **The log names the gaps.** A record with no email, an unreadable date, a phone
+  number in a format you were not sure about — each one is a line, not a silent
+  omission.

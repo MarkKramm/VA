@@ -1,0 +1,74 @@
+---
+id: clean-and-organise-a-dataset
+title: Clean and Organise a Small Client Dataset
+summary: >-
+  Take a deliberately messy client contact list, make it reliable, and hand it
+  back with a change log that makes every transformation reversible.
+purpose: >-
+  Proves you can improve data somebody else depends on without deleting anything,
+  guessing at anything, or leaving a change you cannot account for.
+difficulty: beginner
+estimatedMinutes: 75
+skills:
+  - data-entry
+  - data-cleaning
+  - data-quality-control
+prerequisites:
+  - id: cleaning-a-messy-sheet
+    reason: The method this task is judged against — standardise, mark, log — is set out there.
+  - id: spreadsheet-basics
+    reason: You will be editing a sheet with formulas in it, and the editing rules apply throughout.
+scenario: >-
+  A client sends you a contact list exported from a system they have used for
+  three years. It has around sixty rows. Duplicate companies appear under slightly
+  different names, dates are in two formats, some phone numbers have spaces and
+  some do not, and three rows are missing an email address entirely. There is a
+  formula column counting contacts per company, and a second sheet the client uses
+  for a mail merge. The client asks you to "make it usable".
+requirements:
+  - Nothing is deleted. Suspected duplicates are marked, not removed.
+  - One date format is used for anything you create, and the original values are preserved.
+  - Rows you could not interpret are left untouched and listed with a reason.
+  - The change log has one line per transformation, with a date.
+  - The formula column still produces the same results for rows you did not touch.
+instructions:
+  - Copy the sheet before you change anything, and name the copy with a date.
+  - Record the row count and the sum of any numeric column before you start.
+  - Standardise capitalisation and whitespace first, then look for duplicates.
+  - Add a Duplicate column and mark suspected duplicates with a short note.
+  - Leave ambiguous values alone and list them; do not guess.
+  - Recheck the row count, the totals, and that the formula column still works.
+  - Write the change log at the top of the file.
+deliverable: >-
+  The cleaned sheet, a marked Duplicate column, an untouched record of the original
+  values, and a change log with one line per transformation.
+evaluationCriteria:
+  - id: nothing-deleted
+    description: Every original row is still present, and suspected duplicates are marked rather than removed.
+  - id: consistent-formats
+    description: A single format is used for the dates and numbers you created, and it is stated in the change log.
+  - id: ambiguity-flagged
+    description: Values you could not interpret are left unchanged and listed with the reason.
+  - id: change-log
+    description: Every transformation appears in the change log, with a date, and nothing was changed that is not logged.
+  - id: formulas-intact
+    description: The formula column still produces the same results for the rows you did not touch.
+hints:
+  - Remove stray spaces and normalise capitalisation before you look for duplicates. Near-duplicates become exact ones, and exact ones are reviewable.
+  - Count the rows before and after. It is the only way to know you finished.
+  - If two companies look like the same company under different names, that is a question for the client, not a merge.
+  - Copy the sheet rather than working in place, so a mistake is a rollback rather than a reconstruction.
+commonMistakes:
+  - Deleting "obvious" duplicates, which is unrecoverable when they turn out to be separate records.
+  - Guessing at an ambiguous date and silently changing the meaning of a column.
+  - Sorting with a filter active, which rearranges only the visible rows.
+  - Tidying a column the client did not ask about, and changing a value something else depends on.
+  - Cleaning the data but leaving no record of what was cleaned.
+referenceGuidance: >-
+  A good submission is boring: the same rows, in a consistent format, with a
+  marked duplicate column and a change log somebody could reverse. If a reviewer
+  cannot tell from the file alone what you changed, the cleaning is not finished.
+status: draft
+updatedAt: '2026-10-05'
+changeNote: Added at M6 as the capstone for the data entry and spreadsheets module.
+---

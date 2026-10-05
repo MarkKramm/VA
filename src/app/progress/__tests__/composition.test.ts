@@ -28,7 +28,7 @@ describe('curriculumProgress', () => {
     const progress = curriculumProgress(createInitialState())
     expect(progress.completed).toBe(0)
     expect(progress.practisedLessons).toBe(0)
-    expect(progress.total).toBe(4)
+    expect(progress.total).toBe(24)
     expect(progress.ratio).toBe(0)
   })
 
@@ -36,8 +36,8 @@ describe('curriculumProgress', () => {
     const state = foldEvents([completed(LESSON), completed(OTHER_LESSON)])
     const progress = curriculumProgress(state)
     expect(progress.completed).toBe(2)
-    expect(progress.total).toBe(4)
-    expect(progress.ratio).toBe(0.5)
+    expect(progress.total).toBe(24)
+    expect(progress.ratio).toBeCloseTo(2 / 24)
   })
 
   it('counts practised lessons separately from completed ones', () => {
@@ -62,9 +62,9 @@ describe('roadmapLessonProgress', () => {
   it('counts completed lessons within a real roadmap', () => {
     const state = foldEvents([completed(LESSON)])
     const progress = roadmapLessonProgress(state, 'beginner-va')
-    expect(progress?.total).toBe(4)
+    expect(progress?.total).toBe(17)
     expect(progress?.completed).toBe(1)
-    expect(progress?.ratio).toBe(0.25)
+    expect(progress?.ratio).toBeCloseTo(1 / 17)
   })
 
   it('returns undefined for an unknown roadmap rather than throwing', () => {

@@ -12,6 +12,17 @@ All notable changes to this project. Format follows
 
 ### Added
 
+- **Core VA foundations curriculum (M6).** Seven new modules and twenty new lessons covering the
+  common foundation a specialisation can build on: online research and verification, professional
+  and written communication, inbox triage and scheduling across time zones, shared files and
+  SOPs, data entry and spreadsheets, and working remotely safely — including scam and job-fraud
+  awareness. Ten exercises require the learner to DO something rather than restate a definition;
+  six module quizzes (21 questions in total) test judgement rather than trivia; two new practical
+  assessments (`verified-research-brief`, `clean-and-organise-a-dataset`) join the existing
+  workspace task. A new `non-voice-va` roadmap makes written-only work a first-class pathway by
+  reusing the shared foundation rather than duplicating it. Four new skills
+  (`safety`, `safety-accounts`, `safety-scam-awareness`, `data-spreadsheets`); everything else
+  reuses the existing taxonomy. Roadmap outcome evidence is now resolved to real, validated links.
 - **Practical assessments, skill evidence and readiness (M5).** `Assessment` is a new first-class
   content entity — scenario, requirements, instructions, deliverable, rubric, hints and common
   mistakes (`PLAN.md` §52) — with fail-closed referential integrity for its skills and

@@ -177,4 +177,44 @@ export const skills = [
     parent: 'data',
     order: 2,
   },
+  {
+    id: 'data-spreadsheets',
+    title: 'Spreadsheets',
+    summary: 'Reading, formatting and safely editing tabular data.',
+    gloss: 'Working in a spreadsheet without breaking someone else’s formulas.',
+    parent: 'data',
+    order: 3,
+  },
+
+  // --- Digital safety -----------------------------------------------------
+  //
+  // Added at M6, when the curriculum began teaching work that involves other
+  // people's accounts and other people's money. Both branches are capabilities
+  // rather than topics: "can you tell a fake client from a real one" and "can you
+  // hold a login without exposing it" are things a learner either can do or
+  // cannot, which is the test the taxonomy uses.
+  {
+    id: 'safety',
+    title: 'Digital Safety',
+    summary: 'Protecting client information, accounts and your own work from avoidable risk.',
+    gloss: 'Handling logins, links and client data so nothing goes wrong.',
+    relation: 'contains' as const,
+    order: 4,
+  },
+  {
+    id: 'safety-accounts',
+    title: 'Accounts and Access',
+    summary: 'Passwords, two-factor authentication, and sharing access without exposing it.',
+    gloss: 'Giving a client access without handing over anything you should not.',
+    parent: 'safety',
+    order: 0,
+  },
+  {
+    id: 'safety-scam-awareness',
+    title: 'Scam Awareness',
+    summary: 'Recognising fake clients, fake job offers and payment fraud before acting on them.',
+    gloss: 'Spotting the warning signs in an offer that is too good to be true.',
+    parent: 'safety',
+    order: 1,
+  },
 ] as const

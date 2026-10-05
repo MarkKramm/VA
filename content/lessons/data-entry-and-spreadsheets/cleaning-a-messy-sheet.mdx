@@ -1,0 +1,115 @@
+---
+id: cleaning-a-messy-sheet
+title: Cleaning a Messy Sheet
+aliases:
+  - data cleaning
+  - deduplication
+  - fixing a dataset
+summary: >-
+  How to make a messy dataset usable — duplicates, inconsistent formatting, blank
+  rows — without deleting anything you might need and without losing track of what
+  you changed.
+objectives:
+  - Find and handle duplicates without guessing which copy is right
+  - Standardise dates, names and numbers consistently
+  - Keep a record of every change so the work is reversible
+topics:
+  - id: duplicates
+    title: Duplicates, and why you rarely delete them
+    skills:
+      - data-cleaning
+  - id: standardising
+    title: Standardising formats
+    skills:
+      - data-cleaning
+  - id: reversible-work
+    title: Making the work reversible
+    skills:
+      - data-quality-control
+skills:
+  - data-cleaning
+  - data-quality-control
+difficulty: beginner
+estimatedMinutes: 12
+exercises:
+  - clean-a-small-dataset
+prerequisites:
+  - id: spreadsheet-basics
+    reason: Cleaning a sheet means editing one, and the editing rules apply throughout.
+status: draft
+updatedAt: '2026-10-05'
+changeNote: Written at M6 as part of the core VA foundation curriculum.
+---
+
+Cleaning data is not tidying. It is making a series of decisions about what is
+true, and writing down the ones you made. A cleaned sheet with no record of the
+cleaning is a sheet nobody can trust.
+
+## Duplicates, and why you rarely delete them
+
+Two rows can look identical and still be two real things — two people with the
+same name, two invoices for the same amount, two orders placed minutes apart.
+
+The safe routine:
+
+1. **Copy the sheet** before you touch it. Always.
+2. **Sort by the column you suspect, then scan visually.** Spreadsheets have a
+   built-in duplicate highlighter, but it only finds exact matches — it will miss
+   `Acme Co` and `Acme Co.` and `Acme  Co` (two spaces).
+3. **Standardise first, then look for duplicates.** Removing stray spaces and
+   fixing capitalisation turns near-duplicates into exact ones, which are far
+   easier to review.
+4. **Mark, do not delete.** Add a column `Duplicate?` with `yes` and a short note.
+   The client decides what to remove; you show them what you found.
+
+That last step is the professional one. Deleting a row that turned out to be a
+separate order is not recoverable by an apology.
+
+## Standardising formats
+
+Pick one format per column and apply it everywhere. The three that cause the most
+trouble:
+
+- **Dates.** Use one unambiguous format for anything you create — `YYYY-MM-DD`
+  sorts correctly and cannot be misread. Where the source is ambiguous
+  (`01/02/2026`), do not guess: flag the column and ask, because getting it wrong
+  changes the meaning of the data.
+- **Names and companies.** Decide on capitalisation and spacing, then apply it.
+  `TRIM` removes leading, trailing and doubled spaces. Be careful with
+  accents and non-Latin characters — standardising those away destroys real
+  information.
+- **Numbers.** Remove thousands separators before summing, and check whether a
+  column is currency or a plain number. Mixed formats make `SUM` return nothing
+  and look like a broken sheet.
+
+## Making the work reversible
+
+Two habits make everything you do undoable:
+
+- **One change type per copy.** `Sheet (cleaned)`, `Sheet (deduped)` — so a
+  problem can be traced to the step that caused it.
+- **A change log**, four lines long, at the top of the file or in a separate
+  sheet:
+
+```text
+2026-10-05  Standardised all dates to YYYY-MM-DD (412 rows).
+2026-10-05  Trimmed whitespace in Company column. 12 values changed.
+2026-10-05  Flagged 7 suspected duplicate rows in column H; not removed.
+2026-10-05  Left 3 rows with unreadable dates untouched — listed in Notes.
+```
+
+If you cannot say what you changed, you have not finished cleaning — you have
+just made the sheet different.
+
+## What not to do
+
+Do not delete rows to make a count match. Do not "fix" a value by guessing what it
+should have been. Do not clean a column the client did not ask you to touch,
+however tempting it looks. Do not remove accents, leading zeros in reference
+numbers, or anything else that might be meaningful.
+
+## Practice
+
+Take a list of twenty names and companies, deliberately introduce a few near
+duplicates and inconsistent capitalisations, then clean it using the routine
+above. Finish by writing the four-line change log.

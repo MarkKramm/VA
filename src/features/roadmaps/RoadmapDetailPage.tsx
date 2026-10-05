@@ -5,6 +5,7 @@ import {
   finalAssessmentOf,
   lessonsInModule,
   lessonsInRoadmap,
+  outcomesOfRoadmap,
   stagesOfRoadmap,
 } from '@/app/content.ts'
 import { lessonProgressFor, roadmapLessonProgress } from '@/app/progress/composition.ts'
@@ -77,6 +78,7 @@ export const RoadmapDetailPage = () => {
   if (!roadmap) return <NotFoundPage />
 
   const stages = stagesOfRoadmap(roadmap.id)
+  const outcomes = outcomesOfRoadmap(roadmap.id)
   // The roadmap's lessons in curriculum order. The sequence is the same one the
   // lesson page uses for previous/next navigation, so "start", "next" and the
   // progress count cannot disagree about which lessons the roadmap contains.
@@ -139,19 +141,33 @@ export const RoadmapDetailPage = () => {
       {/*
         Job readiness.
         `outcomes` exists because D6 settled that readiness is evidence-weighted,
-        not completion-weighted. Every M0 roadmap has an empty `evidence` array
-        because quizzes and labs arrive at M4 and M6. Showing the outcomes without
-        a readiness score is therefore the honest rendering — and stating why
-        there is no score is more useful than showing a misleading 0%.
+        not completion-weighted. At M6 each outcome's `evidence` is resolved to a
+        real, validated link — a quiz or a practical task — so a learner can reach
+        the thing the outcome is measured by. Labs are still a pending collection,
+        so lab evidence is skipped rather than rendered as a link to nowhere.
+        Showing the outcomes without a readiness score remains the honest
+        rendering — and stating why there is no score is more useful than showing
+        a misleading 0%.
       */}
       <section aria-labelledby="outcomes-heading">
         <h2 id="outcomes-heading" className={styles.sectionTitle}>
           What you will be able to do
         </h2>
         <ul className={styles.outcomes}>
-          {roadmap.outcomes.map((outcome) => (
+          {outcomes.map((outcome) => (
             <li key={outcome.statement} className={styles.outcome}>
-              {outcome.statement}
+              <span>{outcome.statement}</span>
+              {outcome.evidence.length > 0 ? (
+                <ul className={styles.outcomeEvidence} aria-label="Evidence for this outcome">
+                  {outcome.evidence.map((evidence) => (
+                    <li key={`${evidence.kind}-${evidence.id}`}>
+                      <Link to={evidence.to} className={styles.evidenceLink}>
+                        {evidence.kind === 'quiz' ? 'Quiz' : 'Practical task'}: {evidence.title}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
             </li>
           ))}
         </ul>

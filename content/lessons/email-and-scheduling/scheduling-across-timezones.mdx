@@ -1,0 +1,105 @@
+---
+id: scheduling-across-timezones
+title: Scheduling Across Time Zones
+aliases:
+  - time zones
+  - booking meetings
+  - calendar management
+summary: >-
+  How to book a meeting that everyone turns up to, when the people involved are in
+  different countries and none of them share your clock.
+objectives:
+  - Convert between time zones without making an arithmetic mistake
+  - Write a meeting invitation that cannot be misread
+  - Handle daylight saving, availability windows and rescheduling
+topics:
+  - id: converting-safely
+    title: Converting without guessing
+    skills:
+      - administration-calendar
+  - id: writing-the-invitation
+    title: An invitation that cannot be misread
+    skills:
+      - administration-calendar
+  - id: daylight-saving
+    title: Daylight saving, and rescheduling
+    skills:
+      - administration-calendar
+skills:
+  - administration-calendar
+difficulty: beginner
+estimatedMinutes: 11
+quiz: email-and-scheduling-basics
+prerequisites: []
+status: draft
+updatedAt: '2026-10-05'
+changeNote: Written at M6 as part of the core VA foundation curriculum.
+---
+
+A meeting that half the people miss is worse than no meeting: it costs everyone
+the slot and produces no decision. Almost all of these failures are time zone
+arithmetic, done in someone's head.
+
+## Converting without guessing
+
+Three habits remove nearly all errors:
+
+1. **Never do the arithmetic yourself.** Use a converter, or the calendar tool's
+   own time zone support. The offset between two zones is not constant — it
+   changes twice a year, on different dates in different countries.
+2. **Anchor to one reference point.** Give the time in the client's zone and the
+   UTC time. Two reference points let anyone check the conversion.
+3. **Check the day, not just the hour.** A meeting at 09:00 your time can be the
+   previous day for a client twelve hours behind. "Tuesday 09:00" is ambiguous
+   until you say whose Tuesday.
+
+## An invitation that cannot be misread
+
+A meeting invitation should answer five questions without the reader having to
+convert anything:
+
+```text
+Subject:   Acme Co — March invoice review (30 min)
+When:      Thu 8 Oct, 15:00–15:30 London (14:00 UTC)
+Where:     Video link (below) / Phone: +44 …
+Agenda:    1. March invoice discrepancy  2. April schedule
+Prepare:   The March supplier statement
+```
+
+- **Duration in the subject line.** It tells the reader whether to accept.
+- **The time zone named**, not implied. "15:00" with no zone is a guess.
+- **An agenda**, even a two-line one. A meeting with no agenda gets cancelled or
+  overruns.
+- **What to bring**, if anything. Otherwise half the meeting is spent finding a
+  document.
+
+## Daylight saving, and rescheduling
+
+Daylight saving shifts the offset between two zones by an hour, twice a year, and
+not on the same date everywhere. Two consequences worth knowing:
+
+- A **recurring** meeting that worked all winter can silently move for one side
+  in spring. If a recurring meeting matters, check it after each change.
+- **Avoid the hour after a transition.** Book at least a day away from the change
+  if you can, and confirm with the client if you cannot.
+
+If you have to reschedule, reschedule **early and with a reason and a proposal**:
+
+> "I need to move Thursday's review — I'm waiting on the March statement, which
+> the supplier now says arrives Friday. Same time Friday, or would Monday suit
+> better?"
+
+That is one message, and it lets the client choose. A cancellation with no
+alternative is a message the client has to do work to answer.
+
+## What not to do
+
+Do not book a meeting without checking the other person's calendar if you have
+access to it. Do not assume a client is available just because the slot is free in
+your own calendar. Do not rely on "we'll work it out on the day".
+
+## Practice
+
+Take two cities in different countries, look up their current offsets, and write
+the invitation block above for a half-hour meeting at 10:00 in your own time zone.
+Then state which day it falls on for each city.

@@ -44,9 +44,9 @@ describe('content ingestion — the file walk finds the real curriculum', () => 
     // The counts are the real M0 content, pinned deliberately. A content addition
     // updates this test, which is correct: the point is that the pipeline cannot
     // silently stop seeing files. `>= 1` would pass with a broken walk.
-    expect(roadmaps).toHaveLength(2)
-    expect(modules).toHaveLength(2)
-    expect(lessons).toHaveLength(4)
+    expect(roadmaps).toHaveLength(3)
+    expect(modules).toHaveLength(9)
+    expect(lessons).toHaveLength(24)
   })
 
   it('walks lessons recursively, so a nested domain folder is included', () => {

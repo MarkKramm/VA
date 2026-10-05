@@ -8,21 +8,17 @@ is too large or work is not being closed out.
 
 ---
 
-## Current milestone: M5 — Learning & Assessment Foundation · **complete**
+## Current milestone: M6 — Core VA Curriculum · **complete**
 
-The layer above quizzes is in place:
+The foundation is now filled with a real curriculum slice:
 
-- **Assessment content (M5)** — `Assessment` as a first-class entity: scenario, requirements,
-  instructions, deliverable, a published rubric, hints and common mistakes, with fail-closed
-  integrity for its skills and prerequisite lessons (`DECISIONS.md` D33).
-- **Assessment lifecycle** — `/assessments/:assessmentId`, the one hard lock
-  (`assessmentEligibility`), a self-evaluation against the published rubric, a result, and retry
-  that adds an attempt. Recorded as the existing `assessment.attempted` with
-  `evaluatedBy: 'self'`.
-- **Skill evidence** — the documented three tiers (read / practised / demonstrated), derived from
-  the content and the event log, shown on the dashboard. Counts and states, never a score.
-- **Real content** — `client-file-organisation`, a practical task wired to `beginner-va` as its
-  final assessment and as outcome evidence.
+- **Seven modules, twenty lessons** — research and verification, professional and written
+  communication, inbox triage and scheduling, shared files and SOPs, data entry and spreadsheets,
+  working remotely safely (including scam and job-fraud awareness), and non-voice support.
+- **Ten exercises** that require doing, **six module quizzes** (twenty-one questions),
+  **three practical assessments** — all self-evaluated, all fail-closed.
+- **A non-voice roadmap** that reuses the shared foundation by id rather than duplicating it.
+- **Roadmap outcome evidence resolved to real links**, so an outcome is navigable.
 
 **Not tagged.** `v0.3.0-content-engine` remains the latest tag.
 
@@ -43,6 +39,8 @@ staged in the schema and skipped by referential integrity as pending collections
 
 ## Earlier milestones
 
+- **M6 — Core VA Curriculum** · complete, untagged. Seven modules, twenty lessons, ten exercises,
+  six quizzes, three assessments and a non-voice roadmap.
 - **M5 — Learning & Assessment Foundation** · complete, untagged. Practical assessments, the one
   hard lock, self-evaluated results, derived skill evidence and a readiness view
   (`DECISIONS.md` D33).

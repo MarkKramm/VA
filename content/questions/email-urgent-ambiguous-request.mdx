@@ -1,0 +1,28 @@
+---
+id: email-urgent-ambiguous-request
+type: single-choice
+prompt: >-
+  A client emails with the subject "URGENT" and the message "Need the contract by
+  end of day. It's the one we discussed." What should you do first?
+choices:
+  - id: search-and-send
+    text: Search for the most recent contract and send it
+  - id: ask-which
+    text: Ask which contract they mean, and reply quickly
+  - id: wait
+    text: Wait until you can find one that matches, then send it
+  - id: ignore
+    text: Treat it as low priority because the request is vague
+correctChoiceId: ask-which
+explanation: >-
+  "The one we discussed" is an ambiguous request wearing a deadline. Sending the
+  wrong contract under time pressure is worse than asking a one-line question, and
+  the question takes seconds. Treating it as low priority is also wrong: the
+  deadline may be real, which is exactly why the ambiguity has to be resolved
+  immediately rather than guessed at.
+skills:
+  - communication-email
+  - administration-prioritisation
+status: draft
+updatedAt: '2026-10-05'
+---

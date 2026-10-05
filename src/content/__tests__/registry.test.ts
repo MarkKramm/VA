@@ -21,9 +21,9 @@ describe('the real M0 content', () => {
 
   it('indexes every entity by id', () => {
     expect(registry.careerPaths.size).toBe(16)
-    expect(registry.roadmaps.size).toBe(2)
-    expect(registry.modules.size).toBe(2)
-    expect(registry.lessons.size).toBe(4)
+    expect(registry.roadmaps.size).toBe(3)
+    expect(registry.modules.size).toBe(9)
+    expect(registry.lessons.size).toBe(24)
     expect(registry.exercises.size).toBeGreaterThanOrEqual(1)
     expect(registry.skills.size).toBeGreaterThan(10)
   })

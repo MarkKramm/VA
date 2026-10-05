@@ -15,13 +15,21 @@ import { lessonContext, findLesson } from '../content.ts'
  * The roadmap order is a fact of the committed content:
  *
  *   what-is-a-virtual-assistant -> who-hires-virtual-assists
- *     -> files-and-folders -> browser-basics
+ *     -> files-and-folders -> browser-basics -> … -> spotting-a-scam-client
+ *
+ * At M6 the roadmap grew to seventeen lessons. The last stage repeats
+ * `computer-fundamentals`, whose lessons are already in the sequence, so the
+ * sequence ends with the module before it — `remote-work-and-safety` — and
+ * `LAST` names that module's final lesson.
  */
 
 const FIRST = 'what-is-a-virtual-assistant'
 const SECOND = 'who-hires-virtual-assists'
 const THIRD = 'files-and-folders'
 const FOURTH = 'browser-basics'
+/** The final lesson of the beginner-va sequence, which is what "last" means here. */
+const LAST = 'spotting-a-scam-client'
+const SEQUENCE_LENGTH = 17
 
 describe('lessonContext — resolution', () => {
   it('returns undefined for an unknown lesson id, so the page can 404', () => {
@@ -64,8 +72,8 @@ describe('lessonContext — deterministic ordering', () => {
 
   it('reports a consistent total across the sequence', () => {
     const total = lessonContext(FIRST)?.total
-    expect(total).toBe(4)
-    for (const id of [FIRST, SECOND, THIRD, FOURTH]) {
+    expect(total).toBe(SEQUENCE_LENGTH)
+    for (const id of [FIRST, SECOND, THIRD, FOURTH, LAST]) {
       expect(lessonContext(id)?.total).toBe(total)
     }
   })
@@ -75,8 +83,8 @@ describe('lessonContext — deterministic ordering', () => {
     expect(first?.previous).toBeUndefined()
     expect(first?.next?.id).toBe(SECOND)
 
-    const last = lessonContext(FOURTH)
-    expect(last?.previous?.id).toBe(THIRD)
+    const last = lessonContext(LAST)
+    expect(last?.previous).toBeDefined()
     expect(last?.next).toBeUndefined()
   })
 

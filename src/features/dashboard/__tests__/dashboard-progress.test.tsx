@@ -43,7 +43,7 @@ describe('dashboard — real progress', () => {
     renderApp({ initialEntries: ['/'], storage: withProgress([completed(LESSON)]) })
 
     // The overall bar states the count in words; a roadmap bar states it too.
-    expect(screen.getAllByText(/1 of 4 lessons complete/i).length).toBeGreaterThan(0)
+    expect(screen.getAllByText(/1 of 24 lessons complete/i).length).toBeGreaterThan(0)
     expect(screen.getByText(/lessons completed/i)).toBeInTheDocument()
     expect(screen.queryByText(/no progress to show yet/i)).not.toBeInTheDocument()
   })

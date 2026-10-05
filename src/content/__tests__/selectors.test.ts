@@ -33,23 +33,29 @@ describe('modules and lessons', () => {
   })
 
   it('returns a roadmap’s modules in stage order, including a repeat', () => {
-    // beginner-va deliberately lists computer-fundamentals in two stages.
+    // beginner-va deliberately lists computer-fundamentals in two stages — and at
+    // M6 it gained three more `core` stages, so the ORDER matters more than ever.
     expect(modulesOfRoadmap(registry, 'beginner-va').map((m) => m.id)).toEqual([
       'va-foundations',
       'computer-fundamentals',
+      'professional-communication',
+      'email-and-scheduling',
+      'online-research',
+      'remote-work-and-safety',
       'computer-fundamentals',
     ])
   })
 
   it('de-duplicates a roadmap’s lessons when a module appears in two stages', () => {
     const ids = lessonsOfRoadmap(registry, 'beginner-va').map((l) => l.id)
-    expect(ids).toEqual([
-      'what-is-a-virtual-assistant',
-      'who-hires-virtual-assists',
-      'files-and-folders',
-      'browser-basics',
-    ])
+    expect(ids).toHaveLength(17)
     expect(new Set(ids).size).toBe(ids.length)
+    // The sequence starts with the orientation module, in its declared order.
+    expect(ids.slice(0, 2)).toEqual(['what-is-a-virtual-assistant', 'who-hires-virtual-assists'])
+    // The repeated module contributes its lessons ONCE, which is the property this
+    // test exists for.
+    expect(ids.filter((id) => id === 'browser-basics')).toHaveLength(1)
+    expect(ids.filter((id) => id === 'files-and-folders')).toHaveLength(1)
   })
 
   it('maps a lesson to the modules that contain it', () => {
@@ -61,24 +67,25 @@ describe('modules and lessons', () => {
 
 describe('cross-roadmap reuse is derived, never authored', () => {
   it('reports BOTH roadmaps for a module they both reference', () => {
-    // va-foundations is referenced by beginner-va and data-entry-va. Neither
-    // roadmap declares that relationship anywhere. This test is the proof that
-    // the id-reference model works.
+    // va-foundations is referenced by all three roadmaps. None of them declares
+    // that relationship anywhere. This test is the proof that the id-reference
+    // model works.
     const ids = roadmapsUsingModule(registry, 'va-foundations').map((r) => r.id)
-    expect(ids).toEqual(expect.arrayContaining(['beginner-va', 'data-entry-va']))
-    expect(ids).toHaveLength(2)
+    expect(ids).toEqual(expect.arrayContaining(['beginner-va', 'data-entry-va', 'non-voice-va']))
+    expect(ids).toHaveLength(3)
   })
 
   it('reports each roadmap once, even when it references a module in two stages', () => {
-    // A reverse index is a set, not a tally. Both M0 roadmaps reference both
-    // modules across two stages each, which is exactly the case that silently
-    // produces duplicates if the index is built by appending.
+    // A reverse index is a set, not a tally. All three roadmaps reference both
+    // modules, and beginner-va references computer-fundamentals in two stages —
+    // exactly the case that silently produces duplicates if the index is built by
+    // appending.
     for (const moduleId of ['va-foundations', 'computer-fundamentals']) {
       const ids = roadmapsUsingModule(registry, moduleId).map((r) => r.id)
       expect(new Set(ids).size, `${moduleId} returned duplicates: ${ids.join(', ')}`).toBe(
         ids.length,
       )
-      expect([...ids].sort()).toEqual(['beginner-va', 'data-entry-va'])
+      expect([...ids].sort()).toEqual(['beginner-va', 'data-entry-va', 'non-voice-va'])
     }
   })
 
@@ -137,13 +144,17 @@ describe('career paths', () => {
     const ids = new Set(
       careerPathsOfLesson(registry, 'what-is-a-virtual-assistant').map((c) => c.id),
     )
-    expect(ids).toEqual(new Set(['beginner', 'data']))
+    // All three roadmaps share the orientation module, so a lesson in it is
+    // reachable from all three career paths. That is derived, not authored.
+    expect(ids).toEqual(new Set(['beginner', 'data', 'non-voice']))
   })
 
   it('groups roadmaps under their career paths, with an empty bucket for empty ones', () => {
     const grouped = roadmapsByCareerPath(registry)
     expect(grouped.get('beginner')?.map((r) => r.id)).toEqual(['beginner-va'])
     expect(grouped.get('data')?.map((r) => r.id)).toEqual(['data-entry-va'])
+    // The M6 non-voice roadmap gives the `non-voice` career path real content.
+    expect(grouped.get('non-voice')?.map((r) => r.id)).toEqual(['non-voice-va'])
     // The taxonomy is populated ahead of the content, so unbuilt paths exist and
     // return an empty list rather than being missing from the map.
     expect(grouped.get('voice')).toEqual([])

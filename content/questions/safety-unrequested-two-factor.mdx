@@ -1,0 +1,26 @@
+---
+id: safety-unrequested-two-factor
+type: single-choice
+prompt: >-
+  A two-factor authentication code arrives on your phone for a client account, but
+  you were not trying to sign in. What should you do first?
+choices:
+  - id: ignore
+    text: Ignore it — codes arrive by mistake sometimes
+  - id: change-password
+    text: Change that account's password, then tell the client
+  - id: share-code
+    text: Send the code to whoever asks for it
+  - id: wait
+    text: Wait and see whether another code arrives
+correctChoiceId: change-password
+explanation: >-
+  An unrequested code means somebody has the password and is trying to get past the
+  second factor. The code itself is working as designed; the password is the
+  problem. Change it immediately, sign out other sessions, and tell the client —
+  and never pass a code to anyone, because that is exactly what the request is for.
+skills:
+  - safety-accounts
+status: draft
+updatedAt: '2026-10-05'
+---

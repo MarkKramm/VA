@@ -1180,3 +1180,50 @@ the same reasoning that keeps mastery a level rather than a decimal.
 **WHAT THIS DELIBERATELY DOES NOT DO.** No portfolio, no resume, no interview simulation, no job
 board, no search, no XP, no streaks. `docs/ARCHITECTURE.md` lists several of those as deliberate
 non-features, and the rest are later batches.
+
+---
+
+## D34 — The M6 curriculum: one skill taxonomy, no staged tool references, and content-only changes
+
+**Date:** 2026-10-05 (M6)
+
+**Context.** With the M0–M5 machinery in place the bottleneck became content. M6 produced the
+first substantial foundation curriculum using only the existing architecture — no new entity
+type, no schema field, no event, no dependency, no UI redesign.
+
+**THE SKILL TAXONOMY GREW BY FOUR, NOT TWENTY.** New lessons were mapped to the existing
+nineteen skills wherever a capability already existed. Four were genuinely missing and were added:
+`safety` (with `safety-accounts` and `safety-scam-awareness`) and `data-spreadsheets`. The test
+applied was "can a learner do this or not?" — a capability, not a lesson title. The failure mode
+being avoided is the four-nearly-identical Email skills: `Email`, `Email Management`,
+`Email Basics`, `Professional Email`. All three new email lessons reuse `communication-email`.
+
+**TOOL AND RESOURCE REFERENCES ARE NOT STAGED.** `lesson.tools` and `lesson.resources` are valid
+schema fields and are skipped by referential integrity as pending collections, so staging them
+would have been free. It was skipped anyway: a reference to a tool entity that does not exist
+produces nothing in the UI and a growing pile of ids that look maintained but are not. Tools are
+named in prose instead, and the references can be added in one pass when the tool directory
+exists.
+
+**A LESSON NEEDS PRACTICE.** Every new lesson carries either an exercise or a module quiz. That
+is deliberate: `quality/no-practice` is a warning, and twenty new warnings would be twenty
+admissions that the content teaches without asking anything of the learner. Module-level quizzes
+cover the judgement lessons; exercises cover the procedural ones. The one integration added was
+`outcomesOfRoadmap` — evidence references already existed and were already validated fail-closed;
+the new seam only resolves them to links a learner can follow.
+
+**NON-VOICE IS A ROADMAP, NOT A COPY.** The `non-voice` career path had no roadmap. It now has
+one that references the shared modules by id. Duplicating the foundation lessons into a
+"non-voice" folder would have been the single easiest way to create a maintenance trap.
+
+**KNOWN NON-BLOCKING GAP: MODULE AND ROADMAP BODIES ARE NOT RENDERED.** The registry has body
+maps for lessons and exercises only, so module and roadmap prose is parsed, counted in the payload
+report, and dropped. The M6 module bodies are short because of this. Recorded in `BACKLOG.md`
+rather than fixed here, because rendering them is a content-presentation decision, not a
+curriculum one.
+
+**WHAT THIS DELIBERATELY DOES NOT DO.** No automated or AI grading, no file upload, no portfolio,
+resume, interview or job-board tooling, no search, no XP or streaks, and no specialised career
+curriculum.
+
+---

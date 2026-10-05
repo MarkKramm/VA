@@ -1,7 +1,7 @@
 # Current State
 
 **As of:** 2026-10-05
-**Milestone:** M5 — Learning & Assessment Foundation · **complete**
+**Milestone:** M6 — Core VA Curriculum · **complete**
 **Next:** the tool directory and search — previously labelled M5 in `PLAN.md`, and unbuilt. See
 `NEXT_STEPS.md`.
 
@@ -18,18 +18,48 @@ the history, see `CHANGELOG.md`.
 | M3 — Progress              | ✅ complete (not tagged) — local-first progress, dashboard, export/import   |
 | M4 — Quiz Engine           | ✅ complete (not tagged) — content, renderer, scoring, persisted attempts   |
 | M5 — Learning & Assessment | ✅ complete (not tagged) — practical assessments, skill evidence, readiness |
+| M6 — Core VA Curriculum    | ✅ complete (not tagged) — 7 modules, 20 lessons, assessments, quizzes      |
 
 **Not built:** labs, search, the tool directory, career preparation, bookmarks, notes,
-achievements, XP, streaks, portfolio, resume or interview tooling. Nothing below claims otherwise.
+achievements, XP, streaks, portfolio, resume or interview tooling, and every specialised career
+curriculum. Nothing below claims otherwise.
+
+---
+
+## The M6 curriculum, in one place
+
+**Seven new modules, twenty new lessons.** Online Research and Verification (searching,
+verification, writing a brief); Professional Communication (writing for clients, professional
+English, turning instructions into tasks); Email and Scheduling (inbox triage, shared inboxes,
+scheduling across time zones); Shared Files and Documents (shared drives, writing a SOP); Data
+Entry and Spreadsheets (accurate entry, safe spreadsheet editing, cleaning a messy sheet);
+Working Remotely, Safely (managing your own time, boundaries, accounts and links, spotting a scam
+client); Non-Voice Support (what written-only work is, handling a request queue).
+
+**Ten exercises** that require doing: writing a search plan, verifying claims, rewriting a client
+message, building a task list from a brief, triaging a messy inbox, auditing a shared drive,
+writing a procedure, verifying a data entry batch, cleaning a dataset, planning a day, auditing a
+job offer, sorting a request queue.
+
+**Six module quizzes, twenty-one questions.** Scenario-based, single-choice and true-false only,
+with the correct answer in varying positions and an explanation attached to every one.
+
+**Three practical assessments.** `client-file-organisation` (M5), `verified-research-brief` and
+`clean-and-organise-a-dataset` (M6). All self-evaluated against a published rubric and recorded as
+`assessment.attempted` with `evaluatedBy: 'self'` — the platform has no evaluator and does not
+claim one.
+
+**A non-voice pathway.** `non-voice-va` gives the `non-voice` career path a real curriculum by
+referencing the shared modules by id, not by copying them.
 
 ---
 
 ## What exists and works
 
-**The content pipeline, end to end, parsed AND compiled at build time.** 2 roadmaps,
-2 modules, 4 lessons, 1 exercise, 16 career paths and 19 skills load from `content/`, validate
-against Zod schemas, and are readable through a derived-index registry. `npm run content:check`
-reports 0 errors.
+**The content pipeline, end to end, parsed AND compiled at build time.** 3 roadmaps,
+9 modules, 24 lessons, 11 exercises, 21 questions, 7 quizzes, 3 assessments, 16 career paths and
+23 skills load from `content/`, validate against Zod schemas, and are readable through a
+derived-index registry. `npm run content:check` reports 0 errors and 2 intentional warnings.
 
 **The build-time ingestion pipeline.** `vite-plugin-content.ts` reads and parses `.mdx`
 frontmatter in Node, at build/dev/`vite-node` time, and serves the result as the virtual
@@ -210,17 +240,23 @@ achievements, no backend/auth, no state-management library.
 
 ## Verification state
 
-| Gate                     | Result                                                               |
-| ------------------------ | -------------------------------------------------------------------- |
-| `npm run format:check`   | clean, including the full `prettier --check .` glob                  |
-| `npm run lint`           | clean                                                                |
-| `npm run typecheck`      | clean, app and tooling configs separately                            |
-| `npm run content:check`  | 0 errors, 2 warnings (both `quality/no-practice`)                    |
-| `npm run check:contrast` | 34 pairs pass, computed from tokens                                  |
-| `npm run test`           | 676 across 38 files — **675 pass**, 1 sandbox-only spawn failure     |
-| `npm run test:arch`      | 16 passing                                                           |
-| `npm run build`          | succeeds; 539 kB / 163 kB gzipped — no compiler in the client        |
-| `npm run check:paths`    | base `/VA/`, assets present, SPA fallback in place, no compiler leak |
+| Gate                     | Result                                                           |
+| ------------------------ | ---------------------------------------------------------------- |
+| `npm run format:check`   | clean, including the full `prettier --check .` glob              |
+| `npm run lint`           | clean                                                            |
+| `npm run typecheck`      | clean, app and tooling configs separately                        |
+| `npm run content:check`  | 0 errors, 2 warnings (both `quality/no-practice`)                |
+| `npm run check:contrast` | 34 pairs pass, computed from tokens                              |
+| `npm run test`           | 680 across 39 files — **679 pass**, 1 sandbox-only spawn failure |
+| `npm run test:arch`      | 16 passing                                                       |
+| `npm run build`          | succeeds; 768 kB / 214 kB gzipped — no compiler in the client    |
+
+**Bundle growth is content.** The build went from 539 kB / 163 kB gzipped to 768 kB / 214 kB
+gzipped at M6. That is the curriculum: 98 kB of lesson, exercise and roadmap prose compiled into
+serializable trees and serialized into the bundle. No dependency was added and no runtime parsing
+was introduced; the growth is documented rather than redesigned, because the eager-vs-lazy content
+question belongs to a later milestone.
+| `npm run check:paths` | base `/VA/`, assets present, SPA fallback in place, no compiler leak |
 
 **`npm run check` is the single gate.** Every step is green except one test:
 `src/content/__tests__/content-gate.test.ts` runs `npm run content:check` in a child process,

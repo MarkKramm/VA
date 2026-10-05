@@ -145,6 +145,61 @@ export const summariseRoadmap = (roadmap: Roadmap): RoadmapSummary => {
 export const allRoadmapSummaries = (): readonly RoadmapSummary[] =>
   allRoadmaps().map(summariseRoadmap)
 
+/**
+ * A roadmap outcome with its evidence resolved, in declared order (M6).
+ *
+ * Roadmaps own the evidence references; the registry validates them fail-closed.
+ * This is the presentation seam that makes a real evidence link navigable rather
+ * than leaving a resolved id for the UI to interpret. Labs remain a pending
+ * collection, so only evidence types that actually exist become links.
+ */
+/** One resolved evidence link on a roadmap outcome. */
+export interface OutcomeEvidenceView {
+  readonly kind: 'quiz' | 'assessment'
+  readonly id: string
+  readonly title: string
+  readonly to: string
+}
+
+export interface RoadmapOutcomeView {
+  readonly statement: string
+  readonly evidence: readonly OutcomeEvidenceView[]
+}
+
+export const outcomesOfRoadmap = (roadmapId: string): readonly RoadmapOutcomeView[] => {
+  const roadmap = getRoadmap(registry, roadmapId)
+  if (!roadmap) return []
+  return roadmap.outcomes.map((outcome) => {
+    const evidence: OutcomeEvidenceView[] = outcome.evidence.flatMap(
+      (entry): OutcomeEvidenceView[] => {
+        if (entry.kind === 'quiz') {
+          const quiz = getQuiz(registry, entry.id)
+          return quiz
+            ? [{ kind: 'quiz', id: quiz.id, title: quiz.title, to: `/quizzes/${quiz.id}` }]
+            : []
+        }
+        if (entry.kind === 'assessment') {
+          const assessment = getAssessment(registry, entry.id)
+          return assessment
+            ? [
+                {
+                  kind: 'assessment',
+                  id: assessment.id,
+                  title: assessment.title,
+                  to: `/assessments/${assessment.id}`,
+                },
+              ]
+            : []
+        }
+        // `lab` evidence: the collection does not exist yet, so it is skipped
+        // rather than rendered as a link to nowhere.
+        return []
+      },
+    )
+    return { statement: outcome.statement, evidence }
+  })
+}
+
 /** A resolved reference to a roadmap's final assessment (M5). */
 export interface FinalAssessmentLink {
   readonly id: string

@@ -1,0 +1,109 @@
+---
+id: data-entry-that-does-not-need-checking
+title: Data Entry That Does Not Need Checking
+aliases:
+  - accurate data entry
+  - double entry
+  - data accuracy
+summary: >-
+  Why data entry errors happen, and the checking habits that catch them before
+  anybody else has to.
+objectives:
+  - Explain where entry errors actually come from
+  - Use a verification method that catches your own mistakes
+  - Keep a record of what you entered and when
+topics:
+  - id: where-errors-come-from
+    title: Where errors actually come from
+    skills:
+      - data-entry
+  - id: verifying-your-own-work
+    title: Verifying your own work
+    skills:
+      - data-quality-control
+  - id: keeping-a-record
+    title: Keeping a record
+    skills:
+      - data-quality-control
+skills:
+  - data-entry
+  - data-quality-control
+difficulty: beginner
+estimatedMinutes: 12
+exercises:
+  - verify-a-data-entry-batch
+prerequisites:
+  - id: files-and-folders
+    reason: Data arrives as files, and finding the right one is the first step.
+status: draft
+updatedAt: '2026-10-05'
+changeNote: Written at M6 as part of the core VA foundation curriculum.
+---
+
+Almost nobody makes data entry mistakes because they cannot read. They make them
+because of a small number of predictable situations, and each one has a habit that
+prevents it.
+
+## Where errors actually come from
+
+- **Transposition** — swapping two characters. `4182` becomes `4128`. The most
+  common error, and the hardest to spot, because both look plausible.
+- **Wrong row or column** — entering a value one cell off. Happens when the
+  source and the destination are laid out differently.
+- **Unit and format drift** — `01/02/2026` is January in one country and February
+  in another. `1,500` is fifteen hundred in one locale and one and a half in
+  another.
+- **Interruption** — the real cause of most of the above. A phone call mid-row is
+  how a value lands in the wrong place.
+- **Copying a formula down too far**, which silently writes a value where none
+  was meant to exist.
+
+## Verifying your own work
+
+Reading back what you typed does not work: you read what you meant, not what is
+there. Three methods that do work:
+
+1. **Enter in one direction, verify in another.** If you typed down a column,
+   check across the row. The change of direction forces your eye to process the
+   data rather than the pattern.
+2. **Check totals and counts.** Before you start, count the source rows. After you
+   finish, count the destination rows. They should match, and if the data has a
+   column that should sum, sum it in both places. Two independent checks, and the
+   arithmetic does the work.
+3. **Spot-check the extremes.** The first row, the last row, and the largest and
+   smallest values. Errors cluster at boundaries — the end of a session, the
+   longest value, the row you did last.
+
+Say the number out loud while entering it if you are working alone. It sounds
+ridiculous and it halves transposition errors, because you are using a second
+channel to check the first.
+
+## Keeping a record
+
+A simple log turns "I think I entered about two hundred rows" into an answer:
+
+```text
+Source:      acme-contacts-2026-09.xlsx  (241 rows)
+Entered to:  CRM import sheet, 2026-10-05
+Rows:        241 of 241
+Checks:      row count matched; email column spot-checked first/last 5
+Skipped:     3 rows with no email — left blank, listed in the notes column
+```
+
+The last line is the one that matters. Anything you skipped, guessed or could not
+read is a question for the client, and it is far easier to ask at the time than to
+explain later.
+
+## What not to do
+
+Do not fix an error silently in a source file that belongs to the client — record
+it and tell them. Do not "tidy" data while entering it: if a phone number is
+formatted differently, enter it as it is and raise it separately. Do not enter
+data in a hurry without a row count, because then you have no way to know you
+finished.
+
+## Practice
+
+Enter twenty rows of contact data from any source into a blank sheet, then verify
+with a different method: count the rows, check the first and last, and spot-check
+the longest value in each column. Write the four-line log above for what you did.

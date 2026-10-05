@@ -52,7 +52,7 @@ describe('cross-tab progress sync (A2)', () => {
 
     // No reload, and the test never called `syncExternal` itself.
     expect(screen.queryByText(/no progress to show yet/i)).not.toBeInTheDocument()
-    expect(screen.getAllByText(/1 of 4 lessons complete/i).length).toBeGreaterThan(0)
+    expect(screen.getAllByText(/1 of 24 lessons complete/i).length).toBeGreaterThan(0)
   })
 
   it('does not write back, so an external change cannot start a loop', () => {

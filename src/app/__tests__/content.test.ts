@@ -24,11 +24,14 @@ import { allRoadmaps, stagesOfRoadmap, summariseRoadmap } from '@/app/content.ts
 describe('stages — returned as an ordered list, never keyed by kind', () => {
   it('returns every stage of the real beginner-va roadmap, in order', () => {
     const stages = stagesOfRoadmap('beginner-va')
-    // Three authored stages. If any were collapsed by a kind collision this would
-    // be 2.
-    expect(stages).toHaveLength(3)
+    // Five authored stages. If any were collapsed by a kind collision this would
+    // be fewer — and three of them share the `core` kind, which is the collision
+    // in question.
+    expect(stages).toHaveLength(5)
     expect(stages.map((entry) => entry.stage.kind)).toEqual([
       'foundation',
+      'core',
+      'core',
       'core',
       'specialization',
     ])
@@ -36,25 +39,29 @@ describe('stages — returned as an ordered list, never keyed by kind', () => {
 
   it('keeps both stages that reference the same module', () => {
     const stages = stagesOfRoadmap('beginner-va')
-    // `computer-fundamentals` is in stage 2 (core) and stage 3 (specialization).
-    // Both must resolve to the module, and both stages must survive.
+    // `computer-fundamentals` is in the second stage (core) and the last
+    // (specialization). Both must resolve to the module, and both stages must
+    // survive.
     const withModule = stages.filter((entry) =>
       entry.modules.some((module) => module.id === 'computer-fundamentals'),
     )
     expect(withModule).toHaveLength(2)
-    // And the stages are distinguishable, which is the whole point: they share a
-    // module but not a kind.
     expect(withModule[0]?.stage.kind).not.toBe(withModule[1]?.stage.kind)
   })
 
-  it('returns a distinct kind for every stage of the real content', () => {
-    // If this ever fails, it is not a bug in the renderer — it means content has
-    // started using duplicate stage kinds, which the M2 stage renderer must be
-    // ready for. Worth knowing, so it is asserted rather than assumed.
-    for (const roadmap of allRoadmaps()) {
-      const kinds = roadmap.stages.map((stage) => stage.kind)
-      expect(new Set(kinds).size, `${roadmap.id} has duplicate stage kinds`).toBe(kinds.length)
-    }
+  it('keeps every stage even when three of them share a kind', () => {
+    // The M6 curriculum made this real: `beginner-va` now has three stages of kind
+    // `core`. `StageSchema` allows it ("a list, not a map: two stages may
+    // legitimately share a kind") and `stagesOfRoadmap` returns a LIST precisely so
+    // a kind-keyed renderer cannot drop one. This is the invariant the old
+    // distinct-kinds canary was standing in for.
+    const stages = stagesOfRoadmap('beginner-va')
+    const coreStages = stages.filter((entry) => entry.stage.kind === 'core')
+    expect(coreStages).toHaveLength(3)
+    // Each survives with its own modules, and they are not the same stage.
+    const titles = new Set(coreStages.map((entry) => entry.stage.title))
+    expect(titles.size).toBe(3)
+    for (const entry of coreStages) expect(entry.modules.length).toBeGreaterThan(0)
   })
 
   it('returns an empty list for an unknown roadmap rather than throwing', () => {
@@ -69,11 +76,11 @@ describe('roadmap summaries — derived counts', () => {
     if (!beginnerVa) return
 
     const summary = summariseRoadmap(beginnerVa)
-    // Three stage references, but only two distinct modules: va-foundations and
-    // computer-fundamentals. Counting three would overstate the work, which is
-    // the specific bug this distinction exists to prevent.
-    expect(summary.distinctModuleCount).toBe(2)
-    expect(summary.moduleCount).toBe(3)
+    // Seven stage references, but only six distinct modules: the sixth stage
+    // repeats `computer-fundamentals`. Counting seven would overstate the work,
+    // which is the specific bug this distinction exists to prevent.
+    expect(summary.distinctModuleCount).toBe(6)
+    expect(summary.moduleCount).toBe(7)
   })
 
   it('counts lessons once per roadmap even when a module repeats', () => {
@@ -88,11 +95,11 @@ describe('roadmap summaries — derived counts', () => {
   })
 
   it('reports honest totals for the current curriculum', () => {
-    // Pinned to the M0 content so an accidental content deletion shows up here as
-    // a test failure rather than as a quietly emptier dashboard.
+    // Pinned to the real content so an accidental content deletion shows up here
+    // as a test failure rather than as a quietly emptier dashboard.
     const beginnerVa = allRoadmaps().find((roadmap) => roadmap.id === 'beginner-va')
     if (!beginnerVa) return
-    expect(summariseRoadmap(beginnerVa).lessonCount).toBe(4)
+    expect(summariseRoadmap(beginnerVa).lessonCount).toBe(17)
   })
 })
 

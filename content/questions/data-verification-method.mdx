@@ -1,0 +1,28 @@
+---
+id: data-verification-method
+type: single-choice
+prompt: >-
+  You have just entered two hundred phone numbers down a column. Which
+  verification method is most likely to catch a transposed pair of digits?
+choices:
+  - id: read-back
+    text: Read the column back from the top, slowly
+  - id: cross-check
+    text: Check across each row instead of down the column
+  - id: sort
+    text: Sort the column and check it looks right
+  - id: count
+    text: Count the rows to confirm all two hundred are present
+correctChoiceId: cross-check
+explanation: >-
+  Reading back what you typed does not work, because you read what you meant.
+  Changing direction forces your eye to process the data rather than the pattern,
+  which is what catches a transposition. A row count is a useful check but it
+  proves completeness, not accuracy — two hundred wrong numbers still count as two
+  hundred.
+skills:
+  - data-entry
+  - data-quality-control
+status: draft
+updatedAt: '2026-10-05'
+---

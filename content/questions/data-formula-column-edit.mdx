@@ -1,0 +1,28 @@
+---
+id: data-formula-column-edit
+type: single-choice
+prompt: >-
+  A client's sheet has a total in the last row that is calculated by a formula. You
+  need to add ten rows of data above it. What should you check afterwards?
+choices:
+  - id: total-changed
+    text: That the total changed by the amount you added
+  - id: formatting
+    text: That the new rows match the formatting of the old ones
+  - id: column-width
+    text: That the columns are still wide enough to read
+  - id: freeze-panes
+    text: That the header row is still frozen
+correctChoiceId: total-changed
+explanation: >-
+  A formula covers a fixed range. If the new rows fall outside it, the total
+  silently stays wrong — and it looks correct, which is worse than an error. Adding
+  rows rather than pasting over the data usually extends the range, but checking
+  the arithmetic is what proves it did. Formatting and layout matter; a wrong total
+  is the one that gets acted on.
+skills:
+  - data-spreadsheets
+  - data-quality-control
+status: draft
+updatedAt: '2026-10-05'
+---

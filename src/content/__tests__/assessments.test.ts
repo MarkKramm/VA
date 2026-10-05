@@ -378,8 +378,15 @@ describe('the real assessment content', () => {
     expect(validateRegistry(registry).errors).toBe(0)
   })
 
-  it('is reachable from the roadmap that declares it', () => {
-    expect(roadmapsUsingAssessment(registry, ASSESSMENT).map((r) => r.id)).toEqual(['beginner-va'])
+  it('is reachable from the roadmaps that declare it', () => {
+    // beginner-va and non-voice-va stage it as their final assessment, and
+    // data-entry-va names it as outcome evidence. All three are derived from the
+    // roadmap side, so no assessment file states them.
+    expect(roadmapsUsingAssessment(registry, ASSESSMENT).map((r) => r.id)).toEqual([
+      'beginner-va',
+      'data-entry-va',
+      'non-voice-va',
+    ])
   })
 
   it('produces evidence for the skills it claims', () => {

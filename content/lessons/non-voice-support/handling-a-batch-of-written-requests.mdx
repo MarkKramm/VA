@@ -1,0 +1,107 @@
+---
+id: handling-a-batch-of-written-requests
+title: Handling a Batch of Written Requests
+aliases:
+  - request queue
+  - batch processing
+  - clearing a queue
+summary: >-
+  A repeatable method for working through a queue of client requests in one
+  session, so nothing is missed and nothing is half-done.
+objectives:
+  - Sort a queue into do-now, ask, delegate and defer
+  - Process a batch without losing track of the ones you skipped
+  - Close the session with a status the client can read
+topics:
+  - id: sorting-the-queue
+    title: Sorting the queue
+    skills:
+      - administration-prioritisation
+  - id: processing-without-losing-threads
+    title: Processing without losing threads
+    skills:
+      - administration-prioritisation
+  - id: closing-the-session
+    title: Closing the session
+    skills:
+      - communication-client-updates
+skills:
+  - administration-prioritisation
+  - communication-client-updates
+difficulty: beginner
+estimatedMinutes: 12
+exercises:
+  - sort-a-request-queue
+prerequisites:
+  - id: inbox-triage
+    reason: A request queue is an inbox with a job attached to every item.
+  - id: what-non-voice-work-looks-like
+    reason: This lesson assumes the shape of a written-support working day.
+status: draft
+updatedAt: '2026-10-05'
+changeNote: Written at M6 as part of the core VA foundation curriculum.
+---
+
+A queue of twenty written requests is not twenty tasks. It is four groups, and
+sorting them first is what stops the session becoming twenty half-finished things.
+
+## Sorting the queue
+
+Read everything once, without doing anything. Then sort into four piles:
+
+1. **Do now** — you have everything you need and it takes minutes. Clear these
+   first: they shrink the queue and they are usually the ones somebody is waiting
+   on.
+2. **Ask** — you cannot start because a detail is missing. Draft the question
+   immediately, even if you send the batch later. Asking early means the answer
+   arrives while you work on something else.
+3. **Work** — you have everything you need and it takes real time. These get
+   scheduled into blocks.
+4. **Defer** — not urgent, not blocking anyone, and not today. Put it in the list
+   with a date. This is the pile that must be written down, because it is the one
+   you will forget.
+
+The single most common failure in queue work is doing the easy items repeatedly
+and never starting the hard ones. If the "work" pile has not been touched by the
+end of the session, the session did not accomplish anything the client asked for.
+
+## Processing without losing threads
+
+- **One item at a time, to completion.** Opening five and finishing none leaves
+  five things to re-read.
+- **Write the state down the moment you leave an item.** "Waiting on Acme's
+  address" — not "in progress". A queue item with no next action is a queue item
+  you will open twice.
+- **Keep a scratch list** of anything you touched but did not finish. At the end of
+  the session it becomes the handover; during it, it stops you reopening things.
+- **Batch the questions.** Four questions in one message get answered in one
+  reply. Four messages across a day get answered across a day, and one gets
+  forgotten.
+
+## Closing the session
+
+End every session with a status the client can read in five seconds. Three lines is
+usually enough:
+
+```text
+Done:      March reconciliation, 4 draft replies, folder tidy-up
+Waiting:   2 questions sent (supplier statement, April dates)
+Next:      April schedule — tomorrow morning
+```
+
+This is not reporting for its own sake. It is the thing that lets a client trust a
+written-only relationship, because it is the only evidence they have that the
+queue moved.
+
+## What not to do
+
+Do not answer a request you do not understand just to clear it. Do not leave an
+item "in progress" with no next action. Do not silently drop a request you decided
+was unimportant — say "I've left this until Thursday, is that right?" and let the
+client disagree.
+
+## Practice
+
+Take ten written requests — real or invented — and sort them into the four piles
+without doing any of them. Then write the three-line closing status for the
+session you would run.

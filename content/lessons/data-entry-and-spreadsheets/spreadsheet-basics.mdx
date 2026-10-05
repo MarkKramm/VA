@@ -1,0 +1,107 @@
+---
+id: spreadsheet-basics
+title: Spreadsheet Basics for Client Work
+aliases:
+  - excel basics
+  - google sheets basics
+  - spreadsheet formulas
+summary: >-
+  The small part of a spreadsheet you need every day, and the rules that keep you
+  from breaking a sheet somebody else built.
+objectives:
+  - Read a spreadsheet and work out what its columns mean before editing it
+  - Write the handful of formulas that cover most client work
+  - Edit a shared sheet without destroying its structure or its formulas
+topics:
+  - id: reading-before-editing
+    title: Reading a sheet before you touch it
+    skills:
+      - data-spreadsheets
+  - id: formulas-worth-knowing
+    title: The formulas worth knowing
+    skills:
+      - data-spreadsheets
+  - id: editing-safely
+    title: Editing safely
+    skills:
+      - data-quality-control
+skills:
+  - data-spreadsheets
+  - data-quality-control
+difficulty: beginner
+estimatedMinutes: 12
+quiz: data-basics
+prerequisites:
+  - id: data-entry-that-does-not-need-checking
+    reason: Formulas operate on data, and accurate data is the precondition for trusting them.
+status: draft
+updatedAt: '2026-10-05'
+changeNote: Written at M6 as part of the core VA foundation curriculum.
+---
+
+A client's spreadsheet is a small program. It has structure, hidden columns,
+formulas and often a person who maintains it. Your job is to add to it, not to
+reinterpret it.
+
+## Reading a sheet before you touch it
+
+Before you type anything:
+
+1. **Read the header row.** It is the contract for every column. `Amount` and
+   `Amount (net)` are different columns.
+2. **Click a cell that looks computed.** The formula bar tells you whether the
+   value is typed or calculated. A column that looks like data but is a formula is
+   the single most common source of accidental damage.
+3. **Look for hidden rows, hidden columns and other sheets.** Filtered views hide
+   rows without deleting them, and a second sheet often holds the lookup lists.
+4. **Look for a frozen header or a filter.** A filter means somebody is using this
+   sheet to see a subset of it. Sorting while a filter is active rearranges only
+   the visible rows — a classic and invisible way to scramble a dataset.
+
+## The formulas worth knowing
+
+Five functions cover most administrative spreadsheet work. Learn these before
+anything else:
+
+| Formula                                | What it does               | Typical use                       |
+| -------------------------------------- | -------------------------- | --------------------------------- |
+| `SUM(range)`                           | Adds numbers               | Totals, invoice values            |
+| `COUNTA(range)`                        | Counts non-empty cells     | "How many rows did I enter?"      |
+| `IF(test, a, b)`                       | Chooses between two values | Flagging overdue items            |
+| `VLOOKUP(value, table, column, FALSE)` | Finds a matching row       | Matching a name to an ID          |
+| `TRIM(text)`                           | Removes stray spaces       | Fixing values that will not match |
+
+Two rules make them safe:
+
+- **Absolute references** — a dollar sign before the column letter and the row
+  number — when a range must not shift as you copy the formula down. Forgetting
+  them is why the second row's formula looks up the wrong table.
+- **`TRIM` before you match.** A trailing space in a name means `VLOOKUP` finds
+  nothing, and the two values look identical on screen.
+
+## Editing safely
+
+- **Never sort a filtered range** without clearing the filter first.
+- **Insert rows rather than pasting over**, so formulas below the data extend
+  correctly.
+- **Do not type over a formula cell.** If you must replace a calculated value with
+  a typed one, say so in your handover — somebody is relying on it recalculating.
+- **Copy the sheet before a big change.** `Sheet name (backup 2026-10-05)` is
+  cheap insurance, and deleting it afterwards is a decision you can make once you
+  know the change was right.
+- **Check the total before and after.** If you added rows, the sum should change
+  by the amount you added. If it did not, you have entered data outside the range
+  the formula covers.
+
+## What not to do
+
+Do not restructure a client's sheet because a different layout would be tidier.
+Do not delete columns that look empty — they may feed a formula or a chart. Do not
+leave a filter active when you finish, because the next person will think rows are
+missing.
+
+## Practice
+
+Take any small spreadsheet, find one calculated column, and write down what the
+formula does in one sentence. Then add a row at the bottom and check whether the
+total changed — if it did not, you have found a range that does not extend.

@@ -128,6 +128,31 @@ belongs to a later milestone, and recording them here is what kept them out of M
 - **Browser-automation journeys** — M3 tests the real store, storage and routes through jsdom.
   Playwright stays a M9 item rather than a mid-milestone install.
 
+## M6 — deferred
+
+Deliberately NOT done in M6, which produced the core VA foundations curriculum. Each is
+follow-up content or a capability the current architecture does not have.
+
+- **Module and roadmap bodies are parsed but not rendered.** The registry has no
+  `moduleBodies` / `roadmapBodies` map, so the prose in `content/modules/*.mdx` and
+  `content/roadmaps/*.mdx` is counted in the payload report and then dropped. The new M6 module
+  bodies are kept deliberately short until a milestone renders them.
+- **The tool directory and search.** `lesson.tools` and `lesson.resources` are still staged and
+  skipped as pending collections. The M6 lessons mention tools in prose instead of referencing
+  entities that do not exist.
+- **Labs.** `lab.submitted` exists in the event union and `lesson.lab` is staged, but there is no
+  `Lab` content entity and no lab route. `lab` outcome evidence is skipped, not rendered.
+- **Specialised career curriculum.** Social media, bookkeeping, project coordination, real estate,
+  e-commerce and every other specialisation. M6 is the shared foundation they build on.
+- **Document creation as its own module.** Covered inside Shared Files and Documents
+  (`writing-a-simple-sop`); a fuller module needs the tool directory for tool references.
+- **Internet and web fundamentals beyond the browser.** `browser-basics` covers what a VA needs
+  of a browser; URLs, HTTPS and domains are covered inside the research lessons rather than as a
+  separate module.
+- **Voice / phone support.** Out of scope by design at M6 — the non-voice track is the point.
+- **Job applications, resume, portfolio, interview tooling.** Later batches; several are listed
+  as deliberate non-features in `docs/ARCHITECTURE.md`.
+
 ## M5 — deferred
 
 Deliberately NOT done in M5, which adds practical assessments, skill evidence and a readiness

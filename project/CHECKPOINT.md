@@ -5,6 +5,63 @@ something that works.
 
 ---
 
+## Checkpoint: M6 — Core VA Curriculum
+
+**Date:** 2026-10-05
+**Milestone:** M6 — Core VA Curriculum · complete
+**Tag:** none — `v0.3.0-content-engine` remains the latest
+**Branch:** `main`
+
+### What this checkpoint is
+
+The platform has a real first curriculum slice: seven modules and twenty lessons of substantive
+beginner VA material, ten do-something exercises, six module quizzes, three practical assessments,
+and a non-voice roadmap. Content only — no new architecture, no new dependency, no runtime parsing.
+
+### Verified working
+
+- `npm run content:check` — **0 errors, 2 warnings.** 3 roadmaps, 9 modules, 24 lessons,
+  11 exercises, 21 questions, 7 quizzes, 3 assessments, 23 skills; payload 98.2 KB. The two
+  warnings are the two reading-only M0 lessons, as before.
+- `npm run typecheck`, `npm run lint`, `npm run check:contrast` (34 pairs) — clean.
+- `npm run test` — **680 across 39 files; 679 pass.** The single failure is the environmental
+  `content-gate.test.ts` child-process spawn (`cmd.exe EBUSY`); `content:check` run directly
+  exits 0, so the gate itself is green.
+- `npm run test:arch` — 16 passing.
+- `npm run build` — 768 kB / 214 kB gzipped; SPA fallback written; `check:paths` clean; **no
+  compiler in the client**; no dependency added.
+
+### What was added
+
+- Seven modules: `online-research`, `professional-communication`, `email-and-scheduling`,
+  `shared-files-and-documents`, `data-entry-and-spreadsheets`, `remote-work-and-safety`,
+  `non-voice-support`.
+- Twenty lessons, each with objectives, skills, prerequisites and substantive instructional prose
+  (concept → explanation → example → procedure → mistakes → practice).
+- Ten exercises: `turn-a-request-into-a-search-plan`, `triage-a-messy-inbox`,
+  `build-a-task-list`, `write-a-sop`, `audit-a-shared-drive`, `verify-a-data-entry-batch`,
+  `clean-a-small-dataset`, `plan-a-working-day`, `audit-a-job-offer`, `sort-a-request-queue`.
+- Six quizzes and twenty-one questions: `research-basics`, `communication-basics`,
+  `email-and-scheduling-basics`, `data-basics`, `safety-basics`, `non-voice-basics`.
+- Two assessments: `verified-research-brief`, `clean-and-organise-a-dataset`.
+- Four new skills (`safety` + 2 children, `data-spreadsheets`); the rest reused.
+- `non-voice-va` roadmap, and outcome evidence resolved to real links on the roadmap page
+  (`outcomesOfRoadmap`).
+- Twenty-one test updates to pinned facts about the real curriculum, plus four new evidence-link
+  tests.
+
+### Not done, deliberately
+
+Labs, the tool directory and search, every specialised career curriculum, and module/roadmap body
+rendering (they are parsed and counted but not rendered). See `BACKLOG.md` → "M6 — deferred".
+
+### Recommended next task
+
+**The tool directory and search** — the work `PLAN.md` previously labelled M5. See
+`NEXT_STEPS.md`.
+
+---
+
 ## Checkpoint: M5 — Learning and assessment foundation
 
 **Date:** 2026-10-05

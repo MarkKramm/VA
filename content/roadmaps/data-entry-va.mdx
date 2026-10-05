@@ -18,8 +18,16 @@ stages:
     title: Working habits
     modules:
       - computer-fundamentals
-  - kind: specialization
+  - kind: core
     title: Data foundations
+    modules:
+      - data-entry-and-spreadsheets
+  - kind: core
+    title: Files and documents
+    modules:
+      - shared-files-and-documents
+  - kind: specialization
+    title: Data foundations revisited
     modules:
       - va-foundations
     note: >-
@@ -28,14 +36,21 @@ stages:
       module-reuse model this platform is built on.
 outcomes:
   - statement: Describe what a virtual assistant does and who hires one
-    evidence: []
+    evidence:
+      - kind: quiz
+        id: va-foundations-basics
     weight: 0.4
   - statement: Enter and verify data accurately, and notice when it is not
-    evidence: []
+    evidence:
+      - kind: assessment
+        id: clean-and-organise-a-dataset
     weight: 1
   - statement: Organise client files so they can be found later
-    evidence: []
+    evidence:
+      - kind: assessment
+        id: client-file-organisation
     weight: 0.4
+finalAssessment: clean-and-organise-a-dataset
 estimatedWeeks: 2
 level: beginner
 status: draft
