@@ -12,6 +12,14 @@ All notable changes to this project. Format follows
 
 ### Added
 
+- **The learner-facing quiz renderer (M4.2).** `/quizzes/:quizId` renders a validated quiz — its
+  title, summary and questions in the declared order — with single-choice and true/false
+  questions as accessible radio groups, a live "N of M answered" count, and a completion control
+  that states plainly that nothing is scored or saved yet. Answers are transient component state:
+  no storage, no progress event, no attempt, no score. `quizContext` strips the correct answers
+  before the renderer sees them, so the page could not reveal one. `lesson.quiz` became a
+  fail-closed reference and the lesson page now links to the quiz it declares
+  (`DECISIONS.md` D31).
 - **The question and quiz content architecture (M4.1).** `Question` and `Quiz` are now
   first-class content entities, one file per entity in `content/questions/` and
   `content/quizzes/`, validated and registered like every other collection. A question is a

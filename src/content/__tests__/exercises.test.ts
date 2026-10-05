@@ -102,16 +102,20 @@ describe('the real exercise content', () => {
     ).toEqual([])
   })
 
-  it('makes one lesson reach practice, so no-practice warnings fall by fact', () => {
-    // Four M0 lessons; `files-and-folders` now has a real exercise. The count is
-    // pinned so a regression that un-wires the exercise shows up here rather than
-    // being absorbed by the quality rule.
+  it('makes two lessons reach practice, so no-practice warnings fall by fact', () => {
+    // Four M0 lessons. `files-and-folders` has a real exercise (M2.4) and
+    // `what-is-a-virtual-assistant` links a quiz (M4.2), so two are still reading
+    // pages. The count is pinned so a regression that un-wires either one shows up
+    // here rather than being absorbed by the quality rule.
     const noPractice = validateRegistry(registry).issues.filter(
       (issue) => issue.rule === 'quality/no-practice',
     )
-    expect(noPractice).toHaveLength(3)
+    expect(noPractice).toHaveLength(2)
     expect(noPractice.map((issue) => issue.path)).not.toContain(
       'content/lessons/**/files-and-folders.mdx',
+    )
+    expect(noPractice.map((issue) => issue.path)).not.toContain(
+      'content/lessons/**/what-is-a-virtual-assistant.mdx',
     )
   })
 

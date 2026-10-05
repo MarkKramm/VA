@@ -5,6 +5,55 @@ something that works.
 
 ---
 
+## Checkpoint: M4.2 — Learner quiz renderer
+
+**Date:** 2026-10-05
+**Milestone:** M4 — Quiz Engine · M4.2 complete (M4.3 not started)
+**Tag:** none — `v0.3.0-content-engine` remains the latest
+**Branch:** `main`
+
+### What this checkpoint is
+
+A learner can open a quiz and answer it. Nothing is scored, graded, recorded or saved — that is
+M4.3 — and the page says so rather than implying otherwise.
+
+### Verified working
+
+- `npm run content:check` — **0 errors, 2 `quality/no-practice` warnings**. Down from three
+  because `what-is-a-virtual-assistant` now links a quiz, so it reaches practice **by fact**.
+- `npm run typecheck`, `npm run lint`, `npm run check:contrast` (34 pairs) — clean.
+- `npm run test` — **567 across 32 files; 566 pass.** The single failure is the environmental
+  `content-gate.test.ts` child-process spawn (`cmd.exe EBUSY`); the test is unchanged.
+- `npm run test:arch` — 16 passing.
+- `npm run build` — 515 kB / 157 kB gzipped; SPA fallback written; `check:paths` clean; no
+  compiler in the client.
+
+### What was added
+
+- `/quizzes/:quizId` (`src/features/quizzes/`) — `QuizPage`, `QuestionCard`, `answers.ts` and
+  their stylesheets. One radio group per question, a live "N of M answered" count, and a
+  completion control that states nothing is scored or saved.
+- `quizContext` in `src/app/content.ts` — the renderer's view, with `correctChoiceId`, `answer`
+  and `explanation` **stripped**, so the page cannot reveal a correct answer.
+- `lesson.quiz` is now a **fail-closed** reference, and the lesson page links the quiz it
+  declares (`DECISIONS.md` D31).
+- `content/lessons/foundations/what-is-a-virtual-assistant.mdx` declares
+  `quiz: va-foundations-basics`, so the quiz is reachable in the real content.
+- 17 renderer/interaction tests plus a lesson-link test; the harness route table and
+  `router.test.ts` were kept in sync.
+
+### Not done, deliberately
+
+No scoring, no pass/fail, no mastery, no attempt, no `quiz.attempted`, no progress integration,
+no storage of answers, no shuffling, no additional question types, and no roadmap evidence
+linkage. See `BACKLOG.md` → "M4.2 — deferred".
+
+### Recommended next task
+
+**M4.3 — scoring, attempts and progress integration.**
+
+---
+
 ## Checkpoint: M4.1 — Question and quiz content architecture
 
 **Date:** 2026-10-05

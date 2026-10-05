@@ -158,6 +158,24 @@ const checkReferentialIntegrity = (registry: ContentRegistry, issues: RegistryIs
         )
       }
     })
+    /*
+     * The lesson's quiz (M4.2). `lesson.quiz` existed from M0 but was skipped as a
+     * pending collection; quizzes are registered now, so a lesson naming a quiz
+     * that does not exist is an error rather than a link that silently renders
+     * nothing. This is what makes the "Take the quiz" link on a lesson page
+     * trustworthy: the link exists because the quiz does.
+     */
+    if (lesson.quiz !== undefined && !resolve(registry.quizzes, lesson.quiz)) {
+      report(
+        issues,
+        'error',
+        'referential-integrity',
+        'lesson',
+        at,
+        'quiz',
+        `"${lesson.quiz}" does not exist`,
+      )
+    }
   }
 
   for (const exercise of registry.exercises.values()) {

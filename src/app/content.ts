@@ -13,6 +13,7 @@ import {
   modulesOfRoadmap,
   primaryModuleOfLesson,
   primaryRoadmapOfLesson,
+  questionsOfQuiz,
   roadmapsByCareerPath,
   skillsByIds,
 } from '@/content/selectors.ts'
@@ -241,6 +242,83 @@ export const allQuizzes = (): readonly Quiz[] => [...registry.quizzes.values()]
 
 export const findQuiz = (quizId: string): Quiz | undefined => getQuiz(registry, quizId)
 
+/** One answer option as the renderer sees it: a value to store and a label to show. */
+export interface QuizChoiceView {
+  readonly id: string
+  readonly text: string
+}
+
+/**
+ * A question as the RENDERER sees it (M4.2).
+ *
+ * WHAT IS DELIBERATELY MISSING
+ *
+ * No `correctChoiceId`, no `answer`, no `explanation`. M4.2 collects selections
+ * and stops; it must not know or reveal which answer is right, and the
+ * explanation states outright why the right answer is right. Leaving those fields
+ * out makes that boundary STRUCTURAL — a component that cannot see the answer
+ * cannot leak it, by accident or otherwise — rather than a rule someone has to
+ * remember. M4.3's scorer reads the canonical `Question` through its own seam.
+ *
+ * It is a discriminated union on `type`, mirroring the content, so the renderer
+ * switches on one field and TypeScript refuses a switch that forgets a member.
+ */
+export type QuizQuestionView =
+  | {
+      readonly type: 'single-choice'
+      readonly id: string
+      readonly prompt: string
+      readonly choices: readonly QuizChoiceView[]
+    }
+  | { readonly type: 'true-false'; readonly id: string; readonly prompt: string }
+
+/**
+ * A question, narrowed to what a renderer may see.
+ *
+ * The `switch` is exhaustive and `unreachable` is a `never` guard, so adding a
+ * question type to the content schema is a COMPILE error here rather than a
+ * question that silently renders as the wrong kind.
+ */
+const toQuizQuestionView = (question: Question): QuizQuestionView => {
+  switch (question.type) {
+    case 'single-choice':
+      return {
+        type: 'single-choice',
+        id: question.id,
+        prompt: question.prompt,
+        choices: question.choices.map((choice) => ({ id: choice.id, text: choice.text })),
+      }
+    case 'true-false':
+      return { type: 'true-false', id: question.id, prompt: question.prompt }
+    default:
+      return unreachable(question)
+  }
+}
+
+/** Compile-time exhaustiveness guard. See `toQuizQuestionView`. */
+const unreachable = (value: never): never => {
+  throw new Error(`Unhandled question type: ${JSON.stringify(value)}`)
+}
+
+export interface QuizContext {
+  readonly quiz: Quiz
+  /** The questions in the quiz's declared order, ready to render. */
+  readonly questions: readonly QuizQuestionView[]
+}
+
+/**
+ * Everything a quiz page needs, in one read (M4.2).
+ *
+ * The join lives here rather than in the component for the same reason
+ * `lessonContext` does: a feature may not touch the registry, and "what order are
+ * the questions asked in" is a question about the content, not about the UI.
+ */
+export const quizContext = (quizId: string): QuizContext | undefined => {
+  const quiz = getQuiz(registry, quizId)
+  if (!quiz) return undefined
+  return { quiz, questions: questionsOfQuiz(registry, quizId).map(toQuizQuestionView) }
+}
+
 /**
  * A resolved reference to another lesson, for navigation and link lists.
  *
@@ -354,6 +432,23 @@ export interface LessonContext {
   readonly skills: readonly Skill[]
   /** The lesson's practice exercises, in the lesson's declared order (M2.4). */
   readonly exercises: readonly ExerciseView[]
+  /**
+   * The quiz this lesson links to, resolved (M4.2), or `undefined`.
+   *
+   * Resolved here rather than in the page so a feature never holds a raw quiz id,
+   * exactly as `previous`/`next` are. `lesson.quiz` is checked fail-closed by
+   * referential integrity, so a resolved link always names a quiz that exists —
+   * which is what makes rendering it safe rather than a dead link waiting to
+   * happen.
+   */
+  readonly quiz: QuizLink | undefined
+}
+
+/** A resolved reference to a quiz, for the "check your understanding" link. */
+export interface QuizLink {
+  readonly id: string
+  readonly title: string
+  readonly questionCount: number
 }
 
 export const lessonContext = (lessonId: string): LessonContext | undefined => {
@@ -394,5 +489,14 @@ export const lessonContext = (lessonId: string): LessonContext | undefined => {
     related: lessonsByIds(registry, lesson.related).map(toLessonLink),
     skills: skillsByIds(registry, lesson.skills),
     exercises: exercisesOfLesson(registry, lessonId).map(toExerciseView),
+    quiz: toQuizLink(lesson.quiz),
   }
+}
+
+/** Resolve `lesson.quiz` to something a page can link to, or `undefined`. */
+const toQuizLink = (quizId: string | undefined): QuizLink | undefined => {
+  if (quizId === undefined) return undefined
+  const quiz = getQuiz(registry, quizId)
+  if (!quiz) return undefined
+  return { id: quiz.id, title: quiz.title, questionCount: quiz.questionIds.length }
 }

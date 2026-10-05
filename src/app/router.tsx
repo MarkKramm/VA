@@ -2,6 +2,7 @@ import { createBrowserRouter } from 'react-router'
 import { AppShell } from '@/components/layout/AppShell.tsx'
 import { DashboardPage } from '@/features/dashboard/DashboardPage.tsx'
 import { LessonPage } from '@/features/lessons/LessonPage.tsx'
+import { QuizPage } from '@/features/quizzes/QuizPage.tsx'
 import { NotFoundPage, RouteErrorPage } from '@/features/roadmaps/NotFoundPage.tsx'
 import { RoadmapDetailPage } from '@/features/roadmaps/RoadmapDetailPage.tsx'
 import { RoadmapsPage } from '@/features/roadmaps/RoadmapsPage.tsx'
@@ -63,6 +64,13 @@ export const router = createBrowserRouter(
          * reason the route is keyed on it.
          */
         { path: 'lessons/:lessonId', element: <LessonPage /> },
+        /*
+         * Quizzes follow the same rule: addressed by stable id, never by file
+         * path. A learner reaches one from the lesson that declares it
+         * (`lesson.quiz`), and an id that does not resolve renders the same
+         * in-shell 404 an unknown lesson does.
+         */
+        { path: 'quizzes/:quizId', element: <QuizPage /> },
         { path: '*', element: <NotFoundPage /> },
       ],
     },

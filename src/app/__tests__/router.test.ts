@@ -94,6 +94,7 @@ describe('router — route table', () => {
     expect(source).toContain("path: 'roadmaps/:roadmapId'")
     // The lesson route arrived at M2.3. It is keyed on the stable lesson id.
     expect(source).toContain("path: 'lessons/:lessonId'")
+    expect(source).toContain("path: 'quizzes/:quizId'")
     expect(source).toContain("path: '*'")
     expect(source).toContain('errorElement')
   })

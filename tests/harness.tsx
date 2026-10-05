@@ -7,6 +7,7 @@ import { ThemeProvider } from '@/app/providers/ThemeProvider.tsx'
 import { MemoryStorageAdapter } from '@/app/storage/memory.ts'
 import { DashboardPage } from '@/features/dashboard/DashboardPage.tsx'
 import { LessonPage } from '@/features/lessons/LessonPage.tsx'
+import { QuizPage } from '@/features/quizzes/QuizPage.tsx'
 import { NotFoundPage, RouteErrorPage } from '@/features/roadmaps/NotFoundPage.tsx'
 import { RoadmapDetailPage } from '@/features/roadmaps/RoadmapDetailPage.tsx'
 import { RoadmapsPage } from '@/features/roadmaps/RoadmapsPage.tsx'
@@ -43,6 +44,7 @@ export const testRoutes = [
       { path: 'roadmaps', element: <RoadmapsPage /> },
       { path: 'roadmaps/:roadmapId', element: <RoadmapDetailPage /> },
       { path: 'lessons/:lessonId', element: <LessonPage /> },
+      { path: 'quizzes/:quizId', element: <QuizPage /> },
       { path: '*', element: <NotFoundPage /> },
     ],
   },

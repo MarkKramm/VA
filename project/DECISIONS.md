@@ -995,3 +995,42 @@ recorded in `BACKLOG.md` as follow-ups that must become fail-closed when the lin
 a field no code reads is a guess made before the milestone that has to live with it. Zod strips
 unknown keys, so content cannot stage one either. `Quiz.shuffle`, which `docs/DATA_MODEL.md`
 sketches, is deferred with the renderer for the same reason.
+
+---
+
+## D31 — The lesson → quiz link is `lesson.quiz`, and it is fail-closed
+
+**Date:** 2026-10-05 (M4.2)
+
+**Context.** D30 deferred the learner-facing linkage: quizzes were content that nothing linked
+to, and validating the singular `lesson.quiz` field would have pre-empted the decision about how
+a learner REACHES a quiz. M4.2 is that decision — and a renderer nobody can reach is not a
+renderer.
+
+**Options.** (a) Add a new `quizzes: [...]` list to the lesson schema. (b) Use the existing
+singular `lesson.quiz`. (c) Ship the route with no link at all.
+
+**Choice.** (b), and make it fail-closed in referential integrity.
+
+**Reason.** The field already exists and is already the right shape for "the quiz that covers
+this lesson", so using it needs no new content relationship — which is the thing the milestone
+brief forbids inventing. (a) is a curriculum redesign for a need nobody has yet: one quiz per
+lesson covers every quiz that exists. (c) leaves a page no learner can find, and a milestone
+whose goal is to make the entities usable by a learner has not met its own goal by shipping an
+unreachable page.
+
+Fail-closed is the non-negotiable half. Without it a lesson could name a quiz that does not
+exist and the page would render no link at all, which reads as "there is no quiz here" rather
+than "the id is wrong" — the same failure mode `lesson.exercises` was made fail-closed to
+prevent at M2.4.
+
+**Consequences.** `lesson.quiz` is now a checked reference, so the "Check your understanding"
+link on a lesson page always points at a quiz that exists, and
+`what-is-a-virtual-assistant` declares one — which also means that lesson now reaches practice,
+so the `quality/no-practice` warnings fall from three to two **by fact** rather than by
+loosening the rule.
+
+A lesson may still have at most one quiz. If a later milestone needs several, that is a schema
+change (a `quizzes` list) and its own decision — the field's shape would move, not the
+rendering. `roadmap.outcomes[].evidence` remains unvalidated: it has never been validated for
+ANY kind, and it belongs with the job-readiness work where evidence is actually consumed.

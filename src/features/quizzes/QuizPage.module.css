@@ -1,0 +1,92 @@
+/*
+ * QuizPage styles.
+ *
+ * The same single reading column as a lesson page: the header, the questions and
+ * the foot all cap at `--measure-prose`, so the page has one left edge and one
+ * right edge and stays readable on a wide screen without a breakpoint.
+ *
+ * The questions are a list because they are an ordered sequence — the order the
+ * quiz declares — and the foot sits on a sunken surface so "what is left to do"
+ * reads as a distinct region rather than as another question.
+ */
+
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+  max-width: var(--measure-prose);
+}
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.title {
+  font-size: var(--text-2xl);
+  text-wrap: balance;
+}
+
+.summary {
+  color: var(--color-text-secondary);
+  font-size: var(--text-md);
+  line-height: var(--leading-relaxed);
+}
+
+.count {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+
+.questions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.footer {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-3);
+  max-width: var(--measure-prose);
+  padding: var(--space-5);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface-sunken);
+}
+
+.footerTitle {
+  font-size: var(--text-md);
+}
+
+.progress {
+  color: var(--color-text-secondary);
+}
+
+.notice {
+  color: var(--color-text-secondary);
+  line-height: var(--leading-relaxed);
+}
+
+.note {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  line-height: var(--leading-normal);
+}

@@ -128,16 +128,39 @@ belongs to a later milestone, and recording them here is what kept them out of M
 - **Browser-automation journeys** — M3 tests the real store, storage and routes through jsdom.
   Playwright stays a M9 item rather than a mid-milestone install.
 
+## M4.2 — deferred
+
+Deliberately NOT done in M4.2, which renders a quiz and collects answers. Each is a follow-up with
+a named owner milestone.
+
+- **Scoring, pass/fail and mastery.** M4.3. The renderer deliberately has no access to the correct
+  answers — `quizContext` strips `correctChoiceId`, `answer` and `explanation` — so a scorer must
+  read the canonical `Question` through its own seam rather than by widening the view.
+- **Quiz attempts and progress integration.** M4.3. No `quiz.attempted` event is emitted, nothing
+  is written to storage, and no lesson is marked practised.
+- **Answer persistence.** Answers are transient component state; leaving the page discards them.
+  M4.3 decides whether a submitted attempt is recorded, and how.
+- **Whether a quiz attempt counts as "practice".** Only `exercise.attempted` sets
+  `practisedLessons` today, so taking a quiz would not move the dashboard's "exercises practised"
+  count. An M4.3 decision, not an M4.2 defect.
+- **A quizzes index.** There is no `/quizzes` route; a quiz is reached from the lesson that
+  declares it. An index becomes worth building once there are enough quizzes to browse.
+- **Additional question types** (`multiple-select`, `matching`, `ordering`, `scenario`,
+  `short-answer`). Each is a new member of the content union plus a renderer. The renderer's
+  `switch` and the view's `never` guard both fail loudly rather than mis-rendering, so adding one
+  is additive — but it is its own milestone.
+- **`Quiz.shuffle`.** Still absent; still a presentation decision.
+- **Roadmap `outcomes[].evidence` linkage.** Untouched, and unvalidated for every kind.
+- **Multiple quizzes per lesson.** `lesson.quiz` is singular (`DECISIONS.md` D31). Several would
+  be a schema change and its own decision; only the field's shape would move, not the rendering.
+
 ## M4.1 — deferred
 
 Deliberately NOT done in M4.1, which is content architecture only. Each is a follow-up with a
 named owner milestone.
 
-- **`lesson.quiz` is not validated.** The field exists (`QuizSlugSchema.optional()`) but
-  referential integrity skips it, so a lesson naming a quiz that does not exist is silently
-  ignored. It must become fail-closed the moment M4.2/M4.3 decides how a learner REACHES a
-  quiz — validating the singular field now would pre-empt that decision (a lesson may end up
-  linking to several quizzes). See `DECISIONS.md` D30.
+- **`lesson.quiz` is not validated.** ~~Deferred to M4.2~~ **Done at M4.2** — the field is now a
+  fail-closed reference and the lesson page links the quiz it declares (`DECISIONS.md` D31).
 - **`roadmap.outcomes[].evidence` is not validated.** It has never been validated for ANY kind
   (`quiz`, `lab`, `assessment`), so making quizzes a registered collection does not change it.
   Belongs with the job-readiness work (M7), where evidence is actually consumed.

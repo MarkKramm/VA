@@ -306,3 +306,34 @@ describe('lesson page — practice (M2.4)', () => {
     }
   })
 })
+
+/**
+ * The quiz link (M4.2).
+ *
+ * `lesson.quiz` existed from M0 but nothing rendered it, so a lesson could name a
+ * quiz and a learner would never see it. These pin the two halves: the link
+ * appears when the lesson declares a quiz, and it does not appear when it does
+ * not — a "Check your understanding" heading over nothing would promise a quiz
+ * that is not there.
+ */
+describe('the quiz link (M4.2)', () => {
+  it('links to the quiz the lesson declares', () => {
+    renderApp({ initialEntries: [`/lessons/${FIRST}`] })
+
+    expect(
+      screen.getByRole('heading', { level: 2, name: /Check your understanding/i }),
+    ).toBeInTheDocument()
+    expect(screen.getByText(/3 questions on what this lesson covers/i)).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Virtual Assistant Foundations' })).toHaveAttribute(
+      'href',
+      '/quizzes/va-foundations-basics',
+    )
+  })
+
+  it('renders no quiz section for a lesson that declares none', () => {
+    renderApp({ initialEntries: [`/lessons/${LAST}`] })
+    expect(
+      screen.queryByRole('heading', { name: /Check your understanding/i }),
+    ).not.toBeInTheDocument()
+  })
+})

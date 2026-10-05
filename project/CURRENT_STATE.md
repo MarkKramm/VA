@@ -1,24 +1,24 @@
 # Current State
 
 **As of:** 2026-10-05
-**Milestone:** M4 — Quiz Engine · **in progress** (M4.1 complete)
-**Next:** M4.2 — the quiz renderer; see `NEXT_STEPS.md`
+**Milestone:** M4 — Quiz Engine · **in progress** (M4.1 and M4.2 complete)
+**Next:** M4.3 — scoring, attempts and progress integration; see `NEXT_STEPS.md`
 
 This file describes the state _as it is_, rewritten each session. It is not a history. For
 the history, see `CHANGELOG.md`.
 
 ## Milestone status
 
-| Milestone              | State                                                                     |
-| ---------------------- | ------------------------------------------------------------------------- |
-| M0 — Foundation        | ✅ complete (`v0.1.0-foundation`)                                         |
-| M1 — Application Shell | ✅ complete                                                               |
-| M2 — Content Engine    | ✅ complete (`v0.3.0-content-engine`)                                     |
-| M3 — Progress          | ✅ complete (not tagged) — local-first progress, dashboard, export/import |
-| M4 — Quiz Engine       | 🔨 in progress — **M4.1 done** (question + quiz content); no renderer yet |
+| Milestone              | State                                                                             |
+| ---------------------- | --------------------------------------------------------------------------------- |
+| M0 — Foundation        | ✅ complete (`v0.1.0-foundation`)                                                 |
+| M1 — Application Shell | ✅ complete                                                                       |
+| M2 — Content Engine    | ✅ complete (`v0.3.0-content-engine`)                                             |
+| M3 — Progress          | ✅ complete (not tagged) — local-first progress, dashboard, export/import         |
+| M4 — Quiz Engine       | 🔨 in progress — **M4.1 + M4.2 done** (content + renderer); nothing is scored yet |
 
-**Not built:** quizzes, labs, assessments, search, the tool directory, career preparation,
-bookmarks, notes, achievements, XP, streaks. Nothing below claims otherwise.
+**Not built:** scoring and quiz attempts, labs, assessments, search, the tool directory, career
+preparation, bookmarks, notes, achievements, XP, streaks. Nothing below claims otherwise.
 
 ---
 
@@ -59,9 +59,10 @@ The **lesson owns the reference** (`lesson.exercises`), so the registry derives
 **build error** (fail-closed). The lesson page renders a **Practice** section — title, summary,
 difficulty, duration, compiled body, deliverable and a static self-check list — and says
 plainly that nothing is scored or saved. Exercises are ungraded and unsaved: no attempt is
-recorded and `exercise.attempted` is deliberately **not** wired (M3). `files-and-folders` is the
-first lesson to reach practice, which is what drops the `quality/no-practice` warnings from 4
-to 3. `DECISIONS.md` D25/D26.
+recorded and `exercise.attempted` is deliberately **not** wired (M3). `files-and-folders` was the
+first lesson to reach practice, and the quiz link on `what-is-a-virtual-assistant` (M4.2) is the
+second — the `quality/no-practice` warnings have fallen from 4 to 2 **by fact**, not by loosening
+the rule. `DECISIONS.md` D25/D26.
 
 **Long-form prose typography.** `src/components/mdx/prose.module.css` styles every construct
 the compiler can emit, from design tokens, and the renderer applies it to every body — so the
@@ -115,6 +116,17 @@ registry derives `questionQuizIds` (question → quizzes), and referential integ
 on a missing question. **Content only** — there is no quiz page, no route, no scoring and no
 attempt (`DECISIONS.md` D30).
 
+**The learner quiz renderer (new at M4.2).** `/quizzes/:quizId` renders a validated quiz: its
+title, summary, and its questions **in the order the quiz declares**. `single-choice` and
+`true-false` questions render as accessible radio groups — one group per question, so selecting
+an answer to one cannot clear another — with a live "N of M answered" count and a completion
+control that says plainly that nothing is scored or saved yet. Answers are **transient component
+state**: no storage, no progress event, no attempt, no score. `quizContext` in `src/app/content.ts`
+**strips the correct answers** (`correctChoiceId`, `answer`, `explanation`) before the renderer
+sees them, so the page could not reveal one even by accident — that boundary is structural, not a
+convention. A lesson links to the quiz it declares through `lesson.quiz`, which is now a
+**fail-closed** reference (`DECISIONS.md` D31). An unknown quiz id renders the normal in-shell 404.
+
 **A working application shell.** React 19 + React Router 7, a real Vite application build,
 five routes, a responsive sidebar/mobile-dialog layout, a dashboard, a roadmaps index and the
 lesson pages, a dark-mode-aware design token layer, and the GitHub Pages deployment path
@@ -132,8 +144,9 @@ scans the emitted JS for compiler markers. Both were proven to bite.
 
 ## What does not exist yet
 
-No search, no quizzes, no tool directory, no labs, no career preparation, no bookmarks or notes.
-Lesson pages, roadmap-to-lesson navigation, practice exercises and the progress UI now exist.
+No search, no tool directory, no labs, no career preparation, no bookmarks or notes, and no quiz
+scoring or saved attempts. Lessons, roadmaps, the progress UI, and a learner-facing quiz now
+exist.
 
 Not implemented, by milestone: quizzes (M4), the tool directory and search (M5), labs (M6),
 career preparation (M7), the remaining roadmaps and skill visualisation (M8), polish (M9).
@@ -148,17 +161,17 @@ achievements, no backend/auth, no state-management library.
 | `npm run format:check`   | clean, including the full `prettier --check .` glob                  |
 | `npm run lint`           | clean                                                                |
 | `npm run typecheck`      | clean, app and tooling configs separately                            |
-| `npm run content:check`  | 0 errors, 3 warnings (all `quality/no-practice`)                     |
+| `npm run content:check`  | 0 errors, 2 warnings (both `quality/no-practice`)                    |
 | `npm run check:contrast` | 34 pairs pass, computed from tokens                                  |
-| `npm run test`           | 548 across 31 files — **547 pass**, 1 sandbox-only spawn failure     |
+| `npm run test`           | 567 across 32 files — **566 pass**, 1 sandbox-only spawn failure     |
 | `npm run test:arch`      | 16 passing                                                           |
-| `npm run build`          | succeeds; 510 kB / 156 kB gzipped — no compiler in the client        |
+| `npm run build`          | succeeds; 515 kB / 157 kB gzipped — no compiler in the client        |
 | `npm run check:paths`    | base `/VA/`, assets present, SPA fallback in place, no compiler leak |
 
 **`npm run check` is the single gate.** Every step is green except one test:
 `src/content/__tests__/content-gate.test.ts` runs `npm run content:check` in a child process,
 and this sandbox cannot spawn `cmd.exe` (`spawnSync … EBUSY`). `content:check` itself is green
-when run directly (0 errors, 3 warnings) and the test is deliberately left unchanged — it is an
+when run directly (0 errors, 2 warnings) and the test is deliberately left unchanged — it is an
 environment limitation, not a code failure. On a normal machine `check` is green end to end, so
 CI will be green.
 

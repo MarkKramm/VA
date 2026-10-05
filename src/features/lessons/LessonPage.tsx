@@ -6,6 +6,7 @@ import { useProgressActions } from '@/app/progress/ProgressProvider.tsx'
 import { MdxContent } from '@/components/mdx/render.tsx'
 import { Badge } from '@/components/ui/Badge.tsx'
 import { Breadcrumbs, type Crumb } from '@/components/ui/Breadcrumbs.tsx'
+import { LinkButton } from '@/components/ui/Button.tsx'
 import { Callout } from '@/components/ui/Callout.tsx'
 import { EmptyState } from '@/components/ui/EmptyState.tsx'
 import { Icon } from '@/components/icons/Icon.tsx'
@@ -223,6 +224,32 @@ export const LessonPage = () => {
           reading-only lesson is not given an empty "Practice" heading.
         */}
         <PracticeSection exercises={context.exercises} lessonId={lesson.id} />
+
+        {/*
+          The quiz (M4.2). Rendered only when the lesson declares one, and the
+          reference is checked fail-closed, so this link cannot point at a quiz
+          that does not exist. It sits with the practice rather than after the
+          completion control: checking your understanding is part of doing the
+          lesson, not something to do once you have declared it finished.
+        */}
+        {context.quiz ? (
+          <section className={styles.quiz} aria-labelledby="quiz-heading">
+            <h2 id="quiz-heading" className={styles.sectionTitle}>
+              <Icon size="sm">
+                <ListChecks />
+              </Icon>
+              Check your understanding
+            </h2>
+            <p className={styles.quizIntro}>
+              {context.quiz.questionCount === 1
+                ? 'One question on what this lesson covers.'
+                : `${context.quiz.questionCount} questions on what this lesson covers.`}
+            </p>
+            <LinkButton to={`/quizzes/${context.quiz.id}`} variant="primary">
+              {context.quiz.title}
+            </LinkButton>
+          </section>
+        ) : null}
 
         {/*
           Completion (M3). Placed after the reading and the practice, because that

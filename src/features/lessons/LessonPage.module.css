@@ -19,6 +19,21 @@
   gap: var(--space-6);
 }
 
+/* The quiz call to action. Sits with the practice, so it shares that block's
+   spacing rhythm rather than inventing one. */
+.quiz {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-3);
+  max-width: var(--measure-prose);
+}
+
+.quizIntro {
+  color: var(--color-text-secondary);
+  line-height: var(--leading-relaxed);
+}
+
 /* The single reading column. Everything a learner reads lives inside it. */
 .article {
   display: flex;

@@ -36,19 +36,21 @@ the project is without needing any conversation history. That is the point of th
 
 **Milestones 0–3 are complete. M2 (Content Engine) is tagged `v0.3.0-content-engine`; M3
 (Progress) is complete and untagged. M4 (Quiz Engine) is in progress — M4.1 landed the question
-and quiz CONTENT architecture, and M4.2 (the renderer) is next.**
+and quiz CONTENT architecture and M4.2 the learner-facing quiz renderer; M4.3 (scoring, attempts,
+progress) is next.**
 
 M0 built the content pipeline and the progress model; M1 the application shell; M2 the content
 engine — build-time frontmatter ingestion and MDX compilation behind an enforced trust
 boundary (M2.1/M2.2), the lesson experience (M2.3), and the first render-only practice
 exercises (M2.4). M3 made progress real: a local-first, event-log-backed progress layer
 (`src/app/progress/`) with lesson completion, ungraded exercise attempts, a dashboard, and
-export/import. M4.1 made `Question` and `Quiz` first-class content entities. Content parsing and
-MDX compilation happen at BUILD time; no parser reaches the client. **Questions and quizzes
-exist as validated content, but there is no quiz engine — no renderer, no route, no scoring and
-no attempts — and no labs, no search and no tool directory.** If you find yourself wanting to
-build one of those, you are working on the wrong milestone — and if you find yourself wanting
-to add a route that points at one, read rule 6 first.
+export/import. M4.1 made `Question` and `Quiz` first-class content entities, and M4.2 rendered
+them: a learner can open a quiz from a lesson and answer its questions. Content parsing and MDX
+compilation happen at BUILD time; no parser reaches the client. **A quiz can be taken but not
+scored — nothing is graded, recorded or saved, because that is M4.3. There are no labs, no search
+and no tool directory.** If you find yourself wanting to build one of those, you are working on
+the wrong milestone — and if you find yourself wanting to add a route that points at one, read
+rule 6 first.
 
 Verify your starting point before doing anything else:
 
@@ -151,8 +153,9 @@ these as warnings; treat every one as a task, not noise.
 
 **Every lesson must reach practice.** A lesson with no exercise, quiz or lab is a
 reading page, and `content:check` warns about it. Exercises exist as of M2.4
-(`content/exercises/`) and a learner can record an ungraded attempt at one (M3); the three M0
-lessons that still warn are reading-only, which is the honest state, not a bug.
+(`content/exercises/`) and a learner can record an ungraded attempt at one (M3); quizzes exist as
+of M4.2 (`content/quizzes/`, reached from a lesson through the validated `lesson.quiz` field).
+The two M0 lessons that still warn are reading-only, which is the honest state, not a bug.
 
 ## 5. Session protocol
 

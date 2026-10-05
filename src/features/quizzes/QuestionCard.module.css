@@ -1,0 +1,109 @@
+/*
+ * QuestionCard styles.
+ *
+ * A question is a card containing a radio group. Two things matter here:
+ *
+ *  - The option row is the touch target (>= 44px), not the radio itself. A 1rem
+ *    radio is unhittable with a thumb, and the whole row is what a learner aims
+ *    at. The `<label>` wraps the input, so tapping anywhere in the row selects it.
+ *  - The selected row changes border AND background AND the radio dot. The dot is
+ *    the non-colour cue, so the state survives forced-colours mode and a
+ *    colour-blind learner.
+ *
+ * Focus is NOT styled here. The product has one global `:focus-visible` treatment
+ * in `global.css` — a two-tone outline that stays visible on coloured surfaces —
+ * and a second one per component is how a product ends up with three.
+ */
+
+.card {
+  margin: 0;
+  padding: var(--space-5);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+}
+
+.legend {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding: 0;
+  max-width: var(--measure-prose);
+}
+
+.position {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.prompt {
+  font-size: var(--text-lg);
+  font-weight: 600;
+  line-height: var(--leading-snug);
+  color: var(--color-text-primary);
+  text-wrap: pretty;
+}
+
+.state {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+
+.options {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: var(--space-4) 0 0;
+  padding: 0;
+  list-style: none;
+  max-width: var(--measure-prose);
+}
+
+.option {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  /* 44px touch target. */
+  min-height: 2.75rem;
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-raised);
+  cursor: pointer;
+}
+
+.option:hover {
+  border-color: var(--color-border-strong);
+  background: var(--color-surface-hover);
+}
+
+.option[data-selected='true'] {
+  border-color: var(--color-accent-border);
+  background: var(--color-accent-soft);
+}
+
+.input {
+  flex: none;
+  /* Brand accent on the native control, so the dot matches the product. */
+  accent-color: var(--color-accent);
+  inline-size: 1.125rem;
+  block-size: 1.125rem;
+  /* Optical alignment with the first line of the label. */
+  margin: 0.2rem 0 0;
+}
+
+.optionText {
+  line-height: var(--leading-normal);
+  color: var(--color-text-primary);
+}
+
+.unsupported {
+  margin: var(--space-4) 0 0;
+  max-width: var(--measure-prose);
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}

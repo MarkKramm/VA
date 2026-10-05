@@ -48,7 +48,6 @@ export const validLesson = (overrides: Record<string, unknown> = {}) => ({
   difficulty: 'beginner' as const,
   estimatedMinutes: 12,
   exercises: ['clean-a-sheet'],
-  quiz: 'cleaning-basics',
   status: 'draft' as const,
   updatedAt: '2026-10-01',
   ...overrides,
