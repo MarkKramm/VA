@@ -229,8 +229,10 @@ lost later in the UI.
 
 `lesson.completed` still exists as a self-report, because removing the checkbox is a wall
 and this platform does not build walls. It simply does not count as competence on its own,
-and an assessment cannot be _passed_ until its lessons are completed **and** practised.
-That is the single hard lock in the platform, and it is reserved for claiming a
+and an assessment cannot be _passed_ until its lessons are completed **and** practised — where a
+lesson has something to practise. A lesson that declares no exercise cannot be required to
+practise one, so for it completion is the whole requirement (`DECISIONS.md` D33). That is the
+single hard lock in the platform, and it is reserved for claiming a
 demonstrated outcome.
 
 ### What is deliberately not stored

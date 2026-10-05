@@ -12,6 +12,16 @@ All notable changes to this project. Format follows
 
 ### Added
 
+- **Practical assessments, skill evidence and readiness (M5).** `Assessment` is a new first-class
+  content entity — scenario, requirements, instructions, deliverable, rubric, hints and common
+  mistakes (`PLAN.md` §52) — with fail-closed referential integrity for its skills and
+  prerequisite lessons, and `roadmap.finalAssessment` and `roadmap.outcomes[].evidence` are now
+  validated too. `/assessments/:assessmentId` walks a learner through the task and records a
+  **self-evaluated** result as the existing `assessment.attempted` event
+  (`evaluatedBy: 'self'`) — the platform has no evaluator and says so. `src/app/learning/evidence.ts`
+  derives the documented three evidence tiers (read / practised / demonstrated) from the content
+  and the event log, and the dashboard now shows them. One practical assessment and a roadmap
+  capstone ship as real content. `DECISIONS.md` D33.
 - **Quiz scoring, results and persisted attempts (M4.3).** A submitted quiz is marked against
   the canonical content by a pure scorer (`src/app/quiz/score.ts`), one point per question, and
   the attempt is recorded through the existing `quiz.attempted` event with `evaluatedBy:

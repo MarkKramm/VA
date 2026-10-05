@@ -164,3 +164,25 @@ export const evidencedSkills = (state: ProgressState): SkillId[] => {
 
 export const isRoadmapEnrolled = (state: ProgressState, roadmapId: RoadmapId): boolean =>
   state.derived.enrolledRoadmaps.includes(roadmapId)
+
+/**
+ * The practice activities the learner has actually attempted, by id (M5).
+ *
+ * `practisedLessons` records WHICH LESSON was practised, not which exercise, so
+ * "did they attempt one of these specific activities?" cannot be answered from
+ * the derived cache alone. This reads the log — the source of truth — rather than
+ * widening the cache for one caller.
+ *
+ * Exercises and labs count, because `docs/DATA_MODEL.md` defines both as
+ * PRACTICE. A quiz does not: a quiz is a scored check, and letting it satisfy a
+ * practice requirement would collapse the two tiers the evidence model exists to
+ * keep apart.
+ */
+export const attemptedActivityIds = (state: ProgressState): ReadonlySet<string> => {
+  const ids = new Set<string>()
+  for (const event of state.events) {
+    if (event.type === 'exercise.attempted') ids.add(event.exerciseId)
+    if (event.type === 'lab.submitted') ids.add(event.labId)
+  }
+  return ids
+}

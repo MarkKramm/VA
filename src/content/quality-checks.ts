@@ -108,7 +108,7 @@ export function runQualityChecks(registry: ContentRegistry): RegistryIssue[] {
   const lessonPath = (id: string): string => `content/lessons/**/${id}.mdx`
 
   const push = (
-    entity: 'lesson' | 'exercise' | 'question' | 'quiz',
+    entity: 'lesson' | 'exercise' | 'question' | 'quiz' | 'assessment',
     severity: 'warning' | 'info',
     rule: string,
     path: string,
@@ -307,7 +307,48 @@ export function runQualityChecks(registry: ContentRegistry): RegistryIssue[] {
     }
   }
 
-  // 9. Near-duplicate lessons. AI agents generating content in parallel reliably
+  /*
+   * 9. The same two checks, applied to ASSESSMENTS (M5).
+   *
+   * An assessment is the longest prose surface in the platform — a scenario, a
+   * requirements list, instructions and a rubric — and the one where a fabricated
+   * figure does the most damage, because the learner copies it into real work for
+   * a real client. Everything a learner reads is scanned.
+   */
+  for (const assessment of registry.assessments.values()) {
+    const at = `content/assessments/${assessment.id}.mdx`
+    const body = [
+      assessment.summary,
+      assessment.purpose,
+      assessment.scenario,
+      assessment.requirements.join(' '),
+      assessment.instructions.join(' '),
+      assessment.deliverable,
+      assessment.evaluationCriteria.map((criterion) => criterion.description).join(' '),
+      assessment.hints.join(' '),
+      assessment.commonMistakes.join(' '),
+      assessment.referenceGuidance ?? '',
+    ].join('\n')
+
+    for (const { pattern, message } of GUARANTEE_PATTERNS) {
+      if (pattern.test(body)) {
+        push('assessment', 'warning', 'quality/language', at, 'scenario', message)
+      }
+    }
+
+    if (NUMERIC_CLAIM.test(body)) {
+      push(
+        'assessment',
+        'warning',
+        'quality/numeric-claim',
+        at,
+        'scenario',
+        'contains a currency amount or percentage with no source — verify it, or remove it',
+      )
+    }
+  }
+
+  // 10. Near-duplicate lessons. AI agents generating content in parallel reliably
   //    produce overlapping lessons; catching them here is far cheaper than
   //    unpicking them later.
   for (let i = 0; i < lessons.length; i += 1) {
@@ -353,7 +394,7 @@ export function runQualityChecks(registry: ContentRegistry): RegistryIssue[] {
     }
   }
 
-  // 10. The stale-tool report — a tool whose `updatedAt` is newer than the
+  // 11. The stale-tool report — a tool whose `updatedAt` is newer than the
   //    `updatedAt` of the lessons that reference it — is not implemented yet,
   //    because it needs the tools collection, which arrives at M5. It is a
   //    derivation over the existing reverse indexes, so it is a few lines once

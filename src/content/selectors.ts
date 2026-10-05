@@ -1,6 +1,7 @@
 import type { ContentRegistry } from './registry.ts'
 import type { CompiledBody } from '@content/mdx/tree.ts'
 import type {
+  Assessment,
   CareerPath,
   Exercise,
   Lesson,
@@ -211,6 +212,39 @@ export const quizzesUsingQuestion = (registry: ContentRegistry, questionId: stri
   (registry.questionQuizIds.get(questionId) ?? []).flatMap((id) => {
     const quiz = registry.quizzes.get(id)
     return quiz ? [quiz] : []
+  })
+
+export const getAssessment = (
+  registry: ContentRegistry,
+  assessmentId: string,
+): Assessment | undefined => registry.assessments.get(assessmentId)
+
+/**
+ * The quizzes whose questions exercise a skill (M5), via the derived
+ * `skillQuizIds`. A quiz declares no skills, so this is the only way to ask the
+ * question — see the index's own comment in `registry.ts`.
+ */
+export const quizzesForSkill = (registry: ContentRegistry, skillId: string): Quiz[] =>
+  (registry.skillQuizIds.get(skillId) ?? []).flatMap((id) => {
+    const quiz = registry.quizzes.get(id)
+    return quiz ? [quiz] : []
+  })
+
+/** The assessments that produce evidence for a skill, via `assessmentSkillIds`. */
+export const assessmentsForSkill = (registry: ContentRegistry, skillId: string): Assessment[] =>
+  (registry.assessmentSkillIds.get(skillId) ?? []).flatMap((id) => {
+    const assessment = registry.assessments.get(id)
+    return assessment ? [assessment] : []
+  })
+
+/** The roadmaps that require an assessment, via `assessmentRoadmapIds`. */
+export const roadmapsUsingAssessment = (
+  registry: ContentRegistry,
+  assessmentId: string,
+): Roadmap[] =>
+  (registry.assessmentRoadmapIds.get(assessmentId) ?? []).flatMap((id) => {
+    const roadmap = registry.roadmaps.get(id)
+    return roadmap ? [roadmap] : []
   })
 
 /** Resolve a list of skill ids to skill records, in the order given, dropping unknown ids. */

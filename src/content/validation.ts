@@ -1,6 +1,14 @@
 import type { ContentRegistry } from './registry.ts'
 import { runQualityChecks } from './quality-checks.ts'
-import type { Exercise, Lesson, Module, Question, Quiz, Roadmap } from './schemas/index.ts'
+import type {
+  Assessment,
+  Exercise,
+  Lesson,
+  Module,
+  Question,
+  Quiz,
+  Roadmap,
+} from './schemas/index.ts'
 
 /**
  * Content validation.
@@ -51,6 +59,7 @@ const pathOf = {
    */
   question: (question: Question): string => `content/questions/**/${question.id}.mdx`,
   quiz: (quiz: Quiz): string => `content/quizzes/${quiz.id}.mdx`,
+  assessment: (assessment: Assessment): string => `content/assessments/${assessment.id}.mdx`,
 }
 
 /**
@@ -243,6 +252,44 @@ const checkReferentialIntegrity = (registry: ContentRegistry, issues: RegistryIs
     })
   }
 
+  /*
+   * An assessment's skill and lesson references (M5). Both are checked
+   * unconditionally: skills and lessons are registered collections, so a
+   * reference that does not resolve is a broken link rather than work in
+   * progress. The prerequisite check is the one that matters most — those are
+   * the lessons the hard lock gates on, and a prerequisite naming a lesson that
+   * does not exist would gate an assessment behind something nobody can do.
+   */
+  for (const assessment of registry.assessments.values()) {
+    const at = pathOf.assessment(assessment)
+    for (const skillId of assessment.skills) {
+      if (!resolve(registry.skills, skillId)) {
+        report(
+          issues,
+          'error',
+          'referential-integrity',
+          'assessment',
+          at,
+          'skills',
+          `"${skillId}" does not exist`,
+        )
+      }
+    }
+    assessment.prerequisites.forEach((prerequisite, index) => {
+      if (!resolve(registry.lessons, prerequisite.id)) {
+        report(
+          issues,
+          'error',
+          'referential-integrity',
+          'assessment',
+          at,
+          `prerequisites[${index}].id`,
+          `"${prerequisite.id}" does not exist`,
+        )
+      }
+    })
+  }
+
   for (const module of registry.modules.values()) {
     const at = pathOf.module(module)
     module.lessons.forEach((lessonId, index) => {
@@ -301,6 +348,54 @@ const checkReferentialIntegrity = (registry: ContentRegistry, issues: RegistryIs
         }
       })
     })
+    /*
+     * The roadmap's final assessment (M5). Assessments are registered now, so a
+     * roadmap naming one that does not exist is an error rather than a roadmap
+     * whose capstone silently does not render.
+     */
+    if (
+      roadmap.finalAssessment !== undefined &&
+      !resolve(registry.assessments, roadmap.finalAssessment)
+    ) {
+      report(
+        issues,
+        'error',
+        'referential-integrity',
+        'roadmap',
+        at,
+        'finalAssessment',
+        `"${roadmap.finalAssessment}" does not exist`,
+      )
+    }
+    /*
+     * Outcome evidence (M5). This was deferred at M4.1 because the referenced
+     * collections did not exist; quizzes and assessments are registered now, so a
+     * reference to one is checked. `lab` is still skipped — labs are a pending
+     * collection — which is the documented rule rather than an oversight: a
+     * known collection is always checked, an unbuilt one is not.
+     */
+    roadmap.outcomes.forEach((outcome, outcomeIndex) => {
+      outcome.evidence.forEach((evidence, evidenceIndex) => {
+        const field = `outcomes[${outcomeIndex}].evidence[${evidenceIndex}].id`
+        const collection =
+          evidence.kind === 'quiz'
+            ? registry.quizzes
+            : evidence.kind === 'assessment'
+              ? registry.assessments
+              : undefined
+        if (collection && !resolve(collection, evidence.id)) {
+          report(
+            issues,
+            'error',
+            'referential-integrity',
+            'roadmap',
+            at,
+            field,
+            `"${evidence.id}" does not exist`,
+          )
+        }
+      })
+    })
   }
 
   for (const skill of registry.skills.values()) {
@@ -353,6 +448,7 @@ const checkDuplicateIds = (registry: ContentRegistry, issues: RegistryIssue[]): 
     { entity: 'exercise', entries: registry.parsed.exercises },
     { entity: 'question', entries: registry.parsed.questions },
     { entity: 'quiz', entries: registry.parsed.quizzes },
+    { entity: 'assessment', entries: registry.parsed.assessments },
     { entity: 'roadmap', entries: registry.parsed.roadmaps },
     { entity: 'skill', entries: registry.parsed.skills },
     { entity: 'career-path', entries: registry.parsed.careerPaths },
@@ -595,6 +691,11 @@ const checkProvenance = (registry: ContentRegistry, issues: RegistryIssue[]): vo
       path: pathOf.quiz(entity),
       value: entity,
     })),
+    ...[...registry.assessments.values()].map((entity) => ({
+      entity: 'assessment',
+      path: pathOf.assessment(entity),
+      value: entity,
+    })),
     ...[...registry.roadmaps.values()].map((entity) => ({
       entity: 'roadmap',
       path: pathOf.roadmap(entity),
@@ -629,6 +730,7 @@ export interface ValidationSummary {
     readonly exercises: number
     readonly questions: number
     readonly quizzes: number
+    readonly assessments: number
   }
   readonly payloadBytes: number
 }
@@ -656,6 +758,7 @@ export function validateRegistry(registry: ContentRegistry): ValidationSummary {
       exercises: registry.exercises.size,
       questions: registry.questions.size,
       quizzes: registry.quizzes.size,
+      assessments: registry.assessments.size,
     },
     payloadBytes: registry.payloadBytes,
   }

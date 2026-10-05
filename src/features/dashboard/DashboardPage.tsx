@@ -9,6 +9,7 @@ import { EmptyState } from '@/components/ui/EmptyState.tsx'
 import { Icon } from '@/components/icons/Icon.tsx'
 import { formatDuration } from '@/lib/cn.ts'
 import { ProgressPanel } from './ProgressPanel.tsx'
+import { SkillsPanel } from './SkillsPanel.tsx'
 import styles from './DashboardPage.module.css'
 
 /**
@@ -232,6 +233,20 @@ export const DashboardPage = () => {
               </h2>
             </div>
             <ProgressPanel />
+          </section>
+
+          {/*
+            Skill evidence (M5). Placed after progress because it answers the
+            question progress cannot: what the learner has actually demonstrated,
+            as opposed to what they have read.
+          */}
+          <section className={styles.progressSection} aria-labelledby="skills-heading">
+            <div className={styles.sectionHeader}>
+              <h2 id="skills-heading" className={styles.sectionTitle}>
+                Your skills
+              </h2>
+            </div>
+            <SkillsPanel />
           </section>
         </div>
       </div>

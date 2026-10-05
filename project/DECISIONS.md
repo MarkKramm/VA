@@ -1116,3 +1116,67 @@ is inspectable. That is inherent to a backendless site, not a defect of this imp
 it is why the platform's job-readiness model is weighted on evidence rather than on quiz scores.
 A quiz score is a check that the learner did the reading; it is not high-stakes evidence, and
 nothing should treat it as such.
+
+---
+
+## D33 — A practical assessment is self-evaluated, and skill evidence is derived, never stored
+
+**Date:** 2026-10-05 (M5)
+
+**Context.** M4 closed the quiz loop: answer → score → attempt → history. M5 adds the layer above
+it — a practical task, the evidence that produces, and a conservative readiness view. The hard
+constraint is that the platform has no server: `docs/ARCHITECTURE.md` lists file upload as a
+deliberate non-feature, so a learner's actual work can never reach the platform.
+
+**THE ASSESSMENT IS SELF-EVALUATED, AND SAYS SO.** There is no automated evaluator and no way to
+build one, so a submission is the learner marking each rubric line they met. The result is
+recorded with `evaluatedBy: 'self'` — the field the domain already carries for exactly this — and
+the page states it before and after submission. The alternative was to invent a score, which
+would have been the single most dishonest thing this product could do: a number presented as a
+measurement that measured nothing.
+
+**THE RUBRIC IS PUBLIC. THE QUIZ'S ANSWERS ARE NOT.** These look inconsistent and are not. A
+learner cannot self-assess against a standard they cannot see, so an assessment publishes its
+criteria; a quiz's answers are withheld because the quiz measures what the learner knows rather
+than what they can honestly report. Two different instruments, two different disclosures —
+`assessmentContext` returns everything, `quizContext` strips the answers.
+
+**ALL CRITERIA, OR IT IS NOT PASSED.** A practical deliverable is a yes/no artefact, not a
+percentage: "organised the files but never named them consistently" is an unfinished task, not
+80% of one. `CRITERIA_REQUIRED_TO_PASS` is a single constant for the same reason the quiz's pass
+mark is (D32) — a per-assessment threshold is a schema change and its own decision.
+
+**NO NEW EVENT, AND NO PAYLOAD.** `assessment.attempted` already existed with
+`assessmentId, attemptId, score, maxScore, passed, evaluatedBy`, so M5 reuses it. No
+`assessment.completed`, no `practical.assessment`, no second concept. The attempt stores the
+outcome and NOT the learner's work: there is nowhere to put a file, and the data model defines an
+attempt as an outcome rather than an answer sheet.
+
+**THE ASSESSMENT IS COMPOSITE, AND BELONGS TO A ROADMAP.** It is reached from
+`roadmap.finalAssessment` and from `roadmap.outcomes[].evidence`, both of which are now validated
+fail-closed. No `lesson.assessment` field was added: an assessment is a capstone over lessons
+rather than a step inside one, and inventing a per-lesson link to make the flow diagram look
+neat would have been a content relationship nobody asked for.
+
+**THE ONE HARD LOCK, AND ITS FIX.** `assessmentEligibility` gates an assessment behind its
+prerequisite lessons being complete and practised. A lesson that declares no activity could never
+satisfy `[].some(...)`, which made the gate unsatisfiable and the assessment permanently
+unreachable — so a lesson with nothing to practise now requires completion only. The gate still
+refuses; it just no longer demands the impossible.
+
+**SKILL EVIDENCE IS DERIVED, NOT STORED.** `docs/DATA_MODEL.md` defines three tiers —
+EXPOSED (`lesson.viewed`), PRACTISED (`exercise.attempted`, `lab.submitted`), DEMONSTRATED
+(`quiz.attempted` or `assessment.attempted`, passed). `src/app/learning/evidence.ts` computes them
+from the content references and the event log. Nothing is written: no `skillEvidence` field, no
+cache, because a second source of truth can always disagree with the log. A quiz declares no
+skills, so its skills are derived through its questions — which is why `skillQuizIds` exists.
+
+**READINESS IS COUNTS AND STATES, NOT A SCORE.** The dashboard shows how many skills are read,
+practised and demonstrated, and names the tier for each in words. There is no percentage, no
+"job readiness" number, no recommendation engine and no AI advice. The data model supports a
+count and an explicit state; a single number would imply a precision that does not exist, which is
+the same reasoning that keeps mastery a level rather than a decimal.
+
+**WHAT THIS DELIBERATELY DOES NOT DO.** No portfolio, no resume, no interview simulation, no job
+board, no search, no XP, no streaks. `docs/ARCHITECTURE.md` lists several of those as deliberate
+non-features, and the rest are later batches.

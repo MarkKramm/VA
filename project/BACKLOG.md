@@ -128,6 +128,33 @@ belongs to a later milestone, and recording them here is what kept them out of M
 - **Browser-automation journeys** — M3 tests the real store, storage and routes through jsdom.
   Playwright stays a M9 item rather than a mid-milestone install.
 
+## M5 — deferred
+
+Deliberately NOT done in M5, which adds practical assessments, skill evidence and a readiness
+view. Each is a follow-up with a named owner milestone.
+
+- **Automated or AI grading.** Impossible without a server, and `docs/ARCHITECTURE.md` lists
+  secure client-side assessment as a stated limitation rather than a gap. An assessment is
+  self-evaluated and the event says `evaluatedBy: 'self'`.
+- **File upload / submission payloads.** A deliberate non-feature: there is nowhere to put a
+  file. The data model defines an attempt as an outcome, not an answer sheet.
+- **A per-assessment pass mark.** All criteria must be met (`DECISIONS.md` D33); a threshold
+  would be a content schema field and its own decision.
+- **A "job readiness" score.** Readiness is counts and explicit states. A single number would
+  imply a precision the evidence does not carry — the same reasoning that keeps mastery a level
+  rather than a decimal.
+- **A recommendation engine / "what next".** Needs a ranking model and a product decision.
+- **Portfolio, resume, interview simulation, job board.** Later batches, and several are listed
+  as deliberate non-features.
+- **Assessment attempts contributing to skill MASTERY.** Evidence tiers are per-skill; a numeric
+  mastery score aggregated across quizzes and assessments belongs with the job-readiness work.
+- **Multiple assessments per roadmap.** `roadmap.finalAssessment` is singular, mirroring
+  `lesson.quiz`. Several would be a schema change.
+- **Labs.** Still a pending collection: `lab.submitted` exists in the event union and
+  `lesson.lab` is staged, but there is no `Lab` content entity and no lab route.
+- **The tool directory and search.** Unbuilt, and `PLAN.md` labels it M5 while this batch used
+  M5 for the learning and assessment work. Settle the label before starting.
+
 ## M4.3 — deferred
 
 Deliberately NOT done in M4.3, which scores a quiz and records the attempt. Each is a follow-up

@@ -7,6 +7,8 @@ import {
   rootSkill,
   validCareerPath,
   validExercise,
+  validQuiz,
+  validQuestion,
   validLesson,
   validModule,
   validRoadmap,
@@ -65,6 +67,10 @@ describe('the validation summary a gate branches on', () => {
       exercises: [{ path: 'content/exercises/x/clean-a-sheet.mdx', data: validExercise() }],
       modules: [{ path: 'content/modules/data-cleaning.mdx', data: validModule() }],
       roadmaps: [{ path: 'content/roadmaps/data-entry-va.mdx', data: validRoadmap() }],
+      // The fixture roadmap stages a quiz as outcome evidence, and quizzes are a
+      // registered collection — so the set has to contain it (M5).
+      quizzes: [{ path: 'content/quizzes/cleaning-basics.mdx', data: validQuiz() }],
+      questions: [{ path: 'content/questions/what-does-a-va-do.mdx', data: validQuestion() }],
     })
     expect(validateRegistry(registry).errors).toBe(0)
   })

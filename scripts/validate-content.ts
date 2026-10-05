@@ -41,6 +41,7 @@ process.stdout.write(
     `${count(summary.counts.exercises, 'exercise')}, ` +
     `${count(summary.counts.questions, 'question')}, ` +
     `${count(summary.counts.quizzes, 'quiz', 'quizzes')}, ` +
+    `${count(summary.counts.assessments, 'assessment')}, ` +
     `${count(summary.counts.skills, 'skill')}\n`,
 )
 process.stdout.write(`Content payload (bodies): ${formatKb(summary.payloadBytes)}\n`)

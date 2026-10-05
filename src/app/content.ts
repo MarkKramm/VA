@@ -2,6 +2,7 @@ import { registry } from '@/content/registry.ts'
 import {
   exerciseBody,
   exercisesOfLesson,
+  getAssessment,
   getModule,
   getQuestion,
   getQuiz,
@@ -15,6 +16,7 @@ import {
   primaryRoadmapOfLesson,
   questionsOfQuiz,
   roadmapsByCareerPath,
+  roadmapsUsingAssessment,
   skillsByIds,
 } from '@/content/selectors.ts'
 import type {
@@ -142,6 +144,36 @@ export const summariseRoadmap = (roadmap: Roadmap): RoadmapSummary => {
 /** Every roadmap with its derived totals, for the dashboard and the index page. */
 export const allRoadmapSummaries = (): readonly RoadmapSummary[] =>
   allRoadmaps().map(summariseRoadmap)
+
+/** A resolved reference to a roadmap's final assessment (M5). */
+export interface FinalAssessmentLink {
+  readonly id: string
+  readonly title: string
+  readonly summary: string
+  readonly estimatedMinutes: number
+}
+
+/**
+ * The roadmap's final assessment, resolved, or `undefined`.
+ *
+ * `roadmap.finalAssessment` is validated fail-closed, so a resolved link always
+ * names an assessment that exists — which is what makes rendering it safe rather
+ * than a dead link waiting to happen. Returning `undefined` for a roadmap that
+ * declares none is the honest state, not an error: most roadmaps will not have a
+ * capstone yet.
+ */
+export const finalAssessmentOf = (roadmapId: string): FinalAssessmentLink | undefined => {
+  const roadmap = getRoadmap(registry, roadmapId)
+  if (!roadmap?.finalAssessment) return undefined
+  const assessment = getAssessment(registry, roadmap.finalAssessment)
+  if (!assessment) return undefined
+  return {
+    id: assessment.id,
+    title: assessment.title,
+    summary: assessment.summary,
+    estimatedMinutes: assessment.estimatedMinutes,
+  }
+}
 
 /** Career paths with their roadmaps resolved, ordered by the path's own `order`. */
 export interface CareerPathGroup {
@@ -526,4 +558,103 @@ const toQuizLink = (quizId: string | undefined): QuizLink | undefined => {
   const quiz = getQuiz(registry, quizId)
   if (!quiz) return undefined
   return { id: quiz.id, title: quiz.title, questionCount: quiz.questionIds.length }
+}
+
+/** One rubric line, as the assessment page renders it. */
+export interface AssessmentCriterionView {
+  readonly id: string
+  readonly description: string
+}
+
+/**
+ * A prerequisite of an assessment, with the exercise ids the practice gate needs.
+ *
+ * The exercise ids are carried here because the gate asks "did the learner
+ * practise this lesson?", and the answer is "did they attempt one of the
+ * exercises this lesson declares" — a content question the domain deliberately
+ * cannot answer for itself.
+ */
+export interface AssessmentPrerequisiteView {
+  readonly lesson: LessonLink
+  readonly reason: string
+  readonly exerciseIds: readonly string[]
+}
+
+/**
+ * A practical assessment, ready to render (M5).
+ *
+ * NOTHING IS STRIPPED, unlike the quiz view. A quiz withholds its correct answers
+ * before submission; an assessment publishes its rubric on purpose, because the
+ * learner is the evaluator and cannot self-assess against a hidden standard. That
+ * is also why the result carries `evaluatedBy: 'self'` and the UI says so.
+ */
+export interface AssessmentView {
+  readonly id: string
+  readonly title: string
+  readonly summary: string
+  readonly purpose: string
+  readonly difficulty: Difficulty
+  readonly estimatedMinutes: number
+  readonly scenario: string
+  readonly requirements: readonly string[]
+  readonly instructions: readonly string[]
+  readonly deliverable: string
+  readonly criteria: readonly AssessmentCriterionView[]
+  readonly hints: readonly string[]
+  readonly commonMistakes: readonly string[]
+  readonly referenceGuidance: string | undefined
+  readonly skills: readonly Skill[]
+  readonly prerequisites: readonly AssessmentPrerequisiteView[]
+  /** The roadmaps that require this assessment, derived from the roadmap side. */
+  readonly roadmaps: readonly { readonly id: string; readonly title: string }[]
+}
+
+/**
+ * Everything an assessment page needs, in one read.
+ *
+ * The references are resolved here rather than in the component for the usual
+ * reason — a feature may not touch the registry — and because every one of them
+ * is checked fail-closed at build time, so a resolved reference always names
+ * something that exists.
+ */
+export const assessmentContext = (assessmentId: string): AssessmentView | undefined => {
+  const assessment = getAssessment(registry, assessmentId)
+  if (!assessment) return undefined
+
+  const prerequisites: AssessmentPrerequisiteView[] = []
+  for (const prerequisite of assessment.prerequisites) {
+    const lesson = registry.lessons.get(prerequisite.id)
+    if (!lesson) continue
+    prerequisites.push({
+      lesson: toLessonLink(lesson),
+      reason: prerequisite.reason,
+      exerciseIds: lesson.exercises,
+    })
+  }
+
+  return {
+    id: assessment.id,
+    title: assessment.title,
+    summary: assessment.summary,
+    purpose: assessment.purpose,
+    difficulty: assessment.difficulty,
+    estimatedMinutes: assessment.estimatedMinutes,
+    scenario: assessment.scenario,
+    requirements: assessment.requirements,
+    instructions: assessment.instructions,
+    deliverable: assessment.deliverable,
+    criteria: assessment.evaluationCriteria.map((criterion) => ({
+      id: criterion.id,
+      description: criterion.description,
+    })),
+    hints: assessment.hints,
+    commonMistakes: assessment.commonMistakes,
+    referenceGuidance: assessment.referenceGuidance,
+    skills: skillsByIds(registry, assessment.skills),
+    prerequisites,
+    roadmaps: roadmapsUsingAssessment(registry, assessmentId).map((roadmap) => ({
+      id: roadmap.id,
+      title: roadmap.title,
+    })),
+  }
 }

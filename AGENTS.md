@@ -34,24 +34,25 @@ the project is without needing any conversation history. That is the point of th
 
 ## 2. The state of the project
 
-**Milestones 0–3 are complete. M2 (Content Engine) is tagged `v0.3.0-content-engine`; M3
-(Progress) is complete and untagged. M4 (Quiz Engine) is complete through M4.3 — content,
-renderer, scoring and persisted attempts — and `PLAN.md` §Milestone 4 is delivered. No further M4
-work is defined in this repository; the plan's next milestone is M5 (search and the tool
-directory).**
+**Milestones 0–4 are complete, and M5 (Learning & Assessment Foundation) is complete too. M2
+(Content Engine) is tagged `v0.3.0-content-engine`; M3, M4 and M5 are untagged. A learner can
+read a lesson, practise it, take a scored quiz, and do a self-assessed practical task that
+produces skill evidence. The plan's next milestone is the tool directory and search — which
+`PLAN.md` also labels M5, so settle the label before starting it.**
 
 M0 built the content pipeline and the progress model; M1 the application shell; M2 the content
 engine — build-time frontmatter ingestion and MDX compilation behind an enforced trust
 boundary (M2.1/M2.2), the lesson experience (M2.3), and the first render-only practice
 exercises (M2.4). M3 made progress real: a local-first, event-log-backed progress layer
 (`src/app/progress/`) with lesson completion, ungraded exercise attempts, a dashboard, and
-export/import. M4.1 made `Question` and `Quiz` first-class content entities, M4.2 rendered them,
-and M4.3 scores a submission and records the attempt: a learner can open a quiz from a lesson,
-answer it, and get a marked result saved to their progress. Content parsing and MDX compilation
-happen at BUILD time; no parser reaches the client. **There are no labs, no assessments, no
-search and no tool directory.** If you find yourself wanting to build one of those, you are
-working on the wrong milestone — and if you find yourself wanting to add a route that points at
-one, read rule 6 first.
+export/import. M4 made `Question` and `Quiz` first-class content and gave the platform a scored
+quiz with saved attempts. M5 added practical assessments — done in the learner's own tools and
+**self-evaluated**, because there is no backend to receive work — plus skill evidence derived
+from the event log. Content parsing and MDX compilation happen at BUILD time; no parser reaches
+the client. **There is no automated grading, no file upload, no labs, no search and no tool
+directory.** If you find yourself wanting to build one of those, you are working on the wrong
+milestone — and if you find yourself wanting to add a route that points at one, read rule 6
+first.
 
 Verify your starting point before doing anything else:
 

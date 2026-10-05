@@ -8,6 +8,7 @@ import { LessonSchema, type Lesson } from './schemas/lesson.ts'
 import { ExerciseSchema, type Exercise } from './schemas/exercise.ts'
 import { QuestionSchema, type Question } from './schemas/question.ts'
 import { QuizSchema, type Quiz } from './schemas/quiz.ts'
+import { AssessmentSchema, type Assessment } from './schemas/assessment.ts'
 import { RoadmapSchema, type Roadmap } from './schemas/roadmap.ts'
 import type { RegistryIssue } from './validation.ts'
 
@@ -32,6 +33,7 @@ export interface ContentRegistry {
   readonly exercises: ReadonlyMap<string, Exercise>
   readonly questions: ReadonlyMap<string, Question>
   readonly quizzes: ReadonlyMap<string, Quiz>
+  readonly assessments: ReadonlyMap<string, Assessment>
   readonly roadmaps: ReadonlyMap<string, Roadmap>
 
   /**
@@ -56,6 +58,7 @@ export interface ContentRegistry {
     readonly exercises: readonly ParsedEntity<Exercise>[]
     readonly questions: readonly ParsedEntity<Question>[]
     readonly quizzes: readonly ParsedEntity<Quiz>[]
+    readonly assessments: readonly ParsedEntity<Assessment>[]
     readonly roadmaps: readonly ParsedEntity<Roadmap>[]
   }
 
@@ -91,6 +94,33 @@ export interface ContentRegistry {
    * reusable rather than nominally so.
    */
   readonly questionQuizIds: ReadonlyMap<string, readonly string[]>
+  /**
+   * skillId -> assessmentId, DERIVED from `assessment.skills` (M5).
+   *
+   * The same shape as `skillLessonIds` and `skillModuleIds`: a reverse index over
+   * a skill reference, so "which assessments produce evidence for this skill" is a
+   * lookup rather than a scan. It is what the skill-evidence model reads.
+   */
+  readonly assessmentSkillIds: ReadonlyMap<string, readonly string[]>
+  /**
+   * assessmentId -> roadmapId, DERIVED from `roadmap.finalAssessment` and from
+   * `roadmap.outcomes[].evidence` (M5).
+   *
+   * Both are roadmap-owned references to an assessment, so both feed the index —
+   * exactly as `moduleRoadmapIds` is derived by scanning roadmaps rather than
+   * being declared anywhere. It lets an assessment say which roadmaps it belongs
+   * to without any roadmap being edited to say so.
+   */
+  readonly assessmentRoadmapIds: ReadonlyMap<string, readonly string[]>
+  /**
+   * skillId -> quizId, DERIVED through questions (M5).
+   *
+   * A quiz declares no skills of its own — a question does, and a quiz's skills
+   * are the union of its questions'. So this is built by walking each question's
+   * skills and looking up the quizzes that ask it, which is why it depends on
+   * `questionQuizIds` rather than on any field a quiz carries.
+   */
+  readonly skillQuizIds: ReadonlyMap<string, readonly string[]>
   /**
    * lessonId -> its compiled body tree (M2.2).
    *
@@ -146,6 +176,13 @@ export interface ContentSource {
    */
   readonly questions?: readonly ContentFile[]
   readonly quizzes?: readonly ContentFile[]
+  /**
+   * Assessment files (M5). One file per entity, like lessons and exercises, so a
+   * validation error names the exact file. Optional at this seam for the same
+   * reason as the others: a fixture about roadmap validation should not have to
+   * fabricate an assessment.
+   */
+  readonly assessments?: readonly ContentFile[]
   /**
    * Compiled bodies, keyed by source path (M2.2; exercises added at M2.4).
    *
@@ -304,6 +341,13 @@ export function buildRegistryFromSource(source: ContentSource): ContentRegistry 
     locationOf: () => 'content/quizzes.ts',
     issues,
   })
+  const assessments = parseAll<Assessment>({
+    schema: AssessmentSchema,
+    inputs: source.assessments ?? [],
+    entity: 'assessment',
+    locationOf: () => 'content/assessments/',
+    issues,
+  })
 
   // Bare entity arrays, for the derived indexes. The `ParsedEntity` arrays
   // (which retain each entity's source file) are kept as `parsed` below.
@@ -314,6 +358,7 @@ export function buildRegistryFromSource(source: ContentSource): ContentRegistry 
   const exerciseValues = exercises.map((entry) => entry.value)
   const questionValues = questions.map((entry) => entry.value)
   const quizValues = quizzes.map((entry) => entry.value)
+  const assessmentValues = assessments.map((entry) => entry.value)
   const roadmapValues = roadmaps.map((entry) => entry.value)
 
   // --- derived indexes ----------------------------------------------------
@@ -374,6 +419,36 @@ export function buildRegistryFromSource(source: ContentSource): ContentRegistry 
     for (const questionId of quiz.questionIds) push(questionQuizIds, questionId, quiz.id)
   }
 
+  // skillId -> quizId, through questions: a quiz's skills are its questions'.
+  const skillQuizIds = new Map<string, string[]>()
+  for (const question of questionValues) {
+    for (const skillId of question.skills) {
+      for (const quizId of questionQuizIds.get(question.id) ?? []) {
+        push(skillQuizIds, skillId, quizId)
+      }
+    }
+  }
+
+  // skillId -> assessmentId, from the assessment side. A set, not a tally.
+  const assessmentSkillIds = new Map<string, string[]>()
+  for (const assessment of assessmentValues) {
+    for (const skillId of assessment.skills) push(assessmentSkillIds, skillId, assessment.id)
+  }
+
+  // assessmentId -> roadmapId. Both roadmap-owned references feed it: the
+  // roadmap's final assessment, and any outcome whose evidence names one.
+  const assessmentRoadmapIds = new Map<string, string[]>()
+  for (const roadmap of roadmapValues) {
+    if (roadmap.finalAssessment !== undefined) {
+      push(assessmentRoadmapIds, roadmap.finalAssessment, roadmap.id)
+    }
+    for (const outcome of roadmap.outcomes) {
+      for (const evidence of outcome.evidence) {
+        if (evidence.kind === 'assessment') push(assessmentRoadmapIds, evidence.id, roadmap.id)
+      }
+    }
+  }
+
   // lessonId -> compiled body. The join is on the lesson's SOURCE PATH, because
   // that is what the build compiler keyed its output by. Keying the result by id
   // is what lets a route ask for a lesson body without knowing where the file
@@ -404,10 +479,21 @@ export function buildRegistryFromSource(source: ContentSource): ContentRegistry 
     exercises: indexById(exerciseValues),
     questions: indexById(questionValues),
     quizzes: indexById(quizValues),
+    assessments: indexById(assessmentValues),
     roadmaps: indexById(roadmapValues),
     // The pre-index entities, each with its source file, so duplicate-id
     // detection still has the evidence indexById is about to discard.
-    parsed: { careerPaths, skills, modules, lessons, exercises, questions, quizzes, roadmaps },
+    parsed: {
+      careerPaths,
+      skills,
+      modules,
+      lessons,
+      exercises,
+      questions,
+      quizzes,
+      assessments,
+      roadmaps,
+    },
     roadmapModuleIds,
     moduleRoadmapIds,
     lessonModuleIds,
@@ -416,11 +502,15 @@ export function buildRegistryFromSource(source: ContentSource): ContentRegistry 
     lessonCareerPathIds,
     exerciseLessonIds,
     questionQuizIds,
+    skillQuizIds,
+    assessmentSkillIds,
+    assessmentRoadmapIds,
     lessonBodies,
     exerciseBodies,
-    // Questions and quizzes left this list at M4.1: they are registered
-    // collections now, so a reference to one is checked rather than skipped.
-    pendingCollections: ['tools', 'resources', 'assessments', 'labs', 'topics'],
+    // Questions, quizzes and assessments left this list at M4.1/M5: they are
+    // registered collections now, so a reference to one is checked rather than
+    // skipped.
+    pendingCollections: ['tools', 'resources', 'labs', 'topics'],
     issues,
     payloadBytes: 0,
   }
@@ -434,4 +524,4 @@ export const buildRegistry = (): ContentRegistry => {
 /** The runtime registry. Content is compiled into the bundle, so this is a singleton. */
 export const registry: ContentRegistry = buildRegistry()
 
-export type { CareerPath, Skill, Module, Lesson, Exercise, Question, Quiz, Roadmap }
+export type { CareerPath, Skill, Module, Lesson, Exercise, Question, Quiz, Assessment, Roadmap }

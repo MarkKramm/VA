@@ -53,5 +53,7 @@ declare module 'virtual:content-data' {
    */
   export const questions: readonly RawContentFile[]
   export const quizzes: readonly RawContentFile[]
+  /** Assessments are frontmatter-only too, one file per entity (M5). */
+  export const assessments: readonly RawContentFile[]
   export const contentPayloadBytes: number
 }

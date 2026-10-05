@@ -228,6 +228,15 @@
   margin-top: var(--space-2);
 }
 
+/* The final assessment card (M5). Same rhythm as the rest of the page; the note
+   exists so the self-assessed nature is stated before the learner commits. */
+.assessmentNote {
+  margin-block-end: var(--space-4);
+  color: var(--color-text-secondary);
+  line-height: var(--leading-relaxed);
+  max-width: var(--measure-prose);
+}
+
 .nextLink {
   display: inline-flex;
   align-items: center;

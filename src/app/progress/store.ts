@@ -1,5 +1,5 @@
 import { createInitialState } from '@domain/progress/reducer.ts'
-import type { NewProgressEvent, ProgressState } from '@domain/progress/types.ts'
+import type { EvaluatedBy, NewProgressEvent, ProgressState } from '@domain/progress/types.ts'
 import { ProgressStore } from '@/app/storage/merge.ts'
 import { parseProgressExport, serializeProgressExport } from '@/app/storage/export-validate.ts'
 import type { StorageAdapter } from '@/app/storage/port.ts'
@@ -170,6 +170,40 @@ export class LearnerProgress {
       maxScore: attempt.maxScore,
       passed: attempt.passed,
       evaluatedBy: 'system',
+    })
+  }
+
+  /**
+   * Record a completed practical assessment attempt (M5).
+   *
+   * The existing `assessment.attempted` event, and the ONLY write an assessment
+   * submission makes. `evaluatedBy` is a required argument rather than a constant
+   * here, because it is the honest part: the platform has no automated evaluator
+   * for a practical task, so a submission is `'self'` — the learner scored their
+   * own work against the published rubric. The domain distinguishes that from
+   * `'system'` precisely so a self-report can never be mistaken for a marked
+   * result, and defaulting it here would throw that away.
+   *
+   * No payload is recorded. `docs/ARCHITECTURE.md` lists file upload as a
+   * deliberate non-feature — there is nowhere to put a file — and the data model
+   * defines an attempt as an outcome, not an answer sheet.
+   */
+  submitAssessmentAttempt(attempt: {
+    readonly assessmentId: string
+    readonly attemptId: string
+    readonly score: number
+    readonly maxScore: number
+    readonly passed: boolean
+    readonly evaluatedBy: EvaluatedBy
+  }): void {
+    this.record({
+      type: 'assessment.attempted',
+      assessmentId: attempt.assessmentId,
+      attemptId: attempt.attemptId,
+      score: attempt.score,
+      maxScore: attempt.maxScore,
+      passed: attempt.passed,
+      evaluatedBy: attempt.evaluatedBy,
     })
   }
 

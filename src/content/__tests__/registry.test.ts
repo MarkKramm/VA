@@ -53,15 +53,16 @@ describe('the real M0 content', () => {
   })
 
   it('lists the collections this milestone has not built yet, and no longer lists activated ones', () => {
-    for (const pending of ['tools', 'resources', 'labs', 'assessments', 'topics']) {
+    for (const pending of ['tools', 'resources', 'labs', 'topics']) {
       expect(registry.pendingCollections).toContain(pending)
     }
-    // M2.4 activated the exercise collection, and M4.1 activated questions and
-    // quizzes, so none of the three may still be pending — a collection that is
-    // registered has its references CHECKED rather than skipped.
+    // M2.4 activated exercises, M4.1 questions and quizzes, and M5 assessments —
+    // so none of them may still be pending. A registered collection has its
+    // references CHECKED rather than skipped.
     expect(registry.pendingCollections).not.toContain('exercises')
     expect(registry.pendingCollections).not.toContain('questions')
     expect(registry.pendingCollections).not.toContain('quizzes')
+    expect(registry.pendingCollections).not.toContain('assessments')
   })
 
   it('attaches a compiled body to every real exercise, keyed by exercise id (M2.4)', () => {

@@ -5,6 +5,55 @@ something that works.
 
 ---
 
+## Checkpoint: M5 — Learning and assessment foundation
+
+**Date:** 2026-10-05
+**Milestone:** M5 — Learning & Assessment Foundation · complete
+**Tag:** none — `v0.3.0-content-engine` remains the latest
+**Branch:** `main`
+
+### What this checkpoint is
+
+The layer above quizzes: a practical assessment the learner does in their own tools and reports
+against a published rubric, the skill evidence that produces, and a conservative readiness view.
+It is **self-evaluated and says so** — there is no automated evaluator and no backend to receive
+work, so nothing here claims to have inspected anything.
+
+### Verified working
+
+- `npm run content:check` — **0 errors, 2 `quality/no-practice` warnings**; 1 assessment loaded.
+- `npm run typecheck`, `npm run lint`, `npm run check:contrast` (34 pairs) — clean.
+- `npm run test` — **676 across 38 files; 675 pass.** The single failure is the environmental
+  `content-gate.test.ts` child-process spawn (`cmd.exe EBUSY`); the test is unchanged.
+- `npm run test:arch` — 16 passing.
+- `npm run build` — 539 kB / 163 kB gzipped; SPA fallback written; `check:paths` clean; no
+  compiler in the client; no dependency added.
+
+### What was added
+
+- `content/assessments/client-file-organisation.mdx` — a real practical task with a five-line
+  rubric, wired to `beginner-va` as its `finalAssessment` and as outcome evidence.
+- `src/content/schemas/assessment.ts` + registry, validation, selectors, reverse indexes
+  (`assessmentSkillIds`, `assessmentRoadmapIds`, `skillQuizIds`) and quality checks.
+- `/assessments/:assessmentId` — the brief, the published rubric, a self-evaluation, a result and
+  retry; the gate states its reasons rather than showing a dead end.
+- `src/app/learning/` — the self-assessment model and the derived skill evidence.
+- The dashboard's **Your skills** panel; the roadmap page's final-assessment card.
+- `roadmap.finalAssessment` and `roadmap.outcomes[].evidence` are now validated fail-closed.
+- 71 new tests, and a fix to `assessmentEligibility` for a lesson with nothing to practise.
+
+### Not done, deliberately
+
+No automated or AI grading, no file upload, no portfolio, resume, interview or job-board tooling,
+no search, no XP or streaks, and no readiness score. See `BACKLOG.md` → "M5 — deferred".
+
+### Recommended next task
+
+**The tool directory and search** — the work `PLAN.md` previously labelled M5. See
+`NEXT_STEPS.md`.
+
+---
+
 ## Checkpoint: M4.3 — Quiz scoring, results and persisted attempts
 
 **Date:** 2026-10-05

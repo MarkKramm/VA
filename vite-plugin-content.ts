@@ -157,11 +157,12 @@ const parseSourceIntoFile = (path: string, source: string): RawContentFile => {
  * question's rationale in two places.
  */
 const warnIfBodyIsIgnored = (path: string, body: string): void => {
-  if (!isQuestionPath(path) && !isQuizPath(path)) return
+  if (!isQuestionPath(path) && !isQuizPath(path) && !isAssessmentPath(path)) return
   if (body.trim() === '') return
   console.warn(
-    `[content] ${path} has a body, but questions and quizzes are frontmatter-only — ` +
-      'the body is not rendered and will be dropped. Put the text in `explanation`.',
+    `[content] ${path} has a body, but questions, quizzes and assessments are ` +
+      'frontmatter-only — the body is not rendered and will be dropped. Put the text in a ' +
+      'frontmatter field instead.',
   )
 }
 
@@ -178,6 +179,10 @@ export const isQuestionPath = (path: string): boolean =>
 
 /** True for a repo-relative path under `content/quizzes/` (M4.1). */
 export const isQuizPath = (path: string): boolean => path.startsWith(`${CONTENT_DIR}/quizzes/`)
+
+/** True for a repo-relative path under `content/assessments/` (M5). */
+export const isAssessmentPath = (path: string): boolean =>
+  path.startsWith(`${CONTENT_DIR}/assessments/`)
 
 /** UTF-8 byte length, matching `contentPayloadBytes`'s definition in M1. */
 export const utf8Length = (value: string): number => new TextEncoder().encode(value).length
@@ -212,6 +217,7 @@ const buildModuleSource = (root: string): string => {
   const exercisePaths = findMdxFiles(root, join(CONTENT_DIR, 'exercises'))
   const questionPaths = findMdxFiles(root, join(CONTENT_DIR, 'questions'))
   const quizPaths = findMdxFiles(root, join(CONTENT_DIR, 'quizzes'))
+  const assessmentPaths = findMdxFiles(root, join(CONTENT_DIR, 'assessments'))
 
   const toFiles = (paths: readonly string[]): RawContentFile[] =>
     paths.map((path) => parseContentFile(root, path))
@@ -222,6 +228,7 @@ const buildModuleSource = (root: string): string => {
   const exercises = toFiles(exercisePaths)
   const questions = toFiles(questionPaths)
   const quizzes = toFiles(quizPaths)
+  const assessments = toFiles(assessmentPaths)
   const payloadBytes = [
     ...roadmaps,
     ...modules,
@@ -229,6 +236,7 @@ const buildModuleSource = (root: string): string => {
     ...exercises,
     ...questions,
     ...quizzes,
+    ...assessments,
   ].reduce((total, file) => total + utf8Length(file.body), 0)
 
   /*
@@ -264,6 +272,7 @@ export const lessons = ${JSON.stringify(shipped(lessons))}
 export const exercises = ${JSON.stringify(shipped(exercises))}
 export const questions = ${JSON.stringify(shipped(questions))}
 export const quizzes = ${JSON.stringify(shipped(quizzes))}
+export const assessments = ${JSON.stringify(shipped(assessments))}
 ${exports}
 export const contentPayloadBytes = ${JSON.stringify(payloadBytes)}
 `

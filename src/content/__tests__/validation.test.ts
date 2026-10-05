@@ -9,6 +9,8 @@ import {
   validLesson,
   validModule,
   validRoadmap,
+  validQuiz,
+  validQuestion,
   validSkill,
 } from '@fixtures/content.ts'
 
@@ -28,6 +30,9 @@ const withContent = (args: {
   exercises?: unknown[]
   modules?: unknown[]
   roadmaps?: unknown[]
+  quizzes?: unknown[]
+  assessments?: unknown[]
+  questions?: unknown[]
 }): ContentRegistry =>
   buildRegistryFromSource({
     careerPaths: args.careerPaths ?? [],
@@ -36,8 +41,10 @@ const withContent = (args: {
     exercises: (args.exercises ?? []).map((data) => file(data)),
     modules: (args.modules ?? []).map((data) => file(data)),
     roadmaps: (args.roadmaps ?? []).map((data) => file(data)),
+    quizzes: (args.quizzes ?? []).map((data) => file(data)),
+    assessments: (args.assessments ?? []).map((data) => file(data)),
+    questions: (args.questions ?? []).map((data) => file(data)),
   })
-
 /** A small, entirely valid content set, used as the baseline for failure tests. */
 const validSet = () => ({
   careerPaths: [validCareerPath()],
@@ -46,6 +53,15 @@ const validSet = () => ({
   exercises: [validExercise()],
   modules: [validModule()],
   roadmaps: [validRoadmap()],
+  /**
+   * The fixture roadmap stages `cleaning-basics` as outcome evidence, and quizzes
+   * are a REGISTERED collection since M4.1 — so the set has to contain it. A
+   * fixture that referenced a quiz it did not ship is exactly what fail-closed
+   * referential integrity is for.
+   */
+  quizzes: [validQuiz()],
+  /** …and the quiz's questions have to be there for the same reason. */
+  questions: [validQuestion()],
 })
 
 const errorsFor = (registry: ContentRegistry, rule?: string) =>
@@ -120,8 +136,10 @@ describe('referential integrity', () => {
   })
 
   it('does NOT fail references to collections that do not exist yet', () => {
-    // tools, quizzes and labs arrive at M5, M4 and M6. A lesson may stage them,
-    // and the build must not block work in progress.
+    // tools and labs have not been built. A lesson may stage them, and the build
+    // must not block work in progress. Quizzes and assessments USED to be in this
+    // list and are not any more — they are registered, so a reference to one is
+    // now checked (M5).
     const registry = withContent({
       ...validSet(),
       lessons: [validLesson({ tools: ['canva'], lab: 'phishing-spotting' })],

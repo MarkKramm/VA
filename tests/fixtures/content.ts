@@ -166,3 +166,35 @@ export const validQuiz = (overrides: Record<string, unknown> = {}) => ({
   updatedAt: '2026-10-01',
   ...overrides,
 })
+
+/**
+ * A practical assessment fixture (M5).
+ *
+ * Its prerequisite list is empty by default: a prerequisite is what the hard lock
+ * gates on, and a fixture that gated on a lesson would make every registry built
+ * from it ineligible. Tests that care about the gate add one explicitly.
+ */
+export const validAssessment = (overrides: Record<string, unknown> = {}) => ({
+  id: 'organise-a-shelf',
+  title: 'Organise a Shelf',
+  summary: 'A small practical task, used to exercise the assessment pipeline.',
+  purpose: 'Proves the fixture content can carry a practical assessment end to end.',
+  difficulty: 'beginner' as const,
+  estimatedMinutes: 30,
+  skills: ['data-cleaning'],
+  prerequisites: [],
+  scenario: 'A shelf of mixed items has to be ordered so that anything on it can be found again.',
+  requirements: ['Everything on the shelf is findable without help'],
+  tools: [],
+  instructions: ['Sort the items into groups', 'Label each group'],
+  deliverable: 'A labelled, ordered shelf.',
+  evaluationCriteria: [
+    { id: 'ordered', description: 'Every item sits in a stated position.' },
+    { id: 'labelled', description: 'Each group carries a written label.' },
+  ],
+  hints: [],
+  commonMistakes: [],
+  status: 'draft' as const,
+  updatedAt: '2026-10-01',
+  ...overrides,
+})

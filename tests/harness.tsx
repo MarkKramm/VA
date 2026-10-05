@@ -5,6 +5,7 @@ import { AppShell } from '@/components/layout/AppShell.tsx'
 import { ProgressProvider } from '@/app/progress/ProgressProvider.tsx'
 import { ThemeProvider } from '@/app/providers/ThemeProvider.tsx'
 import { MemoryStorageAdapter } from '@/app/storage/memory.ts'
+import { AssessmentPage } from '@/features/assessments/AssessmentPage.tsx'
 import { DashboardPage } from '@/features/dashboard/DashboardPage.tsx'
 import { LessonPage } from '@/features/lessons/LessonPage.tsx'
 import { QuizPage } from '@/features/quizzes/QuizPage.tsx'
@@ -45,6 +46,7 @@ export const testRoutes = [
       { path: 'roadmaps/:roadmapId', element: <RoadmapDetailPage /> },
       { path: 'lessons/:lessonId', element: <LessonPage /> },
       { path: 'quizzes/:quizId', element: <QuizPage /> },
+      { path: 'assessments/:assessmentId', element: <AssessmentPage /> },
       { path: '*', element: <NotFoundPage /> },
     ],
   },

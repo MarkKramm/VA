@@ -31,6 +31,7 @@
  * application layer could start depending on.
  */
 import {
+  assessments as rawAssessments,
   careerPaths as rawCareerPaths,
   contentPayloadBytes,
   exercises as rawExercises,
@@ -88,6 +89,8 @@ export const rawContent = {
    */
   questions: rawQuestions as readonly RawContentFile[],
   quizzes: rawQuizzes as readonly RawContentFile[],
+  /** Assessments (M5), same shape: one file per entity, no compiled body. */
+  assessments: rawAssessments as readonly RawContentFile[],
   /**
    * Compiled bodies, keyed by source path (M2.2; exercises added at M2.4).
    *

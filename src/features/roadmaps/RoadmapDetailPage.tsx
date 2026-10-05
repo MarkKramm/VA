@@ -1,6 +1,12 @@
 import { Link, useParams } from 'react-router'
 import { ArrowLeft, ArrowRight, BookOpen, Layers } from 'lucide-react'
-import { findRoadmap, lessonsInModule, lessonsInRoadmap, stagesOfRoadmap } from '@/app/content.ts'
+import {
+  findRoadmap,
+  finalAssessmentOf,
+  lessonsInModule,
+  lessonsInRoadmap,
+  stagesOfRoadmap,
+} from '@/app/content.ts'
 import { lessonProgressFor, roadmapLessonProgress } from '@/app/progress/composition.ts'
 import { useProgressState } from '@/app/progress/ProgressProvider.tsx'
 import { Breadcrumbs } from '@/components/ui/Breadcrumbs.tsx'
@@ -76,6 +82,8 @@ export const RoadmapDetailPage = () => {
   // progress count cannot disagree about which lessons the roadmap contains.
   const roadmapLessons = lessonsInRoadmap(roadmap.id)
   const firstLesson = roadmapLessons[0]
+  /** The capstone, resolved. `undefined` for a roadmap that declares none (M5). */
+  const finalAssessment = roadmapId ? finalAssessmentOf(roadmapId) : undefined
   const progress = roadmapLessonProgress(state, roadmap.id)
 
   return (
@@ -234,6 +242,37 @@ export const RoadmapDetailPage = () => {
           </ol>
         )}
       </section>
+
+      {/*
+        The roadmap's final assessment (M5). An assessment is the capstone of a
+        ROADMAP rather than of a single lesson, which is why it is rendered here
+        and not on a lesson page. The reference is validated fail-closed, so this
+        link always points at something that exists; a roadmap that declares none
+        simply renders nothing, which is the honest state for most of them.
+      */}
+      {finalAssessment ? (
+        <section aria-labelledby="assessment-heading">
+          <h2 id="assessment-heading" className={styles.sectionTitle}>
+            Final assessment
+          </h2>
+          <Card tone="raised" padding="lg">
+            <CardHeader
+              title={finalAssessment.title}
+              description={finalAssessment.summary}
+              headingLevel={3}
+            />
+            <CardBody>
+              <p className={styles.assessmentNote}>
+                A practical task you do in your own tools, then check against a published rubric.
+                You assess your own work — nothing is marked automatically, and nothing is uploaded.
+              </p>
+              <LinkButton to={`/assessments/${finalAssessment.id}`} variant="primary">
+                Open the assessment
+              </LinkButton>
+            </CardBody>
+          </Card>
+        </section>
+      ) : null}
 
       {/*
         A clear next action. The honest one now that lesson pages exist (M2.3):

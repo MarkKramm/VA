@@ -8,42 +8,46 @@ is too large or work is not being closed out.
 
 ---
 
-## Current milestone: M4 — Quiz Engine · **in progress** (M4.1, M4.2 and M4.3 complete)
+## Current milestone: M5 — Learning & Assessment Foundation · **complete**
 
-`PLAN.md` §Milestone 4 — quiz data, question rendering, scoring and results — is now delivered
-end to end:
+The layer above quizzes is in place:
 
-- **Content (M4.1)** — `Question` and `Quiz` as first-class entities, one file per entity, with
-  fail-closed quiz → question integrity (`DECISIONS.md` D30).
-- **Renderer (M4.2)** — `/quizzes/:quizId` renders a validated quiz, with `single-choice` and
-  `true-false` as accessible radio groups, and the correct answers stripped from the view.
-- **Scoring and attempts (M4.3)** — submitting marks the quiz against the canonical content and
-  records exactly one `quiz.attempted` event; the result shows score, percentage, pass/fail and
-  per-question correctness, and history is read back from the log. Answers stay transient until
-  submitted (`DECISIONS.md` D32).
+- **Assessment content (M5)** — `Assessment` as a first-class entity: scenario, requirements,
+  instructions, deliverable, a published rubric, hints and common mistakes, with fail-closed
+  integrity for its skills and prerequisite lessons (`DECISIONS.md` D33).
+- **Assessment lifecycle** — `/assessments/:assessmentId`, the one hard lock
+  (`assessmentEligibility`), a self-evaluation against the published rubric, a result, and retry
+  that adds an attempt. Recorded as the existing `assessment.attempted` with
+  `evaluatedBy: 'self'`.
+- **Skill evidence** — the documented three tiers (read / practised / demonstrated), derived from
+  the content and the event log, shown on the dashboard. Counts and states, never a score.
+- **Real content** — `client-file-organisation`, a practical task wired to `beginner-va` as its
+  final assessment and as outcome evidence.
 
 **Not tagged.** `v0.3.0-content-engine` remains the latest tag.
 
-## Next milestone: M5 — Search and the tool directory · **not started**
+## Next milestone: the tool directory and search · **not started**
 
-### 1. M5 — Search and the tool directory
+### 1. The tool directory and search
 
-No further M4 work is defined in this repository, so this is the next milestone the plan names:
-the `tools` collection (a new content entity and its directory), and search across the
-curriculum. See `PLAN.md` and `BACKLOG.md`. If the owner intends a further M4 slice, it should
-be written into this file before work starts.
+**Note on labels.** `PLAN.md` and `BACKLOG.md` previously called this "M5", and the owner's
+milestone plan used "M5" for the learning and assessment work above. The work is unbuilt either
+way; whichever label the owner prefers should be settled before it starts, so the two documents
+stop disagreeing.
+
+The `tools` collection (a new content entity, its directory, and `lesson.tools` becoming a checked
+reference) plus search across the curriculum. `lesson.tools` and `lesson.resources` are already
+staged in the schema and skipped by referential integrity as pending collections.
 
 ---
 
 ## Earlier milestones
 
-- **M4.3 — Quiz scoring, results and persisted attempts** · complete, untagged. A pure scorer
-  over canonical questions, the existing `quiz.attempted` event, a result view, and retry that
-  adds an attempt (`DECISIONS.md` D32).
-- **M4.2 — Learner quiz renderer** · complete, untagged. The quiz route, accessible radio
-  groups, transient answers, and the fail-closed `lesson.quiz` link (`DECISIONS.md` D31).
-- **M4.1 — Question and quiz content architecture** · complete, untagged. `Question` and `Quiz`
-  as first-class content, one file per entity (`DECISIONS.md` D30).
+- **M5 — Learning & Assessment Foundation** · complete, untagged. Practical assessments, the one
+  hard lock, self-evaluated results, derived skill evidence and a readiness view
+  (`DECISIONS.md` D33).
+- **M4 — Quiz Engine** · complete, untagged. M4.1 content, M4.2 renderer, M4.3 scoring and
+  persisted attempts (`DECISIONS.md` D30–D32).
 - **M3 — Progress** · complete, untagged. Local-first progress: lesson completion, ungraded
   exercise attempts, the dashboard, and export/import (`DECISIONS.md` D27–D29).
 - **M2 — Content Engine** · complete, tagged `v0.3.0-content-engine`. M2.1 build-time frontmatter

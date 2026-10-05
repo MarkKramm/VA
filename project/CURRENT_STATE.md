@@ -1,25 +1,26 @@
 # Current State
 
 **As of:** 2026-10-05
-**Milestone:** M4 — Quiz Engine · **in progress** (M4.1, M4.2 and M4.3 complete)
-**Next:** no further M4 work is defined in this repository — `PLAN.md` §Milestone 4 (quiz data,
-question rendering, scoring, results) is now delivered. See `NEXT_STEPS.md`.
+**Milestone:** M5 — Learning & Assessment Foundation · **complete**
+**Next:** the tool directory and search — previously labelled M5 in `PLAN.md`, and unbuilt. See
+`NEXT_STEPS.md`.
 
 This file describes the state _as it is_, rewritten each session. It is not a history. For
 the history, see `CHANGELOG.md`.
 
 ## Milestone status
 
-| Milestone              | State                                                                                  |
-| ---------------------- | -------------------------------------------------------------------------------------- |
-| M0 — Foundation        | ✅ complete (`v0.1.0-foundation`)                                                      |
-| M1 — Application Shell | ✅ complete                                                                            |
-| M2 — Content Engine    | ✅ complete (`v0.3.0-content-engine`)                                                  |
-| M3 — Progress          | ✅ complete (not tagged) — local-first progress, dashboard, export/import              |
-| M4 — Quiz Engine       | 🔨 in progress — **M4.1 + M4.2 + M4.3 done**; a quiz can be taken, scored and recorded |
+| Milestone                  | State                                                                       |
+| -------------------------- | --------------------------------------------------------------------------- |
+| M0 — Foundation            | ✅ complete (`v0.1.0-foundation`)                                           |
+| M1 — Application Shell     | ✅ complete                                                                 |
+| M2 — Content Engine        | ✅ complete (`v0.3.0-content-engine`)                                       |
+| M3 — Progress              | ✅ complete (not tagged) — local-first progress, dashboard, export/import   |
+| M4 — Quiz Engine           | ✅ complete (not tagged) — content, renderer, scoring, persisted attempts   |
+| M5 — Learning & Assessment | ✅ complete (not tagged) — practical assessments, skill evidence, readiness |
 
-**Not built:** labs, assessments, search, the tool directory, career preparation, bookmarks,
-notes, achievements, XP, streaks. Nothing below claims otherwise.
+**Not built:** labs, search, the tool directory, career preparation, bookmarks, notes,
+achievements, XP, streaks, portfolio, resume or interview tooling. Nothing below claims otherwise.
 
 ---
 
@@ -149,6 +150,37 @@ inspectable. That is inherent to a backendless site, and it is why job readiness
 evidence rather than on quiz scores — a quiz score is a check that the learner did the reading,
 not high-stakes evidence.
 
+**Practical assessments (new at M5).** `Assessment` is a first-class content entity —
+scenario, requirements, instructions, deliverable, a published rubric, hints and common mistakes
+(`PLAN.md` §52) — one file per entity in `content/assessments/`. It is **composite**: reached
+from the roadmap that declares it (`roadmap.finalAssessment` and `roadmap.outcomes[].evidence`,
+both now validated fail-closed), not from a lesson. `/assessments/:assessmentId` walks the
+learner through the task, then lets them mark each rubric line they met. The result is recorded
+as the existing `assessment.attempted` event with **`evaluatedBy: 'self'`** — the platform has no
+automated evaluator and no way to receive a learner's work, and the page says so before and after
+submission. **All criteria are needed to pass**: a practical deliverable is finished or it is
+not. Retrying adds an attempt and never replaces one. `DECISIONS.md` D33.
+
+**The one hard lock, and its fix.** An assessment cannot be _passed_ until its prerequisite
+lessons are complete and practised — `assessmentEligibility`, the only refusal in the product.
+A lesson that declares no activity could never satisfy the practice requirement, which made the
+gate unsatisfiable, so a lesson with nothing to practise now requires completion only. The task
+itself stays readable while locked: hiding the work would be a wall, hiding the outcome is a gate.
+
+**Skill evidence (new at M5).** The three tiers `docs/DATA_MODEL.md` defines — **read**,
+**practised**, **demonstrated** — are now derived in `src/app/learning/evidence.ts` from the
+content references and the event log. Nothing is stored: no `skillEvidence` field, because a
+second source of truth can always disagree with the log. A quiz declares no skills, so its skills
+are derived through its questions. The dashboard shows the tiers in words and states plainly that
+only "Demonstrated" means a scored check was passed — reading a lesson is not competence, and the
+platform does not pretend otherwise. Readiness is **counts and states, not a score**: no
+percentage, no "job readiness" number, no recommendation engine.
+
+**Known limitation, restated for assessments.** A self-assessment is self-reported. The learner is
+the only user, so it is inherently unverified — which is why the event carries `evaluatedBy`,
+why the UI labels it everywhere, and why it is weighted lower than a marked result would be.
+No schema change removes this; only a backend with a human evaluator would.
+
 **A working application shell.** React 19 + React Router 7, a real Vite application build,
 five routes, a responsive sidebar/mobile-dialog layout, a dashboard, a roadmaps index and the
 lesson pages, a dark-mode-aware design token layer, and the GitHub Pages deployment path
@@ -167,7 +199,8 @@ scans the emitted JS for compiler markers. Both were proven to bite.
 ## What does not exist yet
 
 No search, no tool directory, no labs, no career preparation, no bookmarks or notes. Lessons,
-roadmaps, the progress UI, and a scored quiz with saved attempts now exist.
+roadmaps, the progress UI, a scored quiz, and a self-assessed practical task with skill evidence
+now exist.
 
 Not implemented, by milestone: quizzes (M4), the tool directory and search (M5), labs (M6),
 career preparation (M7), the remaining roadmaps and skill visualisation (M8), polish (M9).
@@ -184,9 +217,9 @@ achievements, no backend/auth, no state-management library.
 | `npm run typecheck`      | clean, app and tooling configs separately                            |
 | `npm run content:check`  | 0 errors, 2 warnings (both `quality/no-practice`)                    |
 | `npm run check:contrast` | 34 pairs pass, computed from tokens                                  |
-| `npm run test`           | 605 across 34 files — **604 pass**, 1 sandbox-only spawn failure     |
+| `npm run test`           | 676 across 38 files — **675 pass**, 1 sandbox-only spawn failure     |
 | `npm run test:arch`      | 16 passing                                                           |
-| `npm run build`          | succeeds; 519 kB / 158 kB gzipped — no compiler in the client        |
+| `npm run build`          | succeeds; 539 kB / 163 kB gzipped — no compiler in the client        |
 | `npm run check:paths`    | base `/VA/`, assets present, SPA fallback in place, no compiler leak |
 
 **`npm run check` is the single gate.** Every step is green except one test:

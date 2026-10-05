@@ -1,5 +1,6 @@
 import { createBrowserRouter } from 'react-router'
 import { AppShell } from '@/components/layout/AppShell.tsx'
+import { AssessmentPage } from '@/features/assessments/AssessmentPage.tsx'
 import { DashboardPage } from '@/features/dashboard/DashboardPage.tsx'
 import { LessonPage } from '@/features/lessons/LessonPage.tsx'
 import { QuizPage } from '@/features/quizzes/QuizPage.tsx'
@@ -71,6 +72,13 @@ export const router = createBrowserRouter(
          * in-shell 404 an unknown lesson does.
          */
         { path: 'quizzes/:quizId', element: <QuizPage /> },
+        /*
+         * Assessments follow the same rule (M5). A learner reaches one from the
+         * roadmap that declares it — an assessment is composite and belongs to a
+         * roadmap, not to a single lesson — and an unknown id is the same in-shell
+         * 404 an unknown lesson gets.
+         */
+        { path: 'assessments/:assessmentId', element: <AssessmentPage /> },
         { path: '*', element: <NotFoundPage /> },
       ],
     },

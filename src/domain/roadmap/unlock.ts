@@ -70,6 +70,16 @@ export const assessmentEligibility = (
       continue
     }
     const activities = input.activitiesOfLesson[lessonId] ?? []
+    /*
+     * A lesson with nothing to practise cannot be required to practise (M5).
+     *
+     * The practice requirement is "do something with what you read", and a
+     * lesson whose content declares no activity has nothing to do — `[].some()`
+     * is false, so without this the gate would be unsatisfiable and the
+     * assessment unreachable forever. Completion is still required above, so the
+     * gate stays honest: it just does not demand the impossible.
+     */
+    if (activities.length === 0) continue
     const practised = activities.some((activityId) => input.attemptedActivities.has(activityId))
     if (!practised) {
       reasons.push(
