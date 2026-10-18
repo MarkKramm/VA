@@ -331,3 +331,24 @@ parser; `src/features/` and `src/components/` may not import `@content/` and mus
 Invariant 6 and the built-output guard in `check-paths` enforce the compiler boundary. Adding
 a component means adding one entry to `src/components/mdx/registry.ts` — never a dynamic
 import keyed by a content string.
+
+---
+
+## SSD migration note (2026-10-18)
+
+The working SSD is being replaced. Before formatting, all work was verified pushed:
+`main` at `4b0ec16` == `origin/main`, tags `v0.1.0-foundation` and
+`v0.3.0-content-engine` present on the remote. Working tree was clean.
+
+**On the new SSD:**
+
+- Clone `https://github.com/MarkKramm/VA.git`, then `npm install` and `npm run check`.
+- **Git credentials will not travel.** The repo uses `credential.helper manager` (set
+  repo-locally to override the system `helper-selector`). If push fails with
+  "could not read Username", run:
+  `git -c credential.helper= -c credential.helper=manager push origin main`.
+  See `project/WORKBUDDY_MEMORY_BACKUP.md` (Oct 15 note) for the full story.
+- **Agent memory backup:** `.workbuddy-ai/memory/` (gitignored, local scratch) was copied to
+  `project/WORKBUDDY_MEMORY_BACKUP.md` and pushed, so it survives the format.
+  Safe to delete that file once no longer needed.
+- Ignored/regenerable: `node_modules/`, `dist/`. No `.env`, no local config present.
